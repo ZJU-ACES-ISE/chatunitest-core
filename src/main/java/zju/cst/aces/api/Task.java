@@ -1,0 +1,211 @@
+package zju.cst.aces.api;
+
+import org.apache.maven.project.MavenProject;
+import zju.cst.aces.config.Config;
+import zju.cst.aces.dto.ClassInfo;
+import zju.cst.aces.dto.MethodInfo;
+import zju.cst.aces.parser.ProjectParser;
+import zju.cst.aces.runner.ClassRunner;
+import zju.cst.aces.runner.MethodRunner;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.*;
+import java.util.logging.Logger;
+
+public class Task {
+
+    Config config;
+    Logger log;
+
+    public Task(Config config) {
+        this.config = config;
+        this.log = config.getLog();
+    }
+
+    public void startMethodTask(String className, String methodName) {
+        checkTargetFolder(config.getProject());
+        log.info("\n==========================\n[ChatTester] Generating tests for class: < " + className
+                + "> method: < " + methodName + " > ...");
+
+        try {
+            String fullClassName = getFullClassName(config, className);
+            ClassRunner classRunner = new ClassRunner(fullClassName, config);
+            ClassInfo classInfo = classRunner.classInfo;
+            MethodInfo methodInfo = null;
+            if (methodName.matches("\\d+")) { // use method id instead of method name
+                String methodId = methodName;
+                for (String mSig : classInfo.methodSigs.keySet()) {
+                    if (classInfo.methodSigs.get(mSig).equals(methodId)) {
+                        methodInfo = classRunner.getMethodInfo(config, classInfo, mSig);
+                        break;
+                    }
+                }
+                if (methodInfo == null) {
+                    throw new IOException("Method " + methodName + " in class " + fullClassName + " not found");
+                }
+                try {
+                    new MethodRunner(fullClassName, config, methodInfo).start();
+                } catch (Exception e) {
+                    log.severe("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId());
+                }
+            } else {
+                for (String mSig : classInfo.methodSigs.keySet()) {
+                    if (mSig.split("\\(")[0].equals(methodName)) {
+                        methodInfo = classRunner.getMethodInfo(config, classInfo, mSig);
+                        if (methodInfo == null) {
+                            throw new IOException("Method " + methodName + " in class " + fullClassName + " not found");
+                        }
+                        try {
+                            new MethodRunner(fullClassName, config, methodInfo).start(); // generate for all methods with the same name;
+                        } catch (Exception e) {
+                            log.severe("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId());
+                        }
+                    }
+                }
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Method not found: " + methodName + " in " + className + " " + config.getProject().getArtifactId());
+        }
+
+        log.info("\n==========================\n[ChatTester] Generation finished");
+    }
+
+    public void startClassTask(String className) {
+        checkTargetFolder(config.getProject());
+        log.info("\n==========================\n[ChatTester] Generating tests for class < " + className + " > ...");
+        try {
+            new ClassRunner(getFullClassName(config, className), config).start();
+        } catch (IOException e) {
+            log.warning("Class not found: " + className + " in " + config.getProject().getArtifactId());
+        }
+        log.info("\n==========================\n[ChatTester] Generation finished");
+    }
+
+    public void startProjectTask() {
+        MavenProject project = config.getProject();
+        checkTargetFolder(project);
+        if (project.getPackaging().equals("pom")) {
+            log.info("\n==========================\n[ChatTester] Skip pom-packaging ...");
+            return;
+        }
+        List<String> classPaths = ProjectParser.scanSourceDirectory(project);
+        if (config.isEnableMultithreading() == true) {
+            projectJob(classPaths);
+        } else {
+            for (String classPath : classPaths) {
+                String className = classPath.substring(classPath.lastIndexOf(File.separator) + 1, classPath.lastIndexOf("."));
+                try {
+                    className = getFullClassName(config, className);
+                    log.info("\n==========================\n[ChatTester] Generating tests for class < " + className + " > ...");
+                    ClassRunner runner = new ClassRunner(className, config);
+                    if (!filter(runner.classInfo)) {
+                        config.getLog().info("Skip class: " + classPath);
+                        continue;
+                    }
+                    runner.start();
+                } catch (IOException e) {
+                    log.severe("[ChatTester] Generate tests for class " + className + " failed: " + e);
+                }
+            }
+        }
+
+        log.info("\n==========================\n[ChatTester] Generation finished");
+    }
+
+    public void projectJob(List<String> classPaths) {
+        ExecutorService executor = Executors.newFixedThreadPool(config.getClassThreads());
+        List<Future<String>> futures = new ArrayList<>();
+        for (String classPath : classPaths) {
+            Callable<String> callable = new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    String className = classPath.substring(classPath.lastIndexOf(File.separator) + 1, classPath.lastIndexOf("."));
+                    try {
+                        className = getFullClassName(config, className);
+                        log.info("\n==========================\n[ChatTester] Generating tests for class < " + className + " > ...");
+                        ClassRunner runner = new ClassRunner(className, config);
+                        if (!filter(runner.classInfo)) {
+                            return "Skip class: " + classPath;
+                        }
+                        runner.start();
+                    } catch (IOException e) {
+                        log.severe("[ChatTester] Generate tests for class " + className + " failed: " + e);
+                    }
+                    return "Processed " + classPath;
+                }
+            };
+            Future<String> future = executor.submit(callable);
+            futures.add(future);
+        }
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                executor.shutdownNow();
+            }
+        });
+
+        for (Future<String> future : futures) {
+            try {
+                String result = future.get();
+                System.out.println(result);
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+
+        executor.shutdown();
+    }
+
+    public static String getFullClassName(Config config, String name) throws IOException {
+        if (isFullName(name)) {
+            return name;
+        }
+        Path classMapPath = config.getClassNameMapPath();
+        Map<String, List<String>> classMap = config.getGSON().fromJson(Files.readString(classMapPath, StandardCharsets.UTF_8), Map.class);
+        if (classMap.containsKey(name)) {
+            if (classMap.get(name).size() > 1) {
+                throw new RuntimeException("[ChatTester] Multiple classes Named " + name + ": " + classMap.get(name)
+                        + " Please use full qualified name!");
+            }
+            return classMap.get(name).get(0);
+        }
+        return name;
+    }
+
+    public static boolean isFullName(String name) {
+        if (name.contains(".")) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if the classes is compiled
+     * @param project
+     */
+    public static void checkTargetFolder(MavenProject project) {
+        if (project.getPackaging().equals("pom")) {
+            return;
+        }
+        if (!new File(project.getBuild().getOutputDirectory()).exists()) {
+            throw new RuntimeException("In ProjectTestMojo.checkTargetFolder: " +
+                    "The project is not compiled to the target directory. " +
+                    "Please run 'mvn install' first.");
+        }
+    }
+
+    private boolean filter(ClassInfo classInfo) {
+        if (!classInfo.isPublic || classInfo.isAbstract || classInfo.isInterface) {
+            return false;
+        }
+        return true;
+    }
+}
