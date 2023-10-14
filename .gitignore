@@ -4,8 +4,6 @@ src/backup/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-src/main/java/zju/cst/aces/util/ClassPathFetcher.java
-src/main/java/zju/cst/aces/*Mojo.java
 
 ### IntelliJ IDEA ###
 .idea/
