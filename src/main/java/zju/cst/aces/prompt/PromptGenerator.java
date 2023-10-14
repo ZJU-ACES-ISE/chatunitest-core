@@ -23,6 +23,11 @@ public class PromptGenerator {
     PromptTemplate promptTemplate;
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
+    public PromptGenerator(Config config) {
+        this.config = config;
+        this.promptTemplate = new PromptTemplate(config);
+    }
+
     public void setConfig(Config config) {
         this.config = config;
         this.promptTemplate = new PromptTemplate(config);
@@ -138,6 +143,14 @@ public class PromptGenerator {
 
     }
 
+    public List<Message> generateMessages(PromptInfo promptInfo) throws IOException {
+        List<Message> messages = new ArrayList<>();
+        if (promptInfo.errorMsg == null) { // round 0
+            messages.add(Message.ofSystem(getUserPrompt(promptInfo)));
+        }
+        messages.add(Message.of(getSystemPrompt(promptInfo)));
+        return messages;
+    }
 
     public String getSystemPrompt(PromptInfo promptInfo) {
         try {

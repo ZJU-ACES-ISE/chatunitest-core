@@ -21,11 +21,11 @@ public class Validator {
         this.compiler = new TestCompiler(config);
     }
 
-    public void ruleBasedRepair(String code, String testName, ClassInfo classInfo) {
+    public String ruleBasedRepair(String code, String testName, ClassInfo classInfo) {
         code = changeTestName(code, testName);
         code = repairPackage(code, classInfo.packageName);
-//            code = addTimeout(code, testTimeOut);
         code = repairImports(code, classInfo.imports, config.enableRuleRepair);
+        return code;
     }
 
     public boolean compile(String className, Path outputPath, PromptInfo promptInfo) {

@@ -95,7 +95,7 @@ public class MethodRunner extends ClassRunner {
 
 //            TestSkeleton skeleton = new TestSkeleton(promptInfo); // test skeleton to wrap a test method
 
-            List<Message> prompt = generateMessages(promptInfo);
+            List<Message> prompt = promptGenerator.generateMessages(promptInfo);
             if (isExceedMaxTokens(prompt)) {
                 config.getLog().severe("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
                 break;

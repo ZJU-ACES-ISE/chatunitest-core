@@ -38,7 +38,7 @@ public abstract class AbstractRunner {
     public String className;
     public String fullClassName;
     public Config config;
-    public PromptGenerator promptGenerator = new PromptGenerator();
+    public PromptGenerator promptGenerator;
     // get configuration from Config, and move init() to Config
     public AbstractRunner(String fullClassname, Config config) throws IOException {
         fullClassName = fullClassname;
@@ -47,28 +47,10 @@ public abstract class AbstractRunner {
         errorOutputPath = config.getErrorOutput();
         parseOutputPath = config.getParseOutput();
         testOutputPath = config.getTestOutput();
-        promptGenerator.setConfig(config);
+        promptGenerator = new PromptGenerator(config);
     }
 
     abstract void start() throws IOException;
-
-    public List<Message> generateMessages(PromptInfo promptInfo) throws IOException {
-        List<Message> messages = new ArrayList<>();
-        if (promptInfo.errorMsg == null) { // round 0
-            messages.add(Message.ofSystem(generateSystemPrompt(promptInfo)));
-        }
-        messages.add(Message.of(generateUserPrompt(promptInfo)));
-        return messages;
-    }
-
-    public String generateUserPrompt(PromptInfo promptInfo) throws IOException {
-        return promptGenerator.getUserPrompt(promptInfo);
-    }
-
-
-    public String generateSystemPrompt(PromptInfo promptInfo) {
-       return promptGenerator.getSystemPrompt(promptInfo);
-    }
 
     public static String joinLines(List<String> lines) {
         return lines.stream().collect(Collectors.joining("\n"));
@@ -80,7 +62,7 @@ public abstract class AbstractRunner {
                 .collect(Collectors.joining("\n"));
     }
 
-    public String parseResponse(Response response) {
+    public static String parseResponse(Response response) {
         if (response == null) {
             return "";
         }
