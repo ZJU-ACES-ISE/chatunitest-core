@@ -3,13 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
     <!--gav information-->
     <groupId>io.github.ZJU-ACES-ISE</groupId>
-    <artifactId>chatunitest</artifactId>
+    <artifactId>chatunitest-core</artifactId>
     <!--Uploading to the SNAPSHOT repository, the version suffix must include 'SNAPSHOT'-->
     <!--<version>1.0.0-SNAPSHOT</version>-->
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    <name>chatunitest</name>
-    <description>A libarary for generating unit tests using LLMs</description>
+    <name>chatunitest-core</name>
+    <description>A framework to generate unit tests using LLMs</description>
     <licenses>
         <license>
             <name>MIT License</name>
