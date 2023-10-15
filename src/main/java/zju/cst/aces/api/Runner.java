@@ -15,11 +15,11 @@ public class Runner {
     }
 
     public void runClass(String fullClassName) throws IOException {
-        new ClassRunner(fullClassName, config).start();
+        new ClassRunner(config, fullClassName).start();
     }
 
     public void runMethod(String fullClassName, MethodInfo methodInfo) throws IOException {
-        new MethodRunner(fullClassName, config, methodInfo).start();
+        new MethodRunner(config, fullClassName, methodInfo).start();
     }
 
 }

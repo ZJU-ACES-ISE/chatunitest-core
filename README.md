@@ -21,7 +21,7 @@ Many people have tried using ChatGPT to help them with various programming tasks
 
 ## Steps to run
 
-### 0. Add our plugin to `pom.xml` and config
+### 0. Add our dependency to `pom.xml` and config
 
 ### 1. Add the following dependency to pom.xml
 

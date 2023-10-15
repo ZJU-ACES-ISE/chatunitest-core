@@ -45,13 +45,13 @@ public class Prompt {
         this.promptInfo = AbstractRunner.generatePromptInfoWithoutDep(config, classInfo, methodInfo);
     }
 
-    public void setTestName(String testName) {
-        this.testName = testName;
-    }
-
     public void setFullTestName(String fullTestName) {
         this.fullTestName = fullTestName;
         this.promptInfo.setFullTestName(this.fullTestName);
+    }
+
+    public void setTestName(String testName) {
+        this.testName = testName;
     }
 
     public void countToken() {

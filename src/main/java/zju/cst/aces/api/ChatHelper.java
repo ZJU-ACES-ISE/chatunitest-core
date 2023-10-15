@@ -9,7 +9,7 @@ import zju.cst.aces.util.CodeExtractor;
 
 import java.util.List;
 
-public class ChatAPI {
+public class ChatHelper {
 
     public static Response chat(Config config, List<Message> messages) {
         Response response = new AskGPT(config).askChatGPT(messages);

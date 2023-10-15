@@ -44,7 +44,7 @@ public class TestSkeleton {
         this.packageName = promptInfo.classInfo.packageName;
         this.imports = promptInfo.classInfo.imports;
         this.skeleton = repairPackage(this.skeleton, this.packageName);
-        this.skeleton = repairImports(this.skeleton, this.imports, true);
+        this.skeleton = repairImports(this.skeleton, this.imports);
         this.skeleton = changeTestName(this.skeleton, this.testName);
     }
 

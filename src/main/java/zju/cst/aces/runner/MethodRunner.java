@@ -19,8 +19,8 @@ public class MethodRunner extends ClassRunner {
 
     public MethodInfo methodInfo;
 
-    public MethodRunner(String fullClassName, Config config, MethodInfo methodInfo) throws IOException {
-        super(fullClassName, config);
+    public MethodRunner(Config config, String fullClassName, MethodInfo methodInfo) throws IOException {
+        super(config, fullClassName);
         this.methodInfo = methodInfo;
     }
 
@@ -90,7 +90,7 @@ public class MethodRunner extends ClassRunner {
             promptInfo.addRecord(new RoundRecord(rounds));
             RoundRecord record = promptInfo.getRecords().get(rounds);
 
-            Path savePath = testOutputPath.resolve(fullTestName.replace(".", File.separator) + ".java");
+            Path savePath = config.getTestOutput().resolve(fullTestName.replace(".", File.separator) + ".java");
             promptInfo.setTestPath(savePath);
 
 //            TestSkeleton skeleton = new TestSkeleton(promptInfo); // test skeleton to wrap a test method
@@ -122,11 +122,11 @@ public class MethodRunner extends ClassRunner {
             code = changeTestName(code, testName);
             code = repairPackage(code, classInfo.packageName);
 //            code = addTimeout(code, testTimeOut);
-            code = repairImports(code, classInfo.imports, config.enableRuleRepair);
+            code = repairImports(code, classInfo.imports);
             promptInfo.setUnitTest(code); // Before repair imports
 
             record.setCode(code);
-            if (runTest(testName, fullTestName, savePath, promptInfo, rounds)) {
+            if (runTest(fullTestName, promptInfo, rounds)) {
                 record.setHasError(false);
                 exportRecord(promptInfo, classInfo, num);
                 return true;
@@ -139,7 +139,13 @@ public class MethodRunner extends ClassRunner {
         return false;
     }
 
-    public boolean runTest(String testName, String fullTestName, Path savePath, PromptInfo promptInfo, int rounds) {
+    public boolean runTest(String fullTestName, PromptInfo promptInfo, int rounds) {
+        String testName = fullTestName.substring(fullTestName.lastIndexOf(".") + 1);
+        Path savePath = config.getTestOutput().resolve(fullTestName.replace(".", File.separator) + ".java");
+        if (promptInfo.getTestPath() == null) {
+            promptInfo.setTestPath(savePath);
+        }
+
         TestProcessor testProcessor = new TestProcessor(fullTestName);
         String code = promptInfo.getUnitTest();
         if (rounds >= 1) {
@@ -148,8 +154,8 @@ public class MethodRunner extends ClassRunner {
 
         // Compilation
         TestCompiler compiler = new TestCompiler(config, code);
-        Path compilationErrorPath = errorOutputPath.resolve(testName + "_CompilationError_" + rounds + ".txt");
-        Path executionErrorPath = errorOutputPath.resolve(testName + "_ExecutionError_" + rounds + ".txt");
+        Path compilationErrorPath = config.getErrorOutput().resolve(testName + "_CompilationError_" + rounds + ".txt");
+        Path executionErrorPath = config.getErrorOutput().resolve(testName + "_ExecutionError_" + rounds + ".txt");
         boolean compileResult = compiler.compileTest(testName, compilationErrorPath, promptInfo);
         if (!compileResult) {
             config.getLog().info("Test for method < " + methodInfo.methodName + " > compilation failed round " + rounds);
@@ -205,7 +211,7 @@ public class MethodRunner extends ClassRunner {
         }
 //            summary.printTo(new PrintWriter(System.out));
         exportTest(code, savePath);
-        config.getLog().info("Test for method < " + methodInfo.methodName + " > generated successfully round " + rounds);
+        config.getLog().info("Test for method < " + methodInfo.methodName + " > compile and execute successfully round " + rounds);
         return true;
     }
 }

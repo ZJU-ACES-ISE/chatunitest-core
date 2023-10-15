@@ -18,9 +18,9 @@ public class ClassRunner extends AbstractRunner {
     public File infoDir;
     public int index;
 
-    public ClassRunner(String fullClassName, Config config) throws IOException {
-        super(fullClassName, config);
-        infoDir = new File(parseOutputPath + File.separator + fullClassName.replace(".", File.separator));
+    public ClassRunner(Config config, String fullClassName) throws IOException {
+        super(config, fullClassName);
+        infoDir = config.getParseOutput().resolve(fullClassName.replace(".", File.separator)).toFile();
         if (!infoDir.isDirectory()) {
             config.getLog().warning("Error: " + fullClassName + " no parsed info found");
         }
@@ -39,7 +39,7 @@ public class ClassRunner extends AbstractRunner {
                     config.getLog().info("Skip method: " + mSig + " in class: " + fullClassName);
                     continue;
                 }
-                new MethodRunner(fullClassName, config, methodInfo).start();
+                new MethodRunner(config, fullClassName, methodInfo).start();
             }
         }
         if (config.isEnableMerge()) {
@@ -61,7 +61,7 @@ public class ClassRunner extends AbstractRunner {
                     if (!filter(methodInfo)) {
                         return "Skip method: " + mSig + " in class: " + fullClassName;
                     }
-                    new MethodRunner(fullClassName, config, methodInfo).start();
+                    new MethodRunner(config, fullClassName, methodInfo).start();
                     return "Processed " + mSig;
                 }
             };

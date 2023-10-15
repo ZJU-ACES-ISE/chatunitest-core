@@ -1,19 +1,18 @@
 package zju.cst.aces.api;
 
+import com.github.javaparser.ParseProblemException;
+import com.github.javaparser.StaticJavaParser;
 import lombok.Data;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import zju.cst.aces.config.Config;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.PromptInfo;
 import zju.cst.aces.util.TestCompiler;
-import static zju.cst.aces.runner.AbstractRunner.*;
 
 import java.nio.file.Path;
 
 @Data
 public class Validator {
-
-    Config config;
 
     TestCompiler compiler;
 
@@ -21,11 +20,13 @@ public class Validator {
         this.compiler = new TestCompiler(config);
     }
 
-    public String ruleBasedRepair(String code, String testName, ClassInfo classInfo) {
-        code = changeTestName(code, testName);
-        code = repairPackage(code, classInfo.packageName);
-        code = repairImports(code, classInfo.imports, config.enableRuleRepair);
-        return code;
+    public boolean basicValidate(String code) {
+        try {
+            StaticJavaParser.parse(code);
+            return true;
+        } catch (ParseProblemException e) {
+            return false;
+        }
     }
 
     public boolean compile(String className, Path outputPath, PromptInfo promptInfo) {

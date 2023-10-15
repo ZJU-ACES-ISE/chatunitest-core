@@ -2,7 +2,7 @@ package zju.cst.aces.prompt;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import zju.cst.aces.ProjectTestMojo;
+import zju.cst.aces.api.Task;
 import zju.cst.aces.config.Config;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.parser.ProjectParser;
@@ -17,7 +17,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-//该类方法于AbstratRunner中调用
 public class PromptGenerator {
     public Config config;
     PromptTemplate promptTemplate;
@@ -184,7 +183,7 @@ public class PromptGenerator {
         Map<String, String> depBrief = new HashMap<>();
         for (Map.Entry<String, Set<String>> entry : methodInfo.dependentMethods.entrySet()) {
             String depClassName = entry.getKey();
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depBrief;
@@ -210,7 +209,7 @@ public class PromptGenerator {
         Map<String, String> depBodies = new HashMap<>();
         for (Map.Entry<String, Set<String>> entry : methodInfo.dependentMethods.entrySet()) {
             String depClassName = entry.getKey();
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depBodies;
@@ -236,7 +235,7 @@ public class PromptGenerator {
         Map<String, String> depFields = new HashMap<>();
         for (Map.Entry<String, Set<String>> entry : classInfo.constructorDeps.entrySet()) {
             String depClassName = entry.getKey();
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depFields;
@@ -253,7 +252,7 @@ public class PromptGenerator {
             if (depFields.containsKey(depClassName)) {
                 continue;
             }
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depFields;
@@ -271,7 +270,7 @@ public class PromptGenerator {
         Map<String, String> depConstructorSigs = new HashMap<>();
         for (Map.Entry<String, Set<String>> entry : classInfo.constructorDeps.entrySet()) {
             String depClassName = entry.getKey();
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depConstructorSigs;
@@ -288,7 +287,7 @@ public class PromptGenerator {
             if (depConstructorSigs.containsKey(depClassName)) {
                 continue;
             }
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depConstructorSigs;
@@ -306,7 +305,7 @@ public class PromptGenerator {
         Map<String, String> depConstructorBodies = new HashMap<>();
         for (Map.Entry<String, Set<String>> entry : classInfo.constructorDeps.entrySet()) {
             String depClassName = entry.getKey();
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depConstructorBodies;
@@ -332,7 +331,7 @@ public class PromptGenerator {
             if (depConstructorBodies.containsKey(depClassName)) {
                 continue;
             }
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depConstructorBodies;
@@ -359,7 +358,7 @@ public class PromptGenerator {
         Map<String, String> depClassSigs = new HashMap<>();
         for (Map.Entry<String, Set<String>> entry : classInfo.constructorDeps.entrySet()) {
             String depClassName = entry.getKey();
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depClassSigs;
@@ -376,7 +375,7 @@ public class PromptGenerator {
             if (depClassSigs.containsKey(depClassName)) {
                 continue;
             }
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depClassSigs;
@@ -394,7 +393,7 @@ public class PromptGenerator {
         Map<String, String> depClassBodies = new HashMap<>();
         for (Map.Entry<String, Set<String>> entry : classInfo.constructorDeps.entrySet()) {
             String depClassName = entry.getKey();
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depClassBodies;
@@ -411,7 +410,7 @@ public class PromptGenerator {
             if (depClassBodies.containsKey(depClassName)) {
                 continue;
             }
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depClassBodies;
@@ -429,7 +428,7 @@ public class PromptGenerator {
         Map<String, String> depPackages = new HashMap<>();
         for (Map.Entry<String, Set<String>> entry : classInfo.constructorDeps.entrySet()) {
             String depClassName = entry.getKey();
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depPackages;
@@ -446,7 +445,7 @@ public class PromptGenerator {
             if (depPackages.containsKey(depClassName)) {
                 continue;
             }
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depPackages;
@@ -464,7 +463,7 @@ public class PromptGenerator {
         Map<String, String> depImports = new HashMap<>();
         for (Map.Entry<String, Set<String>> entry : classInfo.constructorDeps.entrySet()) {
             String depClassName = entry.getKey();
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depImports;
@@ -481,7 +480,7 @@ public class PromptGenerator {
             if (depImports.containsKey(depClassName)) {
                 continue;
             }
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depImports;
@@ -499,7 +498,7 @@ public class PromptGenerator {
         Map<String, String> depGSSigs = new HashMap<>();
         for (Map.Entry<String, Set<String>> entry : classInfo.constructorDeps.entrySet()) {
             String depClassName = entry.getKey();
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depGSSigs;
@@ -516,7 +515,7 @@ public class PromptGenerator {
             if (depGSSigs.containsKey(depClassName)) {
                 continue;
             }
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depGSSigs;
@@ -534,7 +533,7 @@ public class PromptGenerator {
         Map<String, String> depGSBodies = new HashMap<>();
         for (Map.Entry<String, Set<String>> entry : classInfo.constructorDeps.entrySet()) {
             String depClassName = entry.getKey();
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depGSBodies;
@@ -560,7 +559,7 @@ public class PromptGenerator {
             if (depGSBodies.containsKey(depClassName)) {
                 continue;
             }
-            String fullDepClassName = ProjectTestMojo.getFullClassName(config, depClassName);
+            String fullDepClassName = Task.getFullClassName(config, depClassName);
             Path depClassInfoPath = config.getParseOutput().resolve(fullDepClassName.replace(".", File.separator)).resolve("class.json");
             if (!depClassInfoPath.toFile().exists()) {
                 return depGSBodies;

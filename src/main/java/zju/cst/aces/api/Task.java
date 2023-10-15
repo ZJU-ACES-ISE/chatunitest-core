@@ -36,7 +36,7 @@ public class Task {
 
         try {
             String fullClassName = getFullClassName(config, className);
-            ClassRunner classRunner = new ClassRunner(fullClassName, config);
+            ClassRunner classRunner = new ClassRunner(config, fullClassName);
             ClassInfo classInfo = classRunner.classInfo;
             MethodInfo methodInfo = null;
             if (methodName.matches("\\d+")) { // use method id instead of method name
@@ -51,7 +51,7 @@ public class Task {
                     throw new IOException("Method " + methodName + " in class " + fullClassName + " not found");
                 }
                 try {
-                    new MethodRunner(fullClassName, config, methodInfo).start();
+                    new MethodRunner(config, fullClassName, methodInfo).start();
                 } catch (Exception e) {
                     log.severe("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId());
                 }
@@ -63,7 +63,7 @@ public class Task {
                             throw new IOException("Method " + methodName + " in class " + fullClassName + " not found");
                         }
                         try {
-                            new MethodRunner(fullClassName, config, methodInfo).start(); // generate for all methods with the same name;
+                            new MethodRunner(config, fullClassName, methodInfo).start(); // generate for all methods with the same name;
                         } catch (Exception e) {
                             log.severe("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId());
                         }
@@ -82,7 +82,7 @@ public class Task {
         checkTargetFolder(config.getProject());
         log.info("\n==========================\n[ChatTester] Generating tests for class < " + className + " > ...");
         try {
-            new ClassRunner(getFullClassName(config, className), config).start();
+            new ClassRunner(config, getFullClassName(config, className)).start();
         } catch (IOException e) {
             log.warning("Class not found: " + className + " in " + config.getProject().getArtifactId());
         }
@@ -103,9 +103,9 @@ public class Task {
             for (String classPath : classPaths) {
                 String className = classPath.substring(classPath.lastIndexOf(File.separator) + 1, classPath.lastIndexOf("."));
                 try {
-                    className = getFullClassName(config, className);
+                    String fullClassName = getFullClassName(config, className);
                     log.info("\n==========================\n[ChatTester] Generating tests for class < " + className + " > ...");
-                    ClassRunner runner = new ClassRunner(className, config);
+                    ClassRunner runner = new ClassRunner(config, fullClassName);
                     if (!filter(runner.classInfo)) {
                         config.getLog().info("Skip class: " + classPath);
                         continue;
@@ -129,9 +129,9 @@ public class Task {
                 public String call() throws Exception {
                     String className = classPath.substring(classPath.lastIndexOf(File.separator) + 1, classPath.lastIndexOf("."));
                     try {
-                        className = getFullClassName(config, className);
+                        String fullClassName = getFullClassName(config, className);
                         log.info("\n==========================\n[ChatTester] Generating tests for class < " + className + " > ...");
-                        ClassRunner runner = new ClassRunner(className, config);
+                        ClassRunner runner = new ClassRunner(config, fullClassName);
                         if (!filter(runner.classInfo)) {
                             return "Skip class: " + classPath;
                         }

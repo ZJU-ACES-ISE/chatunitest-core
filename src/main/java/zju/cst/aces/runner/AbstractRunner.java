@@ -6,7 +6,7 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import okhttp3.Response;
-import zju.cst.aces.ProjectTestMojo;
+import zju.cst.aces.api.Task;
 import zju.cst.aces.config.Config;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.Message;
@@ -32,21 +32,15 @@ public abstract class AbstractRunner {
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     public static final String separator = "_";
     public static int testTimeOut = 8000;
-    public Path parseOutputPath;
-    public Path testOutputPath;
-    public Path errorOutputPath;
     public String className;
     public String fullClassName;
     public Config config;
     public PromptGenerator promptGenerator;
     // get configuration from Config, and move init() to Config
-    public AbstractRunner(String fullClassname, Config config) throws IOException {
+    public AbstractRunner(Config config, String fullClassname) throws IOException {
         fullClassName = fullClassname;
         className = fullClassname.substring(fullClassname.lastIndexOf(".") + 1);
         this.config = config;
-        errorOutputPath = config.getErrorOutput();
-        parseOutputPath = config.getParseOutput();
-        testOutputPath = config.getTestOutput();
         promptGenerator = new PromptGenerator(config);
     }
 
@@ -93,14 +87,12 @@ public abstract class AbstractRunner {
         return "";
     }
 
-    public static String repairImports(String code, List<String> imports, boolean asterisk) {
+    public static String repairImports(String code, List<String> imports) {
         CompilationUnit cu = StaticJavaParser.parse(code);
-        if (asterisk) {
-            cu.addImport("org.mockito", false, true);
-            cu.addImport("org.junit.jupiter.api", false, true);
-            cu.addImport("org.mockito.Mockito", true, true);
-            cu.addImport("org.junit.jupiter.api.Assertions", true, true);
-        }
+        cu.addImport("org.mockito", false, true);
+        cu.addImport("org.junit.jupiter.api", false, true);
+        cu.addImport("org.mockito.Mockito", true, true);
+        cu.addImport("org.junit.jupiter.api.Assertions", true, true);
         imports.forEach(i -> cu.addImport(i.replace("import ", "").replace(";", "")));
         return cu.toString();
     }
@@ -126,7 +118,7 @@ public abstract class AbstractRunner {
             }
             List<String> timeoutImport = new ArrayList<>();
             timeoutImport.add("import org.junit.jupiter.api.Timeout;");
-            testCase = repairImports(testCase, timeoutImport, config.enableRuleRepair);
+            testCase = repairImports(testCase, timeoutImport);
             return testCase.replace("@Test\n", String.format("@Test%n    @Timeout(%d)%n", timeout));
         } else {
             config.getLog().warning("Generated with unknown JUnit version, try without adding timeout.");
@@ -276,7 +268,7 @@ public abstract class AbstractRunner {
     }
 
     public static ClassInfo getClassInfo(Config config, String className) throws IOException {
-        String fullClassName = ProjectTestMojo.getFullClassName(config, className);
+        String fullClassName = Task.getFullClassName(config, className);
         Path classInfoPath = config.getParseOutput().resolve(fullClassName.replace(".", File.separator)).resolve("class.json");
         if (!classInfoPath.toFile().exists()) {
             return null;
