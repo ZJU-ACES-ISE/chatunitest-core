@@ -19,13 +19,20 @@
 ## 运行步骤
 
 ### 0. `pom.xml`文件配置
+```xml
+<dependency>
+    <groupId>io.github.ZJU-ACES-ISE</groupId>
+    <artifactId>chatunitest-core</artifactId>
+    <version>1.4.0</version>
+</dependency>
+```
 
 ### 1. 将以下依赖项添加到`pom.xml`文件中
 ```xml
 <dependency>
     <groupId>io.github.ZJU-ACES-ISE</groupId>
     <artifactId>chatunitest-starter</artifactId>
-    <version>1.1.0</version>
+    <version>1.4.0</version>
     <type>pom</type>
 </dependency>
 ```

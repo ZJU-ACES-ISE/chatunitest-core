@@ -22,6 +22,13 @@ Many people have tried using ChatGPT to help them with various programming tasks
 ## Steps to run
 
 ### 0. Add our dependency to `pom.xml` and config
+```xml
+<dependency>
+    <groupId>io.github.ZJU-ACES-ISE</groupId>
+    <artifactId>chatunitest-core</artifactId>
+    <version>1.4.0</version>
+</dependency>
+```
 
 ### 1. Add the following dependency to pom.xml
 
