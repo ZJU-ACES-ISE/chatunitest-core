@@ -1,7 +1,7 @@
 package zju.cst.aces.api;
 
 import org.apache.maven.project.MavenProject;
-import zju.cst.aces.config.Config;
+import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 import zju.cst.aces.parser.ProjectParser;

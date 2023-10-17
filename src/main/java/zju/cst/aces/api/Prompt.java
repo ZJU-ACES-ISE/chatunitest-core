@@ -1,7 +1,7 @@
 package zju.cst.aces.api;
 
 import lombok.Data;
-import zju.cst.aces.config.Config;
+import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.Message;
 import zju.cst.aces.dto.MethodInfo;

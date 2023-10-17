@@ -7,7 +7,7 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import zju.cst.aces.config.Config;
+import zju.cst.aces.api.config.Config;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.runner.AbstractRunner;
 

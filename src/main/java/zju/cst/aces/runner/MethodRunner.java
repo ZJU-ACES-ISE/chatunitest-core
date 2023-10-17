@@ -2,7 +2,7 @@ package zju.cst.aces.runner;
 
 import okhttp3.Response;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
-import zju.cst.aces.config.Config;
+import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.util.AskGPT;
 import zju.cst.aces.util.TestCompiler;

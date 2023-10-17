@@ -2,7 +2,7 @@ package zju.cst.aces.dto;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import zju.cst.aces.config.Config;
+import zju.cst.aces.api.config.Config;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

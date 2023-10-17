@@ -4,7 +4,7 @@ package zju.cst.aces.prompt;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import zju.cst.aces.config.Config;
+import zju.cst.aces.api.config.Config;
 
 import java.io.IOException;
 import java.io.InputStream;

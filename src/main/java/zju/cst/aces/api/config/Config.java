@@ -1,4 +1,4 @@
-package zju.cst.aces.config;
+package zju.cst.aces.api.config;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.symbolsolver.javaparsermodel.JavaParserFacade;
@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.Setter;
 import okhttp3.OkHttpClient;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
 import zju.cst.aces.util.TestCompiler;
@@ -460,5 +459,34 @@ public class Config {
         }
         String apiKey = apiKeys[rand.nextInt(apiKeys.length)];
         return apiKey;
+    }
+
+    private void print() {
+        log.info("\n========================== Configuration ==========================\n");
+        log.info(" Multithreading >>>> " + this.isEnableMultithreading());
+        if (this.isEnableMultithreading()) {
+            log.info(" - Class threads: " + this.getClassThreads() + ", Method threads: " + this.getMethodThreads());
+        }
+        log.info(" Stop when success >>>> " + this.isStopWhenSuccess());
+        log.info(" No execution >>>> " + this.isNoExecution());
+        log.info(" Enable Merge >>>> " + this.isEnableMerge());
+        log.info(" --- ");
+        log.info(" TestOutput Path >>> " + this.getTestOutput());
+        log.info(" TmpOutput Path >>> " + this.getTmpOutput());
+        log.info(" Prompt path >>> " + this.getPromptPath());
+        log.info(" Example path >>> " + this.getExamplePath());
+        log.info(" MaxThreads >>> " + this.getMaxThreads());
+        log.info(" TestNumber >>> " + this.getTestNumber());
+        log.info(" MaxRounds >>> " + this.getMaxRounds());
+        log.info(" MinErrorTokens >>> " + this.getMinErrorTokens());
+        log.info(" MaxPromptTokens >>> " + this.getMaxPromptTokens());
+        log.info(" SleepTime >>> " + this.getSleepTime());
+        log.info(" DependencyDepth >>> " + this.getDependencyDepth());
+        log.info("\n===================================================================\n");
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

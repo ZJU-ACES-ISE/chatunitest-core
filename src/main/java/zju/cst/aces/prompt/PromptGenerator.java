@@ -3,7 +3,7 @@ package zju.cst.aces.prompt;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import zju.cst.aces.api.Task;
-import zju.cst.aces.config.Config;
+import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.runner.AbstractRunner;

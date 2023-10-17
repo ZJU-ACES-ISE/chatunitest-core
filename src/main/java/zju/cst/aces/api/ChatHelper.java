@@ -1,7 +1,7 @@
 package zju.cst.aces.api;
 
 import okhttp3.Response;
-import zju.cst.aces.config.Config;
+import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.Message;
 import zju.cst.aces.runner.AbstractRunner;
 import zju.cst.aces.util.AskGPT;

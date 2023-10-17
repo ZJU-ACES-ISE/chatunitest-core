@@ -2,7 +2,7 @@ package zju.cst.aces.runner;
 
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
-import zju.cst.aces.config.Config;
+import zju.cst.aces.api.config.Config;
 import zju.cst.aces.util.TestClassMerger;
 
 import java.io.File;

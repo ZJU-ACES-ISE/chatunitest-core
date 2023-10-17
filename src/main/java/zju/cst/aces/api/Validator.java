@@ -4,8 +4,7 @@ import com.github.javaparser.ParseProblemException;
 import com.github.javaparser.StaticJavaParser;
 import lombok.Data;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
-import zju.cst.aces.config.Config;
-import zju.cst.aces.dto.ClassInfo;
+import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.PromptInfo;
 import zju.cst.aces.util.TestCompiler;
 

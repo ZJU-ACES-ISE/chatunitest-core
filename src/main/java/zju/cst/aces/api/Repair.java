@@ -1,11 +1,8 @@
 package zju.cst.aces.api;
 
-import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import okhttp3.Response;
-import zju.cst.aces.config.Config;
-import zju.cst.aces.dto.ClassInfo;
+import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.PromptInfo;
-import zju.cst.aces.dto.RoundRecord;
 import zju.cst.aces.runner.MethodRunner;
 
 import java.io.IOException;
