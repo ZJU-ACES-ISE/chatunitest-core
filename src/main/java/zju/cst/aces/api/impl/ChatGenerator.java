@@ -1,6 +1,7 @@
-package zju.cst.aces.api;
+package zju.cst.aces.api.impl;
 
 import okhttp3.Response;
+import zju.cst.aces.api.Generator;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.Message;
 import zju.cst.aces.runner.AbstractRunner;
@@ -8,8 +9,14 @@ import zju.cst.aces.util.AskGPT;
 import zju.cst.aces.util.CodeExtractor;
 
 import java.util.List;
+import zju.cst.aces.api.Generator;
 
-public class ChatHelper {
+public class ChatGenerator implements Generator {
+
+    @Override
+    public String generate(Config config, List<Message> messages) {
+        return extractCodeByResponse(chat(config, messages));
+    }
 
     public static Response chat(Config config, List<Message> messages) {
         Response response = new AskGPT(config).askChatGPT(messages);
