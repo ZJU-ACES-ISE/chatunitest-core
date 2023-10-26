@@ -125,6 +125,16 @@
             <version>9.2</version>
         </dependency>
         <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-tree</artifactId>
+            <version>9.2</version>
+        </dependency>
+        <dependency>
+            <groupId>br.usp.each.saeg</groupId>
+            <artifactId>asm-defuse</artifactId>
+            <version>0.0.9</version>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.aether</groupId>
             <artifactId>aether-api</artifactId>
             <version>1.1.0</version>

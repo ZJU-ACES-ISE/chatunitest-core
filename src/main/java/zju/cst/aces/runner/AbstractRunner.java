@@ -135,7 +135,7 @@ public abstract class AbstractRunner {
     public static PromptInfo generatePromptInfoWithoutDep(Config config, ClassInfo classInfo, MethodInfo methodInfo) throws IOException {
         PromptInfo promptInfo = new PromptInfo(
                 false,
-                classInfo.className,
+                classInfo.fullClassName,
                 methodInfo.methodName,
                 methodInfo.methodSignature);
         promptInfo.setClassInfo(classInfo);
@@ -170,7 +170,7 @@ public abstract class AbstractRunner {
     public static PromptInfo generatePromptInfoWithDep(Config config, ClassInfo classInfo, MethodInfo methodInfo) throws IOException {
         PromptInfo promptInfo = new PromptInfo(
                 true,
-                classInfo.className,
+                classInfo.fullClassName,
                 methodInfo.methodName,
                 methodInfo.methodSignature);
         promptInfo.setClassInfo(classInfo);

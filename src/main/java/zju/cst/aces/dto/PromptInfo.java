@@ -3,6 +3,7 @@ package zju.cst.aces.dto;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import lombok.Data;
+import zju.cst.aces.api.Task;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -10,6 +11,7 @@ import java.util.*;
 @Data
 public class PromptInfo {
     public boolean hasDep;
+    public String fullClassName;
     public String className;
     public String methodName;
     public String methodSignature;
@@ -29,10 +31,12 @@ public class PromptInfo {
     public Map<String, List<MethodDeclaration>> correctTests = new HashMap<>();
     public List<RoundRecord> records = new ArrayList<>();
 
-    public PromptInfo(boolean hasDep, String className, String methodName,
+    public PromptInfo(boolean hasDep, String fullClassName, String methodName,
                       String methodSignature) {
         this.hasDep = hasDep;
-        this.className = className;
+        this.fullClassName = fullClassName;
+        this.className = fullClassName.contains(".") ?
+                fullClassName.substring(fullClassName.lastIndexOf(".") + 1) : fullClassName;
         this.methodName = methodName;
         this.methodSignature = methodSignature;
     }

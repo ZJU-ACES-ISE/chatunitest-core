@@ -117,6 +117,8 @@ public class ClassParser {
         ci.setAbstract(classNode.isAbstract());
         ci.setInterface(classNode.isInterface());
         ci.setCode(cu.toString(), classNode.toString());
+        ci.setFullClassName(cu.getPackageDeclaration().orElseThrow().getNameAsString() + "." + ci.className);
+        ci.setImplementedTypes(getInterfaces(classNode));
         return ci;
     }
 
@@ -214,6 +216,14 @@ public class ClassParser {
             superClasses.add(sup.getNameAsString());
         });
         return superClasses;
+    }
+
+    private List<String> getInterfaces(ClassOrInterfaceDeclaration node) {
+        List<String> interfaces = new ArrayList<>();
+        node.getImplementedTypes().forEach(sup -> {
+            interfaces.add(sup.getNameAsString());
+        });
+        return interfaces;
     }
 
     /**

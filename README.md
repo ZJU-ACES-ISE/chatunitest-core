@@ -10,7 +10,7 @@
 
 💥 Plugin now exports runtime and error logs.
 
-💥 Custom prompt support added.
+💥 Custom promptConstructorImpl support added.
 
 💥 Algorithm optimized to minimize token usage.
 

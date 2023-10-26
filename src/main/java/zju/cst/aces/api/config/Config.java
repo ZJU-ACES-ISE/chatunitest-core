@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 public class Config {
     public String date;
     public Gson GSON;
+    public MavenSession session;
     public MavenProject project;
     public DependencyGraphBuilder dependencyGraphBuilder;
     public JavaParser parser;
@@ -46,6 +47,8 @@ public class Config {
     public boolean enableMultithreading;
     public boolean enableRuleRepair;
     public boolean enableMerge;
+    public boolean enableObfuscate;
+    public String[] obfuscateGroupIds;
     public int maxThreads;
     public int classThreads;
     public int methodThreads;
@@ -68,6 +71,7 @@ public class Config {
     public Path classNameMapPath;
     public Path historyPath;
     public Path examplePath;
+    public Path symbolFramePath;
 
     public String proxy;
     public String hostname;
@@ -78,6 +82,7 @@ public class Config {
 
     public static class ConfigBuilder {
         public String date;
+        public MavenSession session;
         public MavenProject project;
         public DependencyGraphBuilder dependencyGraphBuilder;
         public JavaParser parser;
@@ -93,6 +98,8 @@ public class Config {
         public boolean enableMultithreading = true;
         public boolean enableRuleRepair = true;
         public boolean enableMerge = true;
+        public boolean enableObfuscate = false;
+        public String[] obfuscateGroupIds;
         public int maxThreads = Runtime.getRuntime().availableProcessors() * 5;
         public int classThreads = (int) Math.ceil((double)  this.maxThreads / 10);
         public int methodThreads = (int) Math.ceil((double) this.maxThreads / this.classThreads);
@@ -115,6 +122,7 @@ public class Config {
         public Path classNameMapPath;
         public Path historyPath;
         public Path examplePath;
+        public Path symbolFramePath;
         public String proxy = "null:-1";
         public String hostname = "null";
         public String port = "-1";
@@ -143,6 +151,7 @@ public class Config {
             this.errorOutput = this.tmpOutput.resolve("error-message");
             this.classNameMapPath = this.tmpOutput.resolve("classNameMapping.json");
             this.historyPath = this.tmpOutput.resolve("history" + this.date);
+            this.symbolFramePath = this.tmpOutput.resolve("symbolFrames.json");
         }
 
         public ConfigBuilder maxThreads(int maxThreads) {
@@ -177,6 +186,7 @@ public class Config {
             this.errorOutput = this.tmpOutput.resolve("error-message");
             this.classNameMapPath = this.tmpOutput.resolve("classNameMapping.json");
             this.historyPath = this.tmpOutput.resolve("history" + this.date);
+            this.symbolFramePath = this.tmpOutput.resolve("symbolFrames.json");
             return this;
         }
 
@@ -232,11 +242,6 @@ public class Config {
             return this;
         }
 
-        public ConfigBuilder enableMerge(boolean enableMerge) {
-            this.enableMerge = enableMerge;
-            return this;
-        }
-
         public ConfigBuilder enableMultithreading(boolean enableMultithreading) {
             this.enableMultithreading = enableMultithreading;
             return this;
@@ -244,6 +249,21 @@ public class Config {
 
         public ConfigBuilder enableRuleRepair(boolean enableRuleRepair) {
             this.enableRuleRepair = enableRuleRepair;
+            return this;
+        }
+
+        public ConfigBuilder enableMerge(boolean enableMerge) {
+            this.enableMerge = enableMerge;
+            return this;
+        }
+
+        public ConfigBuilder enableObfuscate(boolean enableObfuscate) {
+            this.enableObfuscate = enableObfuscate;
+            return this;
+        }
+
+        public ConfigBuilder obfuscateGroupIds(String[] obfuscateGroupIds) {
+            this.obfuscateGroupIds = obfuscateGroupIds;
             return this;
         }
 
@@ -326,7 +346,17 @@ public class Config {
         }
 
         public ConfigBuilder testOutput(Path testOutput) {
-            this.testOutput = testOutput;
+            if (testOutput == null) {
+                this.testOutput = project.getBasedir().toPath().resolve("chatunitest-tests");
+            } else {
+                this.testOutput = testOutput;
+                MavenProject parent = project.getParent();
+                while(parent != null && parent.getBasedir() != null) {
+                    this.testOutput = this.testOutput.resolve(parent.getArtifactId());
+                    parent = parent.getParent();
+                }
+                this.testOutput = this.testOutput.resolve(project.getArtifactId());
+            }
             return this;
         }
 
@@ -352,6 +382,11 @@ public class Config {
 
         public ConfigBuilder examplePath(Path examplePath) {
             this.examplePath = examplePath;
+            return this;
+        }
+
+        public ConfigBuilder symbolFramePath(Path symbolFramePath) {
+            this.symbolFramePath = symbolFramePath;
             return this;
         }
 
@@ -407,6 +442,7 @@ public class Config {
             Config config = new Config();
             config.setDate(this.date);
             config.setGSON(new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create());
+            config.setSession(this.session);
             config.setProject(this.project);
             config.setDependencyGraphBuilder(this.dependencyGraphBuilder);
             config.setParser(this.parser);
@@ -421,6 +457,8 @@ public class Config {
             config.setEnableMultithreading(this.enableMultithreading);
             config.setEnableRuleRepair(this.enableRuleRepair);
             config.setEnableMerge(this.enableMerge);
+            config.setEnableObfuscate(this.enableObfuscate);
+            config.setObfuscateGroupIds(this.obfuscateGroupIds);
             config.setMaxThreads(this.maxThreads);
             config.setClassThreads(this.classThreads);
             config.setMethodThreads(this.methodThreads);
@@ -443,6 +481,7 @@ public class Config {
             config.setClassNameMapPath(this.classNameMapPath);
             config.setHistoryPath(this.historyPath);
             config.setExamplePath(this.examplePath);
+            config.setSymbolFramePath(this.symbolFramePath);
             config.setProxy(this.proxy);
             config.setHostname(this.hostname);
             config.setPort(this.port);

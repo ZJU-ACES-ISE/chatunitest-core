@@ -10,6 +10,7 @@ import java.util.Set;
 
 @Data
 public class ClassInfo {
+    public String fullClassName;
     public String className;
     public int index;
     public String modifier;
@@ -25,6 +26,7 @@ public class ClassInfo {
     public List<String> imports;
     public List<String> fields;
     public List<String> superClasses;
+    public List<String> implementedTypes;
     public Map<String, String> methodSigs;
     public List<String> methodsBrief;
     public List<String> constructorSigs;

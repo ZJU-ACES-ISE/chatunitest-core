@@ -1,12 +1,14 @@
-package zju.cst.aces.api;
+package zju.cst.aces.api.impl;
 
 import lombok.Data;
+import zju.cst.aces.api.PreProcess;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.parser.ProjectParser;
 
+import zju.cst.aces.api.PreProcess;
 
 @Data
-public class Parser {
+public class Parser implements PreProcess {
 
     ProjectParser parser;
 
@@ -15,6 +17,11 @@ public class Parser {
     public Parser(Config config) {
         this.config = config;
         this.parser = new ProjectParser(config);
+    }
+
+    @Override
+    public void process() {
+        this.parse();
     }
 
     public void parse() {
