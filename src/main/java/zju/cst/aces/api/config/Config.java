@@ -7,7 +7,6 @@ import com.google.gson.GsonBuilder;
 import lombok.Getter;
 import lombok.Setter;
 import okhttp3.OkHttpClient;
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
 import zju.cst.aces.util.TestCompiler;
@@ -31,7 +30,6 @@ import java.util.logging.Logger;
 public class Config {
     public String date;
     public Gson GSON;
-    public MavenSession session;
     public MavenProject project;
     public DependencyGraphBuilder dependencyGraphBuilder;
     public JavaParser parser;
@@ -82,7 +80,6 @@ public class Config {
 
     public static class ConfigBuilder {
         public String date;
-        public MavenSession session;
         public MavenProject project;
         public DependencyGraphBuilder dependencyGraphBuilder;
         public JavaParser parser;
@@ -133,11 +130,11 @@ public class Config {
                 .build();
 
 
-        public ConfigBuilder(MavenSession session, MavenProject project, DependencyGraphBuilder dependencyGraphBuilder, Logger log) {
+        public ConfigBuilder(MavenProject project, DependencyGraphBuilder dependencyGraphBuilder, Logger log) {
             this.date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")).toString();
             this.project = project;
             this.dependencyGraphBuilder = dependencyGraphBuilder;
-            this.classPaths = TestCompiler.listClassPaths(session, project, dependencyGraphBuilder);
+            this.classPaths = TestCompiler.listClassPaths(project, dependencyGraphBuilder);
             this.log = log;
 
             MavenProject parent = project.getParent();
@@ -442,7 +439,6 @@ public class Config {
             Config config = new Config();
             config.setDate(this.date);
             config.setGSON(new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create());
-            config.setSession(this.session);
             config.setProject(this.project);
             config.setDependencyGraphBuilder(this.dependencyGraphBuilder);
             config.setParser(this.parser);

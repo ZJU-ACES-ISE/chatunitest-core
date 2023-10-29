@@ -25,6 +25,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -163,12 +164,15 @@ public class TestCompiler {
         }
     }
 
-    public static List<String> listClassPaths(MavenSession session, MavenProject project, DependencyGraphBuilder dependencyGraphBuilder) {
+    public static List<String> listClassPaths(MavenProject project, DependencyGraphBuilder dependencyGraphBuilder) {
         List<String> classPaths = new ArrayList<>();
-        classPaths.add(session.getLocalRepository().find(project.getArtifact()).getFile().getAbsolutePath());
+//        classPaths.add(project.getArtifact().getFile().getAbsolutePath());
         try {
             classPaths.addAll(project.getCompileClasspathElements());
-            ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest() );
+            Class<?> clazz = project.getClass();
+            Field privateField = clazz.getDeclaredField("projectBuilderConfiguration");
+            privateField.setAccessible(true);
+            ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest((DefaultProjectBuildingRequest) privateField.get(project));
             buildingRequest.setProject(project);
             DependencyNode root = dependencyGraphBuilder.buildDependencyGraph(buildingRequest, null);
             Set<DependencyNode> depSet = new HashSet<>();

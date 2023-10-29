@@ -32,7 +32,16 @@ public class PromptGenerator {
         this.promptTemplate = new PromptTemplate(config);
     }
 
-    public String getUserPrompt(PromptInfo promptInfo) throws IOException {
+    public List<Message> generateMessages(PromptInfo promptInfo) throws IOException {
+        List<Message> messages = new ArrayList<>();
+        if (promptInfo.errorMsg == null) { // round 0
+            messages.add(Message.ofSystem(createUserPrompt(promptInfo)));
+        }
+        messages.add(Message.of(createSystemPrompt(promptInfo)));
+        return messages;
+    }
+
+    public String createUserPrompt(PromptInfo promptInfo) throws IOException {
         try {
             promptTemplate.readProperties();
             ExampleUsage exampleUsage = new ExampleUsage(config, promptInfo.className);
@@ -142,16 +151,7 @@ public class PromptGenerator {
 
     }
 
-    public List<Message> generateMessages(PromptInfo promptInfo) throws IOException {
-        List<Message> messages = new ArrayList<>();
-        if (promptInfo.errorMsg == null) { // round 0
-            messages.add(Message.ofSystem(getUserPrompt(promptInfo)));
-        }
-        messages.add(Message.of(getSystemPrompt(promptInfo)));
-        return messages;
-    }
-
-    public String getSystemPrompt(PromptInfo promptInfo) {
+    public String createSystemPrompt(PromptInfo promptInfo) {
         try {
             promptTemplate.readProperties();
             String filename;
@@ -170,13 +170,20 @@ public class PromptGenerator {
         }
     }
 
-    //system角色 修改文件名
     public String addSystemFileName(String filename) {
         String[] parts = filename.split("\\.");
         if (parts.length > 1) {
             return parts[0] + "_system." + parts[1];
         }
         return filename;
+    }
+
+    public String buildCOT(COT<?> cot) {
+        return "";
+    }
+
+    public String buildTOT(TOT<?> tot) {
+        return "";
     }
 
     public Map<String, String> getDepBrief(MethodInfo methodInfo) throws IOException {

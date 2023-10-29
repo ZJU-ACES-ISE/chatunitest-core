@@ -1,5 +1,10 @@
 package zju.cst.aces.prompt;
 
-public interface TOT {
-    public void generate();
+import java.util.List;
+
+public class TOT<T> {
+    private List<T> depList;
+    public void generate() {
+
+    }
 }
