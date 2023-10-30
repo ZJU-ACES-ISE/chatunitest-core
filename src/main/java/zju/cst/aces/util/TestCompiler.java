@@ -1,7 +1,6 @@
 package zju.cst.aces.util;
 
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.DefaultProjectBuildingRequest;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
