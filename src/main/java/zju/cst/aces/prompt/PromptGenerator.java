@@ -35,9 +35,9 @@ public class PromptGenerator {
     public List<Message> generateMessages(PromptInfo promptInfo) throws IOException {
         List<Message> messages = new ArrayList<>();
         if (promptInfo.errorMsg == null) { // round 0
-            messages.add(Message.ofSystem(createUserPrompt(promptInfo)));
+            messages.add(Message.ofSystem(createSystemPrompt(promptInfo)));
         }
-        messages.add(Message.of(createSystemPrompt(promptInfo)));
+        messages.add(Message.of(createUserPrompt(promptInfo)));
         return messages;
     }
 

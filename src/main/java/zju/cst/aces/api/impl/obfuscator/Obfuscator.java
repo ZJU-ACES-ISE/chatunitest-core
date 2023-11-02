@@ -30,6 +30,8 @@ import zju.cst.aces.parser.ProjectParser;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
@@ -375,7 +377,8 @@ public class Obfuscator {
         ASMParser asmParser = new ASMParser(config);
         Map<String, SymbolFrame> symbolFrames = new HashMap<>();
         try {
-            JarFile projectJar = new JarFile(config.session.getLocalRepository().find(config.project.getArtifact()).getFile().getAbsolutePath());
+            Path artifactPath = Paths.get(config.getProject().getBuild().getDirectory()).resolve(config.getProject().getBuild().getFinalName() + ".jar");
+            JarFile projectJar = new JarFile(artifactPath.toString());
             candidateClasses.addAll(asmParser.loadClasses(projectJar));
             for (ClassNode classNode : candidateClasses) {
                 String className = classNode.name;

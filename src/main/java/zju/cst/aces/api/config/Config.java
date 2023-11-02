@@ -9,6 +9,7 @@ import lombok.Setter;
 import okhttp3.OkHttpClient;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
+import zju.cst.aces.util.LogFormatter;
 import zju.cst.aces.util.TestCompiler;
 
 import java.io.File;
@@ -23,7 +24,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
 @Getter
 @Setter
@@ -129,13 +130,17 @@ public class Config {
                 .readTimeout(5, TimeUnit.MINUTES)
                 .build();
 
-
-        public ConfigBuilder(MavenProject project, DependencyGraphBuilder dependencyGraphBuilder, Logger log) {
+        public ConfigBuilder(MavenProject project, DependencyGraphBuilder dependencyGraphBuilder) {
             this.date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")).toString();
             this.project = project;
             this.dependencyGraphBuilder = dependencyGraphBuilder;
             this.classPaths = TestCompiler.listClassPaths(project, dependencyGraphBuilder);
-            this.log = log;
+            this.log = Logger.getLogger("ChatUniTest");
+            Handler consoleHandler = new ConsoleHandler();
+            consoleHandler.setLevel(Level.ALL);
+            consoleHandler.setFormatter(new LogFormatter());
+            this.log.addHandler(consoleHandler);
+            this.log.setUseParentHandlers(false);
 
             MavenProject parent = project.getParent();
             while(parent != null && parent.getBasedir() != null) {
@@ -496,7 +501,7 @@ public class Config {
         return apiKey;
     }
 
-    private void print() {
+    public void print() {
         log.info("\n========================== Configuration ==========================\n");
         log.info(" Multithreading >>>> " + this.isEnableMultithreading());
         if (this.isEnableMultithreading()) {

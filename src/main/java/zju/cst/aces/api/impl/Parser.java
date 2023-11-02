@@ -2,6 +2,7 @@ package zju.cst.aces.api.impl;
 
 import lombok.Data;
 import zju.cst.aces.api.PreProcess;
+import zju.cst.aces.api.Task;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.parser.ProjectParser;
 
@@ -25,12 +26,22 @@ public class Parser implements PreProcess {
     }
 
     public void parse() {
+        try {
+            Task.checkTargetFolder(config.getProject());
+        } catch (RuntimeException e) {
+            config.getLog().severe(e.toString());
+            return;
+        }
+        if (config.getProject().getPackaging().equals("pom")) {
+            config.getLog().info("\n==========================\n[ChatUniTest] Skip pom-packaging ...");
+            return;
+        }
         if (! config.getParseOutput().toFile().exists()) {
-            config.getLog().info("\n==========================\n[ChatTester] Parsing class info ...");
+            config.getLog().info("\n==========================\n[ChatUniTest] Parsing class info ...");
             parser.parse();
-            config.getLog().info("\n==========================\n[ChatTester] Parse finished");
+            config.getLog().info("\n==========================\n[ChatUniTest] Parse finished");
         } else {
-            config.getLog().info("\n==========================\n[ChatTester] Parse output already exists, skip parsing!");
+            config.getLog().info("\n==========================\n[ChatUniTest] Parse output already exists, skip parsing!");
         }
     }
 }

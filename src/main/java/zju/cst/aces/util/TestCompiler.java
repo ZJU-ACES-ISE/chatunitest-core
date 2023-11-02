@@ -30,6 +30,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.CharBuffer;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -163,9 +164,14 @@ public class TestCompiler {
         }
     }
 
+    //TODO: remove dependencyGraphBuilder
     public static List<String> listClassPaths(MavenProject project, DependencyGraphBuilder dependencyGraphBuilder) {
         List<String> classPaths = new ArrayList<>();
-//        classPaths.add(project.getArtifact().getFile().getAbsolutePath());
+        Path artifactPath = Paths.get(project.getBuild().getDirectory()).resolve(project.getBuild().getFinalName() + ".jar");
+        if (!artifactPath.toFile().exists()) {
+            throw new RuntimeException("In TestCompiler.listClassPaths: " + artifactPath + " does not exist. Run mvn install first.");
+        }
+        classPaths.add(artifactPath.toString());
         try {
             classPaths.addAll(project.getCompileClasspathElements());
             Class<?> clazz = project.getClass();
@@ -186,22 +192,6 @@ public class TestCompiler {
         }
         return classPaths;
     }
-
-//    public static List<String> listClassPaths(Project project) {
-//        List<String> classPaths = new ArrayList<>();
-//
-//        // 获取项目的主要输出文件（通常是 JAR 文件）
-//        classPaths.add(project.jar.archivePath.absolutePath)
-//
-//        // 获取编译类路径的所有元素
-//        Configuration compileClasspath = project.configurations.compileClasspath
-//        Set<ResolvedArtifact> artifacts = compileClasspath.resolvedConfiguration.resolvedArtifacts
-//        for (ResolvedArtifact artifact : artifacts) {
-//            classPaths.add(artifact.file.absolutePath)
-//        }
-//
-//        return classPaths;
-//    }
 
     /**
      * Copy generated tests to src/test/java and move the original src/test/java folder to a backup folder

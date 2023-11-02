@@ -30,8 +30,19 @@ public class Task {
     }
 
     public void startMethodTask(String className, String methodName) {
-        checkTargetFolder(config.getProject());
-        log.info("\n==========================\n[ChatTester] Generating tests for class: < " + className
+        try {
+            checkTargetFolder(config.getProject());
+        } catch (RuntimeException e) {
+            log.severe(e.toString());
+            return;
+        }
+        if (config.getProject().getPackaging().equals("pom")) {
+            log.info("\n==========================\n[ChatUniTest] Skip pom-packaging ...");
+            return;
+        }
+        ProjectParser parser = new ProjectParser(config);
+        parser.parse();
+        log.info("\n==========================\n[ChatUniTest] Generating tests for class: < " + className
                 + "> method: < " + methodName + " > ...");
 
         try {
@@ -75,27 +86,45 @@ public class Task {
             throw new RuntimeException("Method not found: " + methodName + " in " + className + " " + config.getProject().getArtifactId());
         }
 
-        log.info("\n==========================\n[ChatTester] Generation finished");
+        log.info("\n==========================\n[ChatUniTest] Generation finished");
     }
 
     public void startClassTask(String className) {
-        checkTargetFolder(config.getProject());
-        log.info("\n==========================\n[ChatTester] Generating tests for class < " + className + " > ...");
+        try {
+            checkTargetFolder(config.getProject());
+        } catch (RuntimeException e) {
+            log.severe(e.toString());
+            return;
+        }
+        if (config.getProject().getPackaging().equals("pom")) {
+            log.info("\n==========================\n[ChatUniTest] Skip pom-packaging ...");
+            return;
+        }
+        ProjectParser parser = new ProjectParser(config);
+        parser.parse();
+        log.info("\n==========================\n[ChatUniTest] Generating tests for class < " + className + " > ...");
         try {
             new ClassRunner(config, getFullClassName(config, className)).start();
         } catch (IOException e) {
             log.warning("Class not found: " + className + " in " + config.getProject().getArtifactId());
         }
-        log.info("\n==========================\n[ChatTester] Generation finished");
+        log.info("\n==========================\n[ChatUniTest] Generation finished");
     }
 
     public void startProjectTask() {
         MavenProject project = config.getProject();
-        checkTargetFolder(project);
-        if (project.getPackaging().equals("pom")) {
-            log.info("\n==========================\n[ChatTester] Skip pom-packaging ...");
+        try {
+            checkTargetFolder(project);
+        } catch (RuntimeException e) {
+            log.severe(e.toString());
             return;
         }
+        if (project.getPackaging().equals("pom")) {
+            log.info("\n==========================\n[ChatUniTest] Skip pom-packaging ...");
+            return;
+        }
+        ProjectParser parser = new ProjectParser(config);
+        parser.parse();
         List<String> classPaths = ProjectParser.scanSourceDirectory(project);
         if (config.isEnableMultithreading() == true) {
             projectJob(classPaths);
@@ -104,7 +133,7 @@ public class Task {
                 String className = classPath.substring(classPath.lastIndexOf(File.separator) + 1, classPath.lastIndexOf("."));
                 try {
                     String fullClassName = getFullClassName(config, className);
-                    log.info("\n==========================\n[ChatTester] Generating tests for class < " + className + " > ...");
+                    log.info("\n==========================\n[ChatUniTest] Generating tests for class < " + className + " > ...");
                     ClassRunner runner = new ClassRunner(config, fullClassName);
                     if (!filter(runner.classInfo)) {
                         config.getLog().info("Skip class: " + classPath);
@@ -112,12 +141,12 @@ public class Task {
                     }
                     runner.start();
                 } catch (IOException e) {
-                    log.severe("[ChatTester] Generate tests for class " + className + " failed: " + e);
+                    log.severe("[ChatUniTest] Generate tests for class " + className + " failed: " + e);
                 }
             }
         }
 
-        log.info("\n==========================\n[ChatTester] Generation finished");
+        log.info("\n==========================\n[ChatUniTest] Generation finished");
     }
 
     public void projectJob(List<String> classPaths) {
@@ -130,14 +159,14 @@ public class Task {
                     String className = classPath.substring(classPath.lastIndexOf(File.separator) + 1, classPath.lastIndexOf("."));
                     try {
                         String fullClassName = getFullClassName(config, className);
-                        log.info("\n==========================\n[ChatTester] Generating tests for class < " + className + " > ...");
+                        log.info("\n==========================\n[ChatUniTest] Generating tests for class < " + className + " > ...");
                         ClassRunner runner = new ClassRunner(config, fullClassName);
                         if (!filter(runner.classInfo)) {
                             return "Skip class: " + classPath;
                         }
                         runner.start();
                     } catch (IOException e) {
-                        log.severe("[ChatTester] Generate tests for class " + className + " failed: " + e);
+                        log.severe("[ChatUniTest] Generate tests for class " + className + " failed: " + e);
                     }
                     return "Processed " + classPath;
                 }
@@ -172,7 +201,7 @@ public class Task {
         Map<String, List<String>> classMap = config.getGSON().fromJson(Files.readString(classMapPath, StandardCharsets.UTF_8), Map.class);
         if (classMap.containsKey(name)) {
             if (classMap.get(name).size() > 1) {
-                throw new RuntimeException("[ChatTester] Multiple classes Named " + name + ": " + classMap.get(name)
+                throw new RuntimeException("[ChatUniTest] Multiple classes Named " + name + ": " + classMap.get(name)
                         + " Please use full qualified name!");
             }
             return classMap.get(name).get(0);
