@@ -25,11 +25,10 @@ public class PromptInfo {
     public String unitTest = "";
     public String fullTestName;
     public Path testPath;
-    public MethodInfo methodInfo;
-    public ClassInfo classInfo;
-
     public Map<String, List<MethodDeclaration>> correctTests = new HashMap<>();
     public List<RoundRecord> records = new ArrayList<>();
+    public MethodInfo methodInfo;
+    public ClassInfo classInfo;
 
     public PromptInfo(boolean hasDep, String fullClassName, String methodName,
                       String methodSignature) {
@@ -45,6 +44,7 @@ public class PromptInfo {
 
     public PromptInfo(PromptInfo p) {
         this.setHasDep(p.isHasDep());
+        this.setFullClassName(p.getFullClassName());
         this.setClassName(p.getClassName());
         this.setMethodName(p.getMethodName());
         this.setMethodSignature(p.getMethodSignature());
@@ -58,6 +58,8 @@ public class PromptInfo {
         this.setTestPath(p.getTestPath());
         this.setCorrectTests(p.getCorrectTests());
         this.setRecords(p.getRecords());
+        this.setMethodInfo(p.getMethodInfo());
+        this.setClassInfo(p.getClassInfo());
     }
 
     public void addMethodDeps(Map<String, String> methodDep) {
