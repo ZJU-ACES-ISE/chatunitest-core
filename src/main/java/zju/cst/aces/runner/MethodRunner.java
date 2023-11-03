@@ -3,6 +3,7 @@ package zju.cst.aces.runner;
 import okhttp3.Response;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import zju.cst.aces.api.config.Config;
+import zju.cst.aces.api.impl.obfuscator.Obfuscator;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.util.AskGPT;
 import zju.cst.aces.util.TestCompiler;
@@ -94,8 +95,13 @@ public class MethodRunner extends ClassRunner {
             promptInfo.setTestPath(savePath);
 
 //            TestSkeleton skeleton = new TestSkeleton(promptInfo); // test skeleton to wrap a test method
+            Obfuscator obfuscator = new Obfuscator(config);
+            PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
+            if (config.isEnableObfuscate()) {
+                obfuscator.obfuscatePromptInfo(obfuscatedPromptInfo);
+            }
 
-            List<Message> prompt = promptGenerator.generateMessages(promptInfo);
+            List<Message> prompt = promptGenerator.generateMessages(obfuscatedPromptInfo);
             if (isExceedMaxTokens(prompt)) {
                 config.getLog().severe("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
                 break;
@@ -119,8 +125,11 @@ public class MethodRunner extends ClassRunner {
             }
             record.setHasCode(true);
 
-            code = changeTestName(code, testName);
             code = repairPackage(code, classInfo.packageName);
+            if (config.isEnableObfuscate()) {
+                code = obfuscator.deobfuscateJava(code);
+            }
+            code = changeTestName(code, testName);
 //            code = addTimeout(code, testTimeOut);
             code = repairImports(code, classInfo.imports);
             promptInfo.setUnitTest(code); // Before repair imports
