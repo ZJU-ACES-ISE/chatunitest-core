@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.Setter;
 import okhttp3.OkHttpClient;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
 import zju.cst.aces.util.LogFormatter;
 import zju.cst.aces.util.TestCompiler;
 
@@ -32,7 +31,6 @@ public class Config {
     public String date;
     public Gson GSON;
     public MavenProject project;
-    public DependencyGraphBuilder dependencyGraphBuilder;
     public JavaParser parser;
     public JavaParserFacade parserFacade;
     public List<String> classPaths;
@@ -82,7 +80,6 @@ public class Config {
     public static class ConfigBuilder {
         public String date;
         public MavenProject project;
-        public DependencyGraphBuilder dependencyGraphBuilder;
         public JavaParser parser;
         public JavaParserFacade parserFacade;
         public List<String> classPaths;
@@ -130,11 +127,9 @@ public class Config {
                 .readTimeout(5, TimeUnit.MINUTES)
                 .build();
 
-        public ConfigBuilder(MavenProject project, DependencyGraphBuilder dependencyGraphBuilder) {
+        public ConfigBuilder(MavenProject project) {
             this.date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")).toString();
             this.project = project;
-            this.dependencyGraphBuilder = dependencyGraphBuilder;
-            this.classPaths = TestCompiler.listClassPaths(project, dependencyGraphBuilder);
             this.log = Logger.getLogger("ChatUniTest");
             Handler consoleHandler = new ConsoleHandler();
             consoleHandler.setLevel(Level.ALL);
@@ -194,11 +189,6 @@ public class Config {
 
         public ConfigBuilder project(MavenProject project) {
             this.project = project;
-            return this;
-        }
-
-        public ConfigBuilder dependencyGraphBuilder(DependencyGraphBuilder dependencyGraphBuilder) {
-            this.dependencyGraphBuilder = dependencyGraphBuilder;
             return this;
         }
 
@@ -445,7 +435,6 @@ public class Config {
             config.setDate(this.date);
             config.setGSON(new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create());
             config.setProject(this.project);
-            config.setDependencyGraphBuilder(this.dependencyGraphBuilder);
             config.setParser(this.parser);
             config.setParserFacade(this.parserFacade);
             config.setClassPaths(this.classPaths);
