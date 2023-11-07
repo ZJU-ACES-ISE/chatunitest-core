@@ -53,11 +53,14 @@ public class PromptTemplate {
         configuration.setDefaultEncoding("utf-8");
         Template template = configuration.getTemplate(templateFileName);
 
-        Pattern pattern = Pattern.compile("\\$\\{(\\w+)\\}");
+        Pattern pattern = Pattern.compile("\\$\\{([a-zA-Z_][\\w]*)\\}");
         Matcher matcher = pattern.matcher(template.toString());
         List<String> matches = new ArrayList<>();
         while (matcher.find()) {
-            matches.add(matcher.group(1)); // 添加第一个捕获组的匹配
+            String e = matcher.group(1);
+            if (!matches.contains(e)) {
+                matches.add(e); // 添加第一个捕获组的匹配
+            }
         }
 
         String generatedText;
@@ -65,14 +68,22 @@ public class PromptTemplate {
             StringWriter writer = new StringWriter();
             template.process(dataModel, writer);
             generatedText = writer.toString();
+            String key = matches.get(matches.size()-1);
             if (matches.size() > 0) {
-                String key = matches.get(0);
                 if (dataModel.containsKey(key)) {
-                    dataModel.put(key, new ArrayList<String>());
-                    matches.remove(matches.size()-1);
+                    if (dataModel.get(key) instanceof String) {
+                        dataModel.put(key, "");
+                    } else if (dataModel.get(key) instanceof List) {
+                        dataModel.put(key, new ArrayList<String>());
+                    } else if (dataModel.get(key) instanceof Map) {
+                        dataModel.put(key, new HashMap<String, String>());
+                    } else {
+                        break;
+                    }
                 }
+                matches.remove(matches.size()-1);
             }
-        } while (AbstractRunner.isExceedMaxTokens(config, generatedText));
+        } while (AbstractRunner.isExceedMaxTokens(config, generatedText) && matches.size()>0);
         return generatedText;
     }
 }
