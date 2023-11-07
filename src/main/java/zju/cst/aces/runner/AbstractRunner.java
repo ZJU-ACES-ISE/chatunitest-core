@@ -147,12 +147,13 @@ public abstract class AbstractRunner {
         String information = classInfo.packageDeclaration
                 + "\n" + imports
                 + "\n" + classInfo.classSignature
-                + " {"
-                + "\n" + fields
-                + "\n" + methodInfo.sourceCode
-                + "\n}";
+                + " {\n";
+        if (methodInfo.useField) {
+            information += fields + "\n";
+        }
+        information += methodInfo.sourceCode + "\n}";
 
-        promptInfo.setInfo(information);
+        promptInfo.setContext(information);
         promptInfo.setOtherMethodBrief(methods);
 
         String otherMethodBodies = "";
@@ -184,7 +185,7 @@ public abstract class AbstractRunner {
             if (methodInfo.dependentMethods.containsKey(depClassName)) {
                 continue;
             }
-            promptInfo.addConstructorDeps(getDepInfo(config, depClassName, depMethods));
+            promptInfo.addConstructorDeps(depClassName, getDepInfo(config, depClassName, depMethods));
         }
 
         for (Map.Entry<String, Set<String>> entry : methodInfo.dependentMethods.entrySet()) {
@@ -196,6 +197,7 @@ public abstract class AbstractRunner {
                     if (otherMethodInfo == null) {
                         continue;
                     }
+                    // only add the methods in focal class that are invoked
                     otherBriefMethods.add(otherMethodInfo.brief);
                     otherMethodBodies.add(otherMethodInfo.sourceCode);
                 }
@@ -203,7 +205,7 @@ public abstract class AbstractRunner {
             }
 
             Set<String> depMethods = entry.getValue();
-            promptInfo.addMethodDeps(getDepInfo(config, depClassName, depMethods));
+            promptInfo.addMethodDeps(depClassName, getDepInfo(config, depClassName, depMethods));
             addMethodDepsByDepth(config, depClassName, depMethods, promptInfo, config.getDependencyDepth());
         }
 
@@ -230,7 +232,7 @@ public abstract class AbstractRunner {
         otherFullMethods += joinLines(otherMethodBodies) + "\n";
         information += methodInfo.sourceCode + "\n}";
 
-        promptInfo.setInfo(information);
+        promptInfo.setContext(information);
         promptInfo.setOtherMethodBrief(otherMethods);
         promptInfo.setOtherMethodBodies(otherFullMethods);
         return promptInfo;
@@ -253,7 +255,7 @@ public abstract class AbstractRunner {
             }
             for (String depClassName : depMethodInfo.dependentMethods.keySet()) {
                 Set<String> depMethods = depMethodInfo.dependentMethods.get(depClassName);
-                promptInfo.addMethodDeps(getDepInfo(config, depClassName, depMethods));
+                promptInfo.addMethodDeps(depClassName, getDepInfo(config, depClassName, depMethods));
                 addMethodDepsByDepth(config, depClassName, depMethods, promptInfo, depth - 1);
             }
         }
@@ -263,7 +265,7 @@ public abstract class AbstractRunner {
         for (Map.Entry<String, Set<String>> entry : classInfo.constructorDeps.entrySet()) {
             String depClassName = entry.getKey();
             Set<String> depMethods = entry.getValue();
-            promptInfo.addConstructorDeps(getDepInfo(config, depClassName, depMethods));
+            promptInfo.addConstructorDeps(depClassName, getDepInfo(config, depClassName, depMethods));
         }
     }
 
@@ -291,7 +293,7 @@ public abstract class AbstractRunner {
         return GSON.fromJson(Files.readString(depMethodInfoPath, StandardCharsets.UTF_8), MethodInfo.class);
     }
 
-    public static Map<String, String> getDepInfo(Config config, String depClassName, Set<String> depMethods) throws IOException {
+    public static String getDepInfo(Config config, String depClassName, Set<String> depMethods) throws IOException {
         ClassInfo depClassInfo = getClassInfo(config, depClassName);
         if (depClassInfo == null) {
             return null;
@@ -299,7 +301,6 @@ public abstract class AbstractRunner {
 
         String classSig = depClassInfo.classSignature;
         String fields = joinLines(depClassInfo.fields);
-        Map<String, String> methodDeps = new HashMap<>();
 
         String basicInfo = depClassInfo.packageDeclaration + "\n" + joinLines(depClassInfo.imports) + "\n"
                 + classSig + " {\n" + fields + "\n";
@@ -326,8 +327,7 @@ public abstract class AbstractRunner {
             sourceDepMethods += depMethodInfo.getSourceCode() + "\n";
         }
         String getterSetter = joinLines(depClassInfo.getterSetterBrief) + "\n";
-        methodDeps.put(depClassName, basicInfo + getterSetter + sourceDepMethods + "}");
-        return methodDeps;
+        return basicInfo + getterSetter + sourceDepMethods + "}";
     }
 
     public static String getBodies(Config config, ClassInfo info, List<String> sigs) throws IOException {
@@ -437,11 +437,19 @@ public abstract class AbstractRunner {
         }
     }
 
-    public boolean isExceedMaxTokens(List<Message> prompt) {
+    public static boolean isExceedMaxTokens(Config config, List<Message> prompt) {
         int count = 0;
         for (Message p : prompt) {
             count += TokenCounter.countToken(p.getContent());
         }
+        if (count > config.maxPromptTokens) {
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean isExceedMaxTokens(Config config, String prompt) {
+        int count = TokenCounter.countToken(prompt);
         if (count > config.maxPromptTokens) {
             return true;
         }

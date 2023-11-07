@@ -102,7 +102,7 @@ public class MethodRunner extends ClassRunner {
             }
 
             List<Message> prompt = promptGenerator.generateMessages(obfuscatedPromptInfo);
-            if (isExceedMaxTokens(prompt)) {
+            if (isExceedMaxTokens(config, prompt)) {
                 config.getLog().severe("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
                 break;
             }

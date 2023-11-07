@@ -22,8 +22,6 @@ import zju.cst.aces.api.impl.obfuscator.frame.SymbolFrame;
 import zju.cst.aces.api.impl.obfuscator.util.ASMParser;
 import zju.cst.aces.dto.PromptInfo;
 import zju.cst.aces.dto.TestMessage;
-import zju.cst.aces.api.impl.obfuscator.frame.SymbolFrame;
-import zju.cst.aces.api.impl.obfuscator.util.ASMParser;
 import zju.cst.aces.api.impl.obfuscator.util.SymbolAnalyzer;
 import zju.cst.aces.parser.ProjectParser;
 
@@ -81,10 +79,10 @@ public class Obfuscator {
         this.symbolFrame.toObNames(targetGroupIds).forEach(name -> {
             encryptName(name);
         });
-        promptInfo.setInfo(obfuscateJava(promptInfo.getInfo()));
+        promptInfo.setContext(obfuscateJava(promptInfo.getContext()));
         promptInfo.setUnitTest(obfuscateJava(promptInfo.getUnitTest()));
-        promptInfo.setConstructorDeps(promptInfo.getConstructorDeps().stream().map(this::obfuscateDep).collect(Collectors.toSet()));
-        promptInfo.setMethodDeps(promptInfo.getMethodDeps().stream().map(this::obfuscateDep).collect(Collectors.toSet()));
+        promptInfo.setConstructorDeps(obfuscateDep(promptInfo.getConstructorDeps()));
+        promptInfo.setMethodDeps(obfuscateDep(promptInfo.getMethodDeps()));
         promptInfo.setErrorMsg(obfuscateTestMessage(promptInfo.getErrorMsg()));
 
         promptInfo.setClassName(obfuscateName(promptInfo.getClassName()));

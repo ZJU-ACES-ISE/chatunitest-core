@@ -2,6 +2,7 @@ package zju.cst.aces.prompt;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import freemarker.template.TemplateException;
 import zju.cst.aces.api.Task;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.*;
@@ -41,18 +42,33 @@ public class PromptGenerator {
         return messages;
     }
 
+    private String adaptiveFocalContext(Map<String, Object> data) {
+        String afc = data.get("full_fm").toString();
+        return "";
+    }
+
     public String createUserPrompt(PromptInfo promptInfo) throws IOException {
         try {
             promptTemplate.readProperties();
             ExampleUsage exampleUsage = new ExampleUsage(config, promptInfo.className);
-            String userPrompt = null;
             Map<String, String> cdep_temp = new HashMap<>();
             Map<String, String> mdep_temp = new HashMap<>();
-            promptTemplate.dataModel.put("c_deps", cdep_temp);
-            promptTemplate.dataModel.put("m_deps", mdep_temp);
 
+            // Map<String, String>, key: dependent class names
+            promptTemplate.dataModel.put("dep_packages", getDepPackages(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
+            promptTemplate.dataModel.put("dep_imports", getDepImports(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
+            promptTemplate.dataModel.put("dep_class_sigs", getDepClassSigs(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
+            promptTemplate.dataModel.put("dep_class_bodies", getDepClassBodies(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
+            promptTemplate.dataModel.put("dep_m_sigs", getDepBrief(promptInfo.getMethodInfo()));
+            promptTemplate.dataModel.put("dep_m_bodies", getDepBodies(promptInfo.getMethodInfo()));
+            promptTemplate.dataModel.put("dep_c_sigs", getDepConstructorSigs(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
+            promptTemplate.dataModel.put("dep_c_bodies", getDepConstructorBodies(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
+            promptTemplate.dataModel.put("dep_fields", getDepFields(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
+            promptTemplate.dataModel.put("dep_gs_sigs", getDepGSSigs(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
+            promptTemplate.dataModel.put("dep_gs_bodies", getDepGSBodies(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
 
             // String
+            promptTemplate.dataModel.put("example_usage", exampleUsage.getShortestUsage(promptInfo.getMethodInfo().methodSignature));
             promptTemplate.dataModel.put("project_full_code", getFullProjectCode(promptInfo.getClassName(), config));
             promptTemplate.dataModel.put("method_name", promptInfo.getMethodName());
             promptTemplate.dataModel.put("method_sig", promptInfo.getMethodSignature());
@@ -62,10 +78,8 @@ public class PromptGenerator {
             promptTemplate.dataModel.put("package", promptInfo.getClassInfo().packageDeclaration);
             promptTemplate.dataModel.put("class_body", promptInfo.getClassInfo().classDeclarationCode);
             promptTemplate.dataModel.put("file_content", promptInfo.getClassInfo().compilationUnitCode);
-            promptTemplate.dataModel.put("full_fm", promptInfo.getInfo());
             promptTemplate.dataModel.put("imports", AbstractRunner.joinLines(promptInfo.getClassInfo().imports));
             promptTemplate.dataModel.put("fields", AbstractRunner.joinLines(promptInfo.getClassInfo().fields));
-            promptTemplate.dataModel.put("example_usage", exampleUsage.getShortestUsage(promptInfo.getMethodInfo().methodSignature));
             if (!promptInfo.getClassInfo().constructorSigs.isEmpty()) {
                 promptTemplate.dataModel.put("constructor_sigs", AbstractRunner.joinLines(promptInfo.getClassInfo().constructorBrief));
                 promptTemplate.dataModel.put("constructor_bodies", AbstractRunner.getBodies(config, promptInfo.getClassInfo(), promptInfo.getClassInfo().constructorSigs));
@@ -88,67 +102,55 @@ public class PromptGenerator {
                 promptTemplate.dataModel.put("other_method_bodies", null);
             }
 
-            // Map<String, String>, key: dependent class names
-            promptTemplate.dataModel.put("dep_packages", getDepPackages(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
-            promptTemplate.dataModel.put("dep_imports", getDepImports(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
-            promptTemplate.dataModel.put("dep_class_sigs", getDepClassSigs(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
-            promptTemplate.dataModel.put("dep_class_bodies", getDepClassBodies(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
-            promptTemplate.dataModel.put("dep_m_sigs", getDepBrief(promptInfo.getMethodInfo()));
-            promptTemplate.dataModel.put("dep_m_bodies", getDepBodies(promptInfo.getMethodInfo()));
-            promptTemplate.dataModel.put("dep_c_sigs", getDepConstructorSigs(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
-            promptTemplate.dataModel.put("dep_c_bodies", getDepConstructorBodies(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
-            promptTemplate.dataModel.put("dep_fields", getDepFields(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
-            promptTemplate.dataModel.put("dep_gs_sigs", getDepGSSigs(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
-            promptTemplate.dataModel.put("dep_gs_bodies", getDepGSBodies(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
 
-
-            // round 0
-            if (promptInfo.errorMsg == null) {
-                userPrompt = promptTemplate.renderTemplate(promptTemplate.TEMPLATE_NO_DEPS);
-                if (promptInfo.hasDep) {
-                    for (Map<String, String> cDeps : promptInfo.getConstructorDeps()) {
-                        for (Map.Entry<String, String> entry : cDeps.entrySet()) {
-                            cdep_temp.put(entry.getKey(), entry.getValue());
-                        }
-                    }
-                    for (Map<String, String> mDeps : promptInfo.getMethodDeps()) {
-                        for (Map.Entry<String, String> entry : mDeps.entrySet()) {
-                            mdep_temp.put(entry.getKey(), entry.getValue());
-                        }
-                    }
-                    promptTemplate.dataModel.put("c_deps", cdep_temp);
-                    promptTemplate.dataModel.put("m_deps", mdep_temp);
-                    userPrompt = promptTemplate.renderTemplate(promptTemplate.TEMPLATE_DEPS);
-                }
-            } else { // round > 0 -- repair prompt
-
-                int promptTokens = TokenCounter.countToken(promptInfo.getUnitTest())
-                        + TokenCounter.countToken(promptInfo.getMethodSignature())
-                        + TokenCounter.countToken(promptInfo.getClassName())
-                        + TokenCounter.countToken(promptInfo.getInfo())
-                        + TokenCounter.countToken(promptInfo.getOtherMethodBrief());
-                int allowedTokens = Math.max(config.getMaxPromptTokens() - promptTokens, config.getMinErrorTokens());
-                TestMessage errorMsg = promptInfo.getErrorMsg();
-                String processedErrorMsg = "";
-                for (String error : errorMsg.getErrorMessage()) {
-                    if (TokenCounter.countToken(processedErrorMsg + error + "\n") <= allowedTokens) {
-                        processedErrorMsg += error + "\n";
-                    }
-                }
-                config.getLog().config("Allowed tokens: " + allowedTokens);
-                config.getLog().config("Processed error message: \n" + processedErrorMsg);
-
-                promptTemplate.dataModel.put("unit_test", promptInfo.getUnitTest());
-                promptTemplate.dataModel.put("error_message", processedErrorMsg);
-
-                userPrompt = promptTemplate.renderTemplate(promptTemplate.TEMPLATE_ERROR);
+            for (Map.Entry<String, String> entry : promptInfo.getConstructorDeps().entrySet()) {
+                cdep_temp.put(entry.getKey(), entry.getValue());
             }
-            return userPrompt;
+            for (Map.Entry<String, String> entry : promptInfo.getMethodDeps().entrySet()) {
+                mdep_temp.put(entry.getKey(), entry.getValue());
+            }
+            promptTemplate.dataModel.put("c_deps", cdep_temp);
+            promptTemplate.dataModel.put("m_deps", mdep_temp);
+            promptTemplate.dataModel.put("full_fm", promptInfo.getContext());
+
+            return renderPrompt(promptInfo);
 
         } catch (Exception e) {
-            throw new IOException("An error occurred while generating the user prompt: " + e);
+            throw new RuntimeException("An error occurred while generating the user prompt: " + e);
         }
+    }
 
+    public String renderPrompt(PromptInfo promptInfo) throws TemplateException, IOException {
+        // round 0
+        if (promptInfo.errorMsg == null) {
+            if (promptInfo.hasDep) {
+                return promptTemplate.renderTemplate(promptTemplate.TEMPLATE_DEPS);
+            } else {
+                return promptTemplate.renderTemplate(promptTemplate.TEMPLATE_NO_DEPS);
+            }
+        } else { // round > 0 -- repair prompt
+
+            int promptTokens = TokenCounter.countToken(promptInfo.getUnitTest())
+                    + TokenCounter.countToken(promptInfo.getMethodSignature())
+                    + TokenCounter.countToken(promptInfo.getClassName())
+                    + TokenCounter.countToken(promptInfo.getContext())
+                    + TokenCounter.countToken(promptInfo.getOtherMethodBrief());
+            int allowedTokens = Math.max(config.getMaxPromptTokens() - promptTokens, config.getMinErrorTokens());
+            TestMessage errorMsg = promptInfo.getErrorMsg();
+            String processedErrorMsg = "";
+            for (String error : errorMsg.getErrorMessage()) {
+                if (TokenCounter.countToken(processedErrorMsg + error + "\n") <= allowedTokens) {
+                    processedErrorMsg += error + "\n";
+                }
+            }
+            config.getLog().config("Allowed tokens: " + allowedTokens);
+            config.getLog().config("Processed error message: \n" + processedErrorMsg);
+
+            promptTemplate.dataModel.put("unit_test", promptInfo.getUnitTest());
+            promptTemplate.dataModel.put("error_message", processedErrorMsg);
+
+            return promptTemplate.renderTemplate(promptTemplate.TEMPLATE_ERROR);
+        }
     }
 
     public String createSystemPrompt(PromptInfo promptInfo) {

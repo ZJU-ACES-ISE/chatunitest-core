@@ -3,7 +3,6 @@ package zju.cst.aces.dto;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import lombok.Data;
-import zju.cst.aces.api.Task;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -15,12 +14,11 @@ public class PromptInfo {
     public String className;
     public String methodName;
     public String methodSignature;
-    public String info; // move other methods and constructors to otherMethods.
+    public String context; // context with only focal method.
     public String otherMethodBrief;
     public String otherMethodBodies;
-    //TODO: do not need use Set
-    public Set<Map<String, String>> constructorDeps = new HashSet<>(); // dependent classes in constructor.
-    public Set<Map<String, String>> methodDeps = new HashSet<>(); // dependent classes in method parameters and body.
+    public Map<String, String> constructorDeps = new HashMap<>(); // dependent classes in constructor.
+    public Map<String, String> methodDeps = new HashMap<>(); // dependent classes in method parameters and body.
     public TestMessage errorMsg;
     public String unitTest = "";
     public String fullTestName;
@@ -48,7 +46,7 @@ public class PromptInfo {
         this.setClassName(p.getClassName());
         this.setMethodName(p.getMethodName());
         this.setMethodSignature(p.getMethodSignature());
-        this.setInfo(p.getInfo());
+        this.setContext(p.getContext());
         this.setOtherMethodBrief(p.getOtherMethodBrief());
         this.setConstructorDeps(p.getConstructorDeps());
         this.setMethodDeps(p.getMethodDeps());
@@ -62,18 +60,18 @@ public class PromptInfo {
         this.setClassInfo(p.getClassInfo());
     }
 
-    public void addMethodDeps(Map<String, String> methodDep) {
+    public void addMethodDeps(String depClassName, String methodDep) {
         if (methodDep == null) {
             return;
         }
-        this.methodDeps.add(methodDep);
+        this.methodDeps.put(depClassName, methodDep);
     }
 
-    public void addConstructorDeps(Map<String, String> constructorDep) {
+    public void addConstructorDeps(String depClassName, String constructorDep) {
         if (constructorDep == null) {
             return;
         }
-        this.constructorDeps.add(constructorDep);
+        this.constructorDeps.put(depClassName, constructorDep);
     }
 
     public void addCorrectTest(MethodDeclaration m) {
