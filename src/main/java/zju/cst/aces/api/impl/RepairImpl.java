@@ -1,5 +1,6 @@
 package zju.cst.aces.api.impl;
 
+import lombok.Data;
 import okhttp3.Response;
 import zju.cst.aces.api.Repair;
 import zju.cst.aces.api.config.Config;
@@ -11,11 +12,14 @@ import java.io.IOException;
 import static zju.cst.aces.runner.AbstractRunner.*;
 import static zju.cst.aces.api.impl.ChatGenerator.*;
 
+@Data
 public class RepairImpl implements Repair {
 
     Config config;
 
     PromptConstructorImpl promptConstructorImpl;
+
+    boolean success = false;
 
     public RepairImpl(Config config, PromptConstructorImpl promptConstructorImpl) {
         this.config = config;
@@ -39,6 +43,7 @@ public class RepairImpl implements Repair {
             if (new MethodRunner(config, fullClassName, promptInfo.getMethodInfo())
                     .runTest(promptConstructorImpl.getFullTestName(), promptInfo, rounds)) {
                 config.getLog().info("Test for method < " + promptInfo.methodInfo.methodName + " > doesn't need repair");
+                this.success = true;
                 return code;
             }
 

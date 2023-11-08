@@ -13,8 +13,14 @@ import zju.cst.aces.api.Generator;
 
 public class ChatGenerator implements Generator {
 
+    Config config;
+
+    public ChatGenerator(Config config) {
+        this.config = config;
+    }
+
     @Override
-    public String generate(Config config, List<Message> messages) {
+    public String generate(List<Message> messages) {
         return extractCodeByResponse(chat(config, messages));
     }
 
@@ -34,4 +40,7 @@ public class ChatGenerator implements Generator {
         return AbstractRunner.parseResponse(response);
     }
 
+    public static String extractCodeByContent(String content) {
+        return new CodeExtractor(content).getExtractedCode();
+    }
 }

@@ -68,8 +68,8 @@ public class PromptTemplate {
             StringWriter writer = new StringWriter();
             template.process(dataModel, writer);
             generatedText = writer.toString();
-            String key = matches.get(matches.size()-1);
             if (matches.size() > 0) {
+                String key = matches.get(matches.size()-1);
                 if (dataModel.containsKey(key)) {
                     if (dataModel.get(key) instanceof String) {
                         dataModel.put(key, "");

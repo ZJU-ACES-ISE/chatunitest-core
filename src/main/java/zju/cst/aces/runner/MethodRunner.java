@@ -2,9 +2,15 @@ package zju.cst.aces.runner;
 
 import okhttp3.Response;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
+import zju.cst.aces.api.PromptConstructor;
+import zju.cst.aces.api.Repair;
 import zju.cst.aces.api.config.Config;
+import zju.cst.aces.api.impl.ChatGenerator;
+import zju.cst.aces.api.impl.PromptConstructorImpl;
+import zju.cst.aces.api.impl.RepairImpl;
 import zju.cst.aces.api.impl.obfuscator.Obfuscator;
 import zju.cst.aces.dto.*;
+import zju.cst.aces.prompt.PromptTemplate;
 import zju.cst.aces.util.AskGPT;
 import zju.cst.aces.util.TestCompiler;
 import zju.cst.aces.util.TestProcessor;
@@ -68,7 +74,6 @@ public class MethodRunner extends ClassRunner {
     }
 
     public boolean startRounds(final int num) throws IOException {
-        PromptInfo promptInfo = null;
         String testName = className + separator + methodInfo.methodName + separator
                 + classInfo.methodSigs.get(methodInfo.methodSignature) + separator + num + separator + "Test";
         String fullTestName = fullClassName + separator + methodInfo.methodName + separator
@@ -76,17 +81,25 @@ public class MethodRunner extends ClassRunner {
         config.getLog().info("\n==========================\n[ChatUniTest] Generating test for method < "
                 + methodInfo.methodName + " > number " + num + "...\n");
 
+        ChatGenerator generator = new ChatGenerator(config);
+        PromptConstructorImpl pc = new PromptConstructorImpl(config);
+        RepairImpl repair = new RepairImpl(config, pc);
+
         for (int rounds = 0; rounds < config.getMaxRounds(); rounds++) {
-            if (promptInfo == null) {
+            if (pc.getPromptInfo() == null) {
                 config.getLog().info("Generating test for method < " + methodInfo.methodName + " > round " + rounds + " ...");
                 if (methodInfo.dependentMethods.size() > 0) {
-                    promptInfo = generatePromptInfoWithDep(config, classInfo, methodInfo);
+                    pc.setPromptInfoWithDep(classInfo, methodInfo);
                 } else {
-                    promptInfo = generatePromptInfoWithoutDep(config, classInfo, methodInfo);
+                    pc.setPromptInfoWithoutDep(classInfo, methodInfo);
                 }
             } else {
                 config.getLog().info("Fixing test for method < " + methodInfo.methodName + " > round " + rounds + " ...");
             }
+            pc.setFullTestName(fullTestName);
+            pc.setTestName(testName);
+
+            PromptInfo promptInfo = pc.getPromptInfo();
             promptInfo.setFullTestName(fullTestName);
             promptInfo.addRecord(new RoundRecord(rounds));
             RoundRecord record = promptInfo.getRecords().get(rounds);
@@ -108,11 +121,9 @@ public class MethodRunner extends ClassRunner {
             }
             config.getLog().config("[Prompt]:\n" + prompt.toString());
 
-            AskGPT askGPT = new AskGPT(config);
-            Response response = askGPT.askChatGPT(prompt);
-
-            String content = parseResponse(response);
-            String code = extractCode(content);
+            Response response = generator.chat(config, prompt);
+            String content = generator.getContentByResponse(response);
+            String code = generator.extractCodeByContent(content);
 
 //            code = skeleton.build(code);
 
@@ -125,17 +136,16 @@ public class MethodRunner extends ClassRunner {
             }
             record.setHasCode(true);
 
-            code = repairPackage(code, classInfo.packageName);
             if (config.isEnableObfuscate()) {
                 code = obfuscator.deobfuscateJava(code);
             }
-            code = changeTestName(code, testName);
-//            code = addTimeout(code, testTimeOut);
-            code = repairImports(code, classInfo.imports);
+
+            code = repair.ruleBasedRepair(code);
             promptInfo.setUnitTest(code); // Before repair imports
 
             record.setCode(code);
-            if (runTest(fullTestName, promptInfo, rounds)) {
+            repair.LLMBasedRepair(code, rounds);
+            if (repair.isSuccess()) {
                 record.setHasError(false);
                 exportRecord(promptInfo, classInfo, num);
                 return true;
@@ -144,7 +154,7 @@ public class MethodRunner extends ClassRunner {
             record.setErrorMsg(promptInfo.getErrorMsg());
         }
 
-        exportRecord(promptInfo, classInfo, num);
+        exportRecord(pc.getPromptInfo(), classInfo, num);
         return false;
     }
 
