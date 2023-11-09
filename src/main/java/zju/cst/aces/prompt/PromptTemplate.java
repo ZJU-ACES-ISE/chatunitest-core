@@ -42,14 +42,12 @@ public class PromptTemplate {
     public String renderTemplate(String templateFileName) throws IOException, TemplateException{
         Configuration configuration = new Configuration(Configuration.VERSION_2_3_30);
 
-//        if (config.getPromptPath() == null) {
-//            // 使用类加载器获取插件自身的resources目录下的文件
-//            configuration.setClassForTemplateLoading(PromptTemplate.class, "/prompt");
-//        } else {
-//            configuration.setDirectoryForTemplateLoading(config.getPromptPath().toFile());
-//        }
+        if (config.getPromptPath() == null) {
+            configuration.setClassForTemplateLoading(PromptTemplate.class, "/prompt");
+        } else {
+            configuration.setDirectoryForTemplateLoading(config.getPromptPath().toFile());
+        }
 
-        configuration.setClassForTemplateLoading(PromptTemplate.class, "/prompt");
         configuration.setDefaultEncoding("utf-8");
         Template template = configuration.getTemplate(templateFileName);
 
@@ -59,7 +57,7 @@ public class PromptTemplate {
         while (matcher.find()) {
             String e = matcher.group(1);
             if (!matches.contains(e)) {
-                matches.add(e); // 添加第一个捕获组的匹配
+                matches.add(e);
             }
         }
 

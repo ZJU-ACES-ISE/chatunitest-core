@@ -208,7 +208,6 @@ public class MethodRunner extends ClassRunner {
             }
 
             // Set promptInfo error message
-            // TODO: should be a function invoked by each return statement
             TestMessage testMessage = new TestMessage();
             List<String> errors = new ArrayList<>();
             summary.getFailures().forEach(failure -> {
