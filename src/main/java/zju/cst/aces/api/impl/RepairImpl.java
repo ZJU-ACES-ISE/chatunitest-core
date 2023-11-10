@@ -49,13 +49,13 @@ public class RepairImpl implements Repair {
 
             promptConstructorImpl.generate();
             if (promptConstructorImpl.isExceedMaxTokens()) {
-                config.getLog().severe("Exceed max prompt tokens: " + promptInfo.methodInfo.methodName + " Skipped.");
+                config.getLog().error("Exceed max prompt tokens: " + promptInfo.methodInfo.methodName + " Skipped.");
                 return code;
             }
             Response response = chat(config, promptConstructorImpl.getMessages());
             String newcode = extractCodeByResponse(response);
             if (newcode.isEmpty()) {
-                config.getLog().warning("Test for method < " + promptInfo.methodInfo.methodName + " > extract code failed");
+                config.getLog().warn("Test for method < " + promptInfo.methodInfo.methodName + " > extract code failed");
                 return code;
             } else {
                 return newcode;
@@ -80,13 +80,13 @@ public class RepairImpl implements Repair {
             promptConstructorImpl.generate();
 
             if (promptConstructorImpl.isExceedMaxTokens()) {
-                config.getLog().severe("Exceed max prompt tokens: " + promptInfo.methodInfo.methodName + " Skipped.");
+                config.getLog().error("Exceed max prompt tokens: " + promptInfo.methodInfo.methodName + " Skipped.");
                 return code;
             }
             Response response = chat(config, promptConstructorImpl.getMessages());
             String newcode = extractCodeByResponse(response);
             if (newcode.isEmpty()) {
-                config.getLog().warning("Test for method < " + promptInfo.methodInfo.methodName + " > extract code failed");
+                config.getLog().warn("Test for method < " + promptInfo.methodInfo.methodName + " > extract code failed");
                 return code;
             } else {
                 return newcode;

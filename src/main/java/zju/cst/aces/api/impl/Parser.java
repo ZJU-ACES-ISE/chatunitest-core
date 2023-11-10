@@ -29,7 +29,7 @@ public class Parser implements PreProcess {
         try {
             Task.checkTargetFolder(config.getProject());
         } catch (RuntimeException e) {
-            config.getLog().severe(e.toString());
+            config.getLog().error(e.toString());
             return;
         }
         if (config.getProject().getPackaging().equals("pom")) {

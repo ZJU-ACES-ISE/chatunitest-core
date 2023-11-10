@@ -8,8 +8,8 @@ import lombok.Getter;
 import lombok.Setter;
 import okhttp3.OkHttpClient;
 import org.apache.maven.project.MavenProject;
-import zju.cst.aces.util.LogFormatter;
-import zju.cst.aces.util.TestCompiler;
+import zju.cst.aces.api.impl.LoggerImpl;
+import zju.cst.aces.api.Logger;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.*;
 
 @Getter
 @Setter
@@ -130,12 +129,7 @@ public class Config {
         public ConfigBuilder(MavenProject project) {
             this.date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")).toString();
             this.project = project;
-            this.log = Logger.getLogger("ChatUniTest");
-            Handler consoleHandler = new ConsoleHandler();
-            consoleHandler.setLevel(Level.ALL);
-            consoleHandler.setFormatter(new LogFormatter());
-            this.log.addHandler(consoleHandler);
-            this.log.setUseParentHandlers(false);
+            this.log = new LoggerImpl();
 
             MavenProject parent = project.getParent();
             while(parent != null && parent.getBasedir() != null) {

@@ -7,6 +7,6 @@ import java.util.List;
 
 public interface Generator {
 
-    public String generate(List<Message> messages);
+    String generate(List<Message> messages);
 
 }

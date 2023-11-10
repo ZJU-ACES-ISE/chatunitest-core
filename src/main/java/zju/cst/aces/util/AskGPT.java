@@ -58,11 +58,11 @@ public class AskGPT {
                 return response;
 
             } catch (IOException e) {
-                config.getLog().severe("In AskGPT.askChatGPT: " + e);
+                config.getLog().error("In AskGPT.askChatGPT: " + e);
                 maxTry--;
             }
         }
-        config.getLog().config("AskGPT: Failed to get response\n");
+        config.getLog().debug("AskGPT: Failed to get response\n");
         return null;
     }
 }

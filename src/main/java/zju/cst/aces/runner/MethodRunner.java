@@ -116,10 +116,10 @@ public class MethodRunner extends ClassRunner {
 
             List<Message> prompt = promptGenerator.generateMessages(obfuscatedPromptInfo);
             if (isExceedMaxTokens(config, prompt)) {
-                config.getLog().severe("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
+                config.getLog().error("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
                 break;
             }
-            config.getLog().config("[Prompt]:\n" + prompt.toString());
+            config.getLog().debug("[Prompt]:\n" + prompt.toString());
 
             Response response = generator.chat(config, prompt);
             String content = generator.getContentByResponse(response);
@@ -193,13 +193,13 @@ public class MethodRunner extends ClassRunner {
 
             // Remove errors successfully, recompile and re-execute test
             if (testProcessed != null) {
-                config.getLog().config("[Original Test]:\n" + code);
+                config.getLog().debug("[Original Test]:\n" + code);
                 TestCompiler newCompiler = new TestCompiler(config, testProcessed);
                 if (newCompiler.compileTest(testName, compilationErrorPath, null)) {
                     TestExecutionSummary newSummary = newCompiler.executeTest(fullTestName);
                     if (newSummary.getTestsFailedCount() == 0) {
                         exportTest(testProcessed, savePath);
-                        config.getLog().config("[Processed Test]:\n" + testProcessed);
+                        config.getLog().debug("[Processed Test]:\n" + testProcessed);
                         config.getLog().info("Processed test for method < " + methodInfo.methodName + " > generated successfully round " + rounds);
                         return true;
                     }

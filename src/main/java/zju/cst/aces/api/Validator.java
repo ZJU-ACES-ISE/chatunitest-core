@@ -6,8 +6,8 @@ import java.nio.file.Path;
 
 public interface Validator {
 
-    public boolean syntacticValidate(String code);
-    public boolean semanticValidate(String className, Path outputPath, PromptInfo promptInfo);
-    public boolean runtimeValidate(String fullTestName);
+    boolean syntacticValidate(String code);
+    boolean semanticValidate(String className, Path outputPath, PromptInfo promptInfo);
+    boolean runtimeValidate(String fullTestName);
 
 }

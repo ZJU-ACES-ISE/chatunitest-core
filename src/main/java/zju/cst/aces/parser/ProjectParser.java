@@ -51,7 +51,7 @@ public class ProjectParser {
     public void parse() {
         List<String> classPaths = scanSourceDirectory(config.getProject());
         if (classPaths.isEmpty()) {
-            config.getLog().warning("No java file found in " + srcFolderPath);
+            config.getLog().warn("No java file found in " + srcFolderPath);
             return;
         }
         for (String classPath : classPaths) {
@@ -147,8 +147,8 @@ public class ProjectParser {
                 }
                 combinedTypeSolver.add(new JarTypeSolver(depFile));
             } catch (Exception e) {
-                config.getLog().warning(e.getMessage());
-                config.getLog().config(e.getMessage());
+                config.getLog().warn(e.getMessage());
+                config.getLog().debug(e.getMessage());
             }
         }
         for (String src : config.getProject().getCompileSourceRoots()) { // TODO: remove MavenProject

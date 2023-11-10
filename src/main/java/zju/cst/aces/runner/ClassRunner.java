@@ -22,7 +22,7 @@ public class ClassRunner extends AbstractRunner {
         super(config, fullClassName);
         infoDir = config.getParseOutput().resolve(fullClassName.replace(".", File.separator)).toFile();
         if (!infoDir.isDirectory()) {
-            config.getLog().warning("Error: " + fullClassName + " no parsed info found");
+            config.getLog().warn("Error: " + fullClassName + " no parsed info found");
         }
         File classInfoFile = new File(infoDir + File.separator + "class.json");
         classInfo = GSON.fromJson(Files.readString(classInfoFile.toPath(), StandardCharsets.UTF_8), ClassInfo.class);

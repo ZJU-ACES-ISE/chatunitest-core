@@ -82,7 +82,7 @@ public abstract class AbstractRunner {
         try {
             return new CodeExtractor(content).getExtractedCode();
         } catch (Exception e) {
-            config.getLog().severe("In AbstractRunner.extractCode: " + e);
+            config.getLog().error("In AbstractRunner.extractCode: " + e);
         }
         return "";
     }
@@ -121,7 +121,7 @@ public abstract class AbstractRunner {
             testCase = repairImports(testCase, timeoutImport);
             return testCase.replace("@Test\n", String.format("@Test%n    @Timeout(%d)%n", timeout));
         } else {
-            config.getLog().warning("Generated with unknown JUnit version, try without adding timeout.");
+            config.getLog().warn("Generated with unknown JUnit version, try without adding timeout.");
         }
         return testCase;
     }

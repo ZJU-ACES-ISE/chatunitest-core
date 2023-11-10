@@ -61,7 +61,7 @@ public class ClassParser {
                 addClassMapping(classInfo);
                 methodCount += classDeclaration.getMethods().size();
             } catch (Exception e) {
-                config.getLog().severe("In ClassParser.extractClass Exception: when parse class " + classDeclaration.getNameAsString() + " :\n" + e);
+                config.getLog().error("In ClassParser.extractClass Exception: when parse class " + classDeclaration.getNameAsString() + " :\n" + e);
             }
         }
         return classes.size();

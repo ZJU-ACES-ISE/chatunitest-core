@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.logging.Logger;
+import zju.cst.aces.api.Logger;
 
 public class Task {
 
@@ -33,7 +33,7 @@ public class Task {
         try {
             checkTargetFolder(config.getProject());
         } catch (RuntimeException e) {
-            log.severe(e.toString());
+            log.error(e.toString());
             return;
         }
         if (config.getProject().getPackaging().equals("pom")) {
@@ -64,7 +64,7 @@ public class Task {
                 try {
                     new MethodRunner(config, fullClassName, methodInfo).start();
                 } catch (Exception e) {
-                    log.severe("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId());
+                    log.error("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId());
                 }
             } else {
                 for (String mSig : classInfo.methodSigs.keySet()) {
@@ -76,7 +76,7 @@ public class Task {
                         try {
                             new MethodRunner(config, fullClassName, methodInfo).start(); // generate for all methods with the same name;
                         } catch (Exception e) {
-                            log.severe("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId());
+                            log.error("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId());
                         }
                     }
                 }
@@ -93,7 +93,7 @@ public class Task {
         try {
             checkTargetFolder(config.getProject());
         } catch (RuntimeException e) {
-            log.severe(e.toString());
+            log.error(e.toString());
             return;
         }
         if (config.getProject().getPackaging().equals("pom")) {
@@ -106,7 +106,7 @@ public class Task {
         try {
             new ClassRunner(config, getFullClassName(config, className)).start();
         } catch (IOException e) {
-            log.warning("Class not found: " + className + " in " + config.getProject().getArtifactId());
+            log.warn("Class not found: " + className + " in " + config.getProject().getArtifactId());
         }
         log.info("\n==========================\n[ChatUniTest] Generation finished");
     }
@@ -116,7 +116,7 @@ public class Task {
         try {
             checkTargetFolder(project);
         } catch (RuntimeException e) {
-            log.severe(e.toString());
+            log.error(e.toString());
             return;
         }
         if (project.getPackaging().equals("pom")) {
@@ -141,7 +141,7 @@ public class Task {
                     }
                     runner.start();
                 } catch (IOException e) {
-                    log.severe("[ChatUniTest] Generate tests for class " + className + " failed: " + e);
+                    log.error("[ChatUniTest] Generate tests for class " + className + " failed: " + e);
                 }
             }
         }
@@ -166,7 +166,7 @@ public class Task {
                         }
                         runner.start();
                     } catch (IOException e) {
-                        log.severe("[ChatUniTest] Generate tests for class " + className + " failed: " + e);
+                        log.error("[ChatUniTest] Generate tests for class " + className + " failed: " + e);
                     }
                     return "Processed " + classPath;
                 }

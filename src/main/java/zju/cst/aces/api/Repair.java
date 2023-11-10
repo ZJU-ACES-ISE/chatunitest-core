@@ -4,8 +4,8 @@ import java.io.IOException;
 
 public interface Repair {
 
-    public String ruleBasedRepair(String code);
-    public String LLMBasedRepair(String code);
-    public String LLMBasedRepair(String code, int rounds);
+    String ruleBasedRepair(String code);
+    String LLMBasedRepair(String code);
+    String LLMBasedRepair(String code, int rounds);
 
 }

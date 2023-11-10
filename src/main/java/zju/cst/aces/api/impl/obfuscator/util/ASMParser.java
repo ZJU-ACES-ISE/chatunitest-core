@@ -73,7 +73,7 @@ public class ASMParser {
             try (InputStream jis = jar.getInputStream(entry)) {
                 return readClass(className, jis, targetClasses);
             } catch (IOException e) {
-                config.getLog().warning("Fail to read class {} in jar {}" + entry + jar.getName() + e);
+                config.getLog().warn("Fail to read class {} in jar {}" + entry + jar.getName() + e);
             }
         } else if (name.endsWith("jar") || name.endsWith("war")) {
 

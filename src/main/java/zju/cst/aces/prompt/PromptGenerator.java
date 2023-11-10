@@ -143,8 +143,8 @@ public class PromptGenerator {
                     processedErrorMsg += error + "\n";
                 }
             }
-            config.getLog().config("Allowed tokens: " + allowedTokens);
-            config.getLog().config("Processed error message: \n" + processedErrorMsg);
+            config.getLog().debug("Allowed tokens: " + allowedTokens);
+            config.getLog().debug("Processed error message: \n" + processedErrorMsg);
 
             promptTemplate.dataModel.put("unit_test", promptInfo.getUnitTest());
             promptTemplate.dataModel.put("error_message", processedErrorMsg);
@@ -603,7 +603,7 @@ public class PromptGenerator {
             try {
                 fullProjectCode += Files.readString(Paths.get(path), StandardCharsets.UTF_8) + "\n";
             } catch (IOException e) {
-                config.getLog().warning("Failed to append class code for " + className);
+                config.getLog().warn("Failed to append class code for " + className);
             }
         }
         return fullProjectCode;

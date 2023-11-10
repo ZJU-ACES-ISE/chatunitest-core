@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface PromptConstructor {
 
-    public List<Message> generate();
+    List<Message> generate();
 
 }

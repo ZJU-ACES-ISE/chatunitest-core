@@ -101,7 +101,7 @@ public class Obfuscator {
             md.accept(new ObfuscatorVisitor(), null);
             return md.toString().substring(0, md.toString().lastIndexOf("{"));
         } catch (Exception e) {
-            config.getLog().severe("Failed to obfuscate method brief: " + e);
+            config.getLog().error("Failed to obfuscate method brief: " + e);
         }
         return brief;
     }
@@ -120,7 +120,7 @@ public class Obfuscator {
             md.accept(new ObfuscatorVisitor(), null);
             obfuscatedCode = md.toString();
         } catch (Exception e) {
-            config.getLog().severe("Failed to obfuscate method source code: " + e);
+            config.getLog().error("Failed to obfuscate method source code: " + e);
         }
         return obfuscatedCode;
     }
@@ -155,7 +155,7 @@ public class Obfuscator {
             obfuscatedCode = cu.toString();
         } catch (Exception e) {
             //TODO: solve dep constructors and methods code
-            config.getLog().severe("Failed to obfuscate code: " + e);
+            config.getLog().error("Failed to obfuscate code: " + e);
         }
         return obfuscatedCode;
     }
@@ -189,7 +189,7 @@ public class Obfuscator {
             cu.accept(new DeobfuscatorVisitor(), null);
             obfuscatedCode = cu.toString();
         } catch (Exception e) {
-            config.getLog().severe("Failed to deobfuscate code: " + e);
+            config.getLog().error("Failed to deobfuscate code: " + e);
             e.printStackTrace();
         }
         return obfuscatedCode;
@@ -236,7 +236,7 @@ public class Obfuscator {
                 str = str.replaceAll(decapitalize(key), decapitalize(cryptoMap.get(key)));
             }
         } catch (Exception e) {
-            config.getLog().severe("Failed to obfuscate String: " + e);
+            config.getLog().error("Failed to obfuscate String: " + e);
         }
         return str;
     }
@@ -255,7 +255,7 @@ public class Obfuscator {
                 str = str.replaceAll(decapitalize(cryptoMap.get(key)), decapitalize(key));
             }
         } catch (Exception e) {
-            config.getLog().severe("Failed to deobfuscate String: " + e);
+            config.getLog().error("Failed to deobfuscate String: " + e);
         }
         return str;
     }
