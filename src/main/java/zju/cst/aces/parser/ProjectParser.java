@@ -9,8 +9,8 @@ import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSol
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JarTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
-import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
+import zju.cst.aces.api.Project;
 import zju.cst.aces.api.config.Config;
 
 import java.io.File;
@@ -117,7 +117,7 @@ public class ProjectParser {
         }
     }
 
-    public static List<String> scanSourceDirectory(MavenProject project) {
+    public static List<String> scanSourceDirectory(Project project) {
         List<String> classPaths = new ArrayList<>();
         File[] files = Paths.get(project.getCompileSourceRoots().get(0)).toFile().listFiles();
         if (files != null) {

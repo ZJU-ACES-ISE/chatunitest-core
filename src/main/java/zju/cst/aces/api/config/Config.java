@@ -1,5 +1,6 @@
 package zju.cst.aces.api.config;
 
+import zju.cst.aces.api.Project;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.symbolsolver.javaparsermodel.JavaParserFacade;
 import com.google.gson.Gson;
@@ -7,7 +8,6 @@ import com.google.gson.GsonBuilder;
 import lombok.Getter;
 import lombok.Setter;
 import okhttp3.OkHttpClient;
-import org.apache.maven.project.MavenProject;
 import zju.cst.aces.api.impl.LoggerImpl;
 import zju.cst.aces.api.Logger;
 
@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Config {
     public String date;
     public Gson GSON;
-    public MavenProject project;
+    public Project project;
     public JavaParser parser;
     public JavaParserFacade parserFacade;
     public List<String> classPaths;
@@ -78,7 +78,7 @@ public class Config {
 
     public static class ConfigBuilder {
         public String date;
-        public MavenProject project;
+        public Project project;
         public JavaParser parser;
         public JavaParserFacade parserFacade;
         public List<String> classPaths;
@@ -126,12 +126,12 @@ public class Config {
                 .readTimeout(5, TimeUnit.MINUTES)
                 .build();
 
-        public ConfigBuilder(MavenProject project) {
+        public ConfigBuilder(Project project) {
             this.date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")).toString();
             this.project = project;
             this.log = new LoggerImpl();
 
-            MavenProject parent = project.getParent();
+            Project parent = project.getParent();
             while(parent != null && parent.getBasedir() != null) {
                 this.tmpOutput = this.tmpOutput.resolve(parent.getArtifactId());
                 parent = parent.getParent();
@@ -166,7 +166,7 @@ public class Config {
 
         public ConfigBuilder tmpOutput(Path tmpOutput) {
             this.tmpOutput = tmpOutput;
-            MavenProject parent = project.getParent();
+            Project parent = project.getParent();
             while(parent != null && parent.getBasedir() != null) {
                 this.tmpOutput = this.tmpOutput.resolve(parent.getArtifactId());
                 parent = parent.getParent();
@@ -181,7 +181,7 @@ public class Config {
             return this;
         }
 
-        public ConfigBuilder project(MavenProject project) {
+        public ConfigBuilder project(Project project) {
             this.project = project;
             return this;
         }
@@ -336,7 +336,7 @@ public class Config {
                 this.testOutput = project.getBasedir().toPath().resolve("chatunitest-tests");
             } else {
                 this.testOutput = testOutput;
-                MavenProject parent = project.getParent();
+                Project parent = project.getParent();
                 while(parent != null && parent.getBasedir() != null) {
                     this.testOutput = this.testOutput.resolve(parent.getArtifactId());
                     parent = parent.getParent();

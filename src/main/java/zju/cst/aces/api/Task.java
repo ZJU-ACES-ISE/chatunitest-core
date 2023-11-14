@@ -1,6 +1,5 @@
 package zju.cst.aces.api;
 
-import org.apache.maven.project.MavenProject;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
@@ -112,7 +111,7 @@ public class Task {
     }
 
     public void startProjectTask() {
-        MavenProject project = config.getProject();
+        Project project = config.getProject();
         try {
             checkTargetFolder(project);
         } catch (RuntimeException e) {
@@ -220,11 +219,11 @@ public class Task {
      * Check if the classes is compiled
      * @param project
      */
-    public static void checkTargetFolder(MavenProject project) {
+    public static void checkTargetFolder(Project project) {
         if (project.getPackaging().equals("pom")) {
             return;
         }
-        if (!new File(project.getBuild().getOutputDirectory()).exists()) {
+        if (!new File(project.getBuildPath().toString()).exists()) {
             throw new RuntimeException("In ProjectTestMojo.checkTargetFolder: " +
                     "The project is not compiled to the target directory. " +
                     "Please run 'mvn install' first.");

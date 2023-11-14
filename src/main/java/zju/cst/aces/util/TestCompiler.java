@@ -164,7 +164,7 @@ public class TestCompiler {
         }
     }
 
-    //TODO: remove dependencyGraphBuilder
+    //TODO: only support MavenProject
     public static List<String> listClassPaths(MavenProject project, DependencyGraphBuilder dependencyGraphBuilder) {
         List<String> classPaths = new ArrayList<>();
         Path artifactPath = Paths.get(project.getBuild().getDirectory()).resolve(project.getBuild().getFinalName() + ".jar");

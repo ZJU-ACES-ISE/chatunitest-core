@@ -61,7 +61,7 @@ public class Obfuscator {
 
     //TODO
     public void setTargetGroupIds(Config config) {
-        String projectGroupId = config.project.getGroupId();
+        String projectGroupId = config.getProject().getGroupId();
         List<String> groupIds = Arrays.stream(config.getObfuscateGroupIds())
                 .map(String::trim)
                 .collect(Collectors.toList());
@@ -375,7 +375,7 @@ public class Obfuscator {
         ASMParser asmParser = new ASMParser(config);
         Map<String, SymbolFrame> symbolFrames = new HashMap<>();
         try {
-            Path artifactPath = Paths.get(config.getProject().getBuild().getDirectory()).resolve(config.getProject().getBuild().getFinalName() + ".jar");
+            Path artifactPath = config.getProject().getArtifactPath();
             JarFile projectJar = new JarFile(artifactPath.toString());
             candidateClasses.addAll(asmParser.loadClasses(projectJar));
             for (ClassNode classNode : candidateClasses) {
