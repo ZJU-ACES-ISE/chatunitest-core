@@ -85,77 +85,116 @@ public class MethodRunner extends ClassRunner {
         PromptConstructorImpl pc = new PromptConstructorImpl(config);
         RepairImpl repair = new RepairImpl(config, pc);
 
+        if (methodInfo.dependentMethods.size() > 0) {
+            pc.setPromptInfoWithDep(classInfo, methodInfo);
+        } else {
+            pc.setPromptInfoWithoutDep(classInfo, methodInfo);
+        }
+        pc.setFullTestName(fullTestName);
+        pc.setTestName(testName);
+
+        PromptInfo promptInfo = pc.getPromptInfo();
+        promptInfo.setFullTestName(fullTestName);
+        Path savePath = config.getTestOutput().resolve(fullTestName.replace(".", File.separator) + ".java");
+        promptInfo.setTestPath(savePath);
+
         for (int rounds = 0; rounds < config.getMaxRounds(); rounds++) {
-            if (pc.getPromptInfo() == null) {
+            if (rounds == 0) {
                 config.getLog().info("Generating test for method < " + methodInfo.methodName + " > round " + rounds + " ...");
-                if (methodInfo.dependentMethods.size() > 0) {
-                    pc.setPromptInfoWithDep(classInfo, methodInfo);
-                } else {
-                    pc.setPromptInfoWithoutDep(classInfo, methodInfo);
-                }
             } else {
                 config.getLog().info("Fixing test for method < " + methodInfo.methodName + " > round " + rounds + " ...");
             }
-            pc.setFullTestName(fullTestName);
-            pc.setTestName(testName);
-
-            PromptInfo promptInfo = pc.getPromptInfo();
-            promptInfo.setFullTestName(fullTestName);
             promptInfo.addRecord(new RoundRecord(rounds));
             RoundRecord record = promptInfo.getRecords().get(rounds);
-
-            Path savePath = config.getTestOutput().resolve(fullTestName.replace(".", File.separator) + ".java");
-            promptInfo.setTestPath(savePath);
-
-//            TestSkeleton skeleton = new TestSkeleton(promptInfo); // test skeleton to wrap a test method
-            Obfuscator obfuscator = new Obfuscator(config);
-            PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
-            if (config.isEnableObfuscate()) {
-                obfuscator.obfuscatePromptInfo(obfuscatedPromptInfo);
-            }
-
-            List<Message> prompt = promptGenerator.generateMessages(obfuscatedPromptInfo);
-            if (isExceedMaxTokens(config, prompt)) {
-                config.getLog().error("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
-                break;
-            }
-            config.getLog().debug("[Prompt]:\n" + prompt.toString());
-
-            Response response = generator.chat(config, prompt);
-            String content = generator.getContentByResponse(response);
-            String code = generator.extractCodeByContent(content);
-
-//            code = skeleton.build(code);
-
-            record.setPrompt(prompt);
-            record.setResponse(content);
-            if (code.isEmpty()) {
-                config.getLog().info("Test for method < " + methodInfo.methodName + " > extract code failed");
-                record.setHasCode(false);
-                continue;
-            }
-            record.setHasCode(true);
-
-            if (config.isEnableObfuscate()) {
-                code = obfuscator.deobfuscateJava(code);
-            }
-
-            code = repair.ruleBasedRepair(code);
-            promptInfo.setUnitTest(code); // Before repair imports
-
-            record.setCode(code);
-            repair.LLMBasedRepair(code, rounds);
-            if (repair.isSuccess()) {
-                record.setHasError(false);
-                exportRecord(promptInfo, classInfo, num);
+            record.setAttempt(num);
+            if (generateTest(generator, pc, repair, record)) {
+                exportRecord(promptInfo, classInfo, record.getAttempt());
                 return true;
             }
-            record.setHasError(true);
-            record.setErrorMsg(promptInfo.getErrorMsg());
         }
-
         exportRecord(pc.getPromptInfo(), classInfo, num);
         return false;
+    }
+
+    public boolean generateTest(ChatGenerator generator, PromptConstructorImpl pc, RepairImpl repair, RoundRecord record) throws IOException {
+        PromptInfo promptInfo = pc.getPromptInfo();
+        Obfuscator obfuscator = new Obfuscator(config);
+        PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
+        if (config.isEnableObfuscate()) {
+            obfuscator.obfuscatePromptInfo(obfuscatedPromptInfo);
+        }
+
+        List<Message> prompt = promptGenerator.generateMessages(obfuscatedPromptInfo);
+        if (isExceedMaxTokens(config, prompt)) {
+            config.getLog().error("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
+            return false;
+        }
+        config.getLog().debug("[Prompt]:\n" + prompt.toString());
+
+        Response response = generator.chat(config, prompt);
+        String content = generator.getContentByResponse(response);
+        String code = generator.extractCodeByContent(content);
+
+        record.setPrompt(prompt);
+        record.setResponse(content);
+        if (code.isEmpty()) {
+            config.getLog().info("Test for method < " + methodInfo.methodName + " > extract code failed");
+            record.setHasCode(false);
+            return false;
+        }
+        record.setHasCode(true);
+
+        if (config.isEnableObfuscate()) {
+            code = obfuscator.deobfuscateJava(code);
+        }
+
+        code = repair.ruleBasedRepair(code);
+        promptInfo.setUnitTest(code);
+
+        record.setCode(code);
+        repair.LLMBasedRepair(code, record.getRound());
+        if (repair.isSuccess()) {
+            record.setHasError(false);
+            return true;
+        }
+        record.setHasError(true);
+        record.setErrorMsg(promptInfo.getErrorMsg());
+        return false;
+    }
+
+    public boolean generateTest(ChatGenerator generator, PromptConstructorImpl pc, RepairImpl repair) throws IOException {
+        PromptInfo promptInfo = pc.getPromptInfo();
+        Obfuscator obfuscator = new Obfuscator(config);
+        PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
+        if (config.isEnableObfuscate()) {
+            obfuscator.obfuscatePromptInfo(obfuscatedPromptInfo);
+        }
+
+        List<Message> prompt = promptGenerator.generateMessages(obfuscatedPromptInfo);
+        if (isExceedMaxTokens(config, prompt)) {
+            config.getLog().error("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
+            return false;
+        }
+        config.getLog().debug("[Prompt]:\n" + prompt.toString());
+
+        Response response = generator.chat(config, prompt);
+        String content = generator.getContentByResponse(response);
+        String code = generator.extractCodeByContent(content);
+
+        if (code.isEmpty()) {
+            config.getLog().info("Test for method < " + methodInfo.methodName + " > extract code failed");
+            return false;
+        }
+
+        if (config.isEnableObfuscate()) {
+            code = obfuscator.deobfuscateJava(code);
+        }
+
+        code = repair.ruleBasedRepair(code);
+        promptInfo.setUnitTest(code);
+
+        repair.LLMBasedRepair(code);
+        return repair.isSuccess();
     }
 
     public boolean runTest(String fullTestName, PromptInfo promptInfo, int rounds) {

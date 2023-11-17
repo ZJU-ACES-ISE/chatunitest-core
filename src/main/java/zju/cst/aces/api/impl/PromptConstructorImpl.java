@@ -55,6 +55,7 @@ public class PromptConstructorImpl implements PromptConstructor {
 
     public void setFullTestName(String fullTestName) {
         this.fullTestName = fullTestName;
+        this.testName = fullTestName.substring(fullTestName.lastIndexOf(".") + 1);
         this.promptInfo.setFullTestName(this.fullTestName);
     }
 

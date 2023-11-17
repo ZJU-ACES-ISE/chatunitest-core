@@ -6,6 +6,7 @@ import java.util.List;
 
 @Data
 public class RoundRecord {
+    public int attempt;
     public int round;
     public List<Message> prompt;
     public String response;

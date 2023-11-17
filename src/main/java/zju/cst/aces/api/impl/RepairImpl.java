@@ -42,7 +42,6 @@ public class RepairImpl implements Repair {
         try {
             if (new MethodRunner(config, fullClassName, promptInfo.getMethodInfo())
                     .runTest(promptConstructorImpl.getFullTestName(), promptInfo, rounds)) {
-                config.getLog().info("Test for method < " + promptInfo.methodInfo.methodName + " > doesn't need repair");
                 this.success = true;
                 return code;
             }
