@@ -18,6 +18,9 @@ public class ProjectImpl implements Project {
 
     @Override
     public Project getParent() {
+        if (project.getParent() == null) {
+            return null;
+        }
         return new ProjectImpl(project.getParent());
     }
 
