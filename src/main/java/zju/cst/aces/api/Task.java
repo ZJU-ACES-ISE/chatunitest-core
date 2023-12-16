@@ -82,7 +82,8 @@ public class Task {
             }
 
         } catch (IOException e) {
-            throw new RuntimeException("Method not found: " + methodName + " in " + className + " " + config.getProject().getArtifactId());
+            log.warn("Method not found: " + methodName + " in " + className + " " + config.getProject().getArtifactId());
+            return;
         }
 
         log.info("\n==========================\n[ChatUniTest] Generation finished");

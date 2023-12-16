@@ -1,4 +1,4 @@
-# :mega: ChatUnitest
+# :mega: ChatUnitest Core
 
 ![logo](docs/img/logo.png)
 
@@ -19,7 +19,7 @@ Many people have tried using ChatGPT to help them with various programming tasks
 <dependency>
     <groupId>io.github.ZJU-ACES-ISE</groupId>
     <artifactId>chatunitest-core</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
