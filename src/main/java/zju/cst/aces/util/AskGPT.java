@@ -48,14 +48,13 @@ public class AskGPT {
                 RequestBody body = RequestBody.create(MEDIA_TYPE, jsonPayload);
                 Request request = new Request.Builder().url(URL).post(body).addHeader("Content-Type", "application/json").addHeader("Authorization", "Bearer " + apiKey).build();
 
-                Response response = config.getClient().newCall(request).execute();
-                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-                try {
+                try (Response response = config.getClient().newCall(request).execute()) {
+                    if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
                     Thread.sleep(config.sleepTime);
+                    return response;
                 } catch (InterruptedException ie) {
                     throw new RuntimeException("In AskGPT.askChatGPT: " + ie);
                 }
-                return response;
 
             } catch (IOException e) {
                 config.getLog().error("In AskGPT.askChatGPT: " + e);
