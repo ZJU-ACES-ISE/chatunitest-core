@@ -30,6 +30,7 @@ public class AskGPT {
         String apiKey = config.getRandomKey();
         int maxTry = 5;
         while (maxTry > 0) {
+            Response response = null;
             try {
                 Map<String, Object> payload = new HashMap<>();
 
@@ -48,17 +49,26 @@ public class AskGPT {
                 RequestBody body = RequestBody.create(MEDIA_TYPE, jsonPayload);
                 Request request = new Request.Builder().url(URL).post(body).addHeader("Content-Type", "application/json").addHeader("Authorization", "Bearer " + apiKey).build();
 
-                try (Response response = config.getClient().newCall(request).execute()) {
-                    if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+                response = config.getClient().newCall(request).execute();
+                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+                try {
                     Thread.sleep(config.sleepTime);
-                    return response;
                 } catch (InterruptedException ie) {
                     throw new RuntimeException("In AskGPT.askChatGPT: " + ie);
+                } finally {
+                    if (response != null) {
+                        response.close();
+                    }
                 }
 
+                return response;
             } catch (IOException e) {
                 config.getLog().error("In AskGPT.askChatGPT: " + e);
                 maxTry--;
+            } finally {
+                if (response != null) {
+                    response.close();
+                }
             }
         }
         config.getLog().debug("AskGPT: Failed to get response\n");
