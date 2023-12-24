@@ -1,13 +1,16 @@
 package zju.cst.aces.runner;
 
+import lombok.Data;
 import okhttp3.Response;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import zju.cst.aces.api.PromptConstructor;
 import zju.cst.aces.api.Repair;
+import zju.cst.aces.api.Validator;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.ChatGenerator;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
 import zju.cst.aces.api.impl.RepairImpl;
+import zju.cst.aces.api.impl.ValidatorImpl;
 import zju.cst.aces.api.impl.obfuscator.Obfuscator;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.prompt.PromptTemplate;
@@ -15,20 +18,29 @@ import zju.cst.aces.util.AskGPT;
 import zju.cst.aces.util.TestCompiler;
 import zju.cst.aces.util.TestProcessor;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 public class MethodRunner extends ClassRunner {
 
     public MethodInfo methodInfo;
+    public Validator validator;
 
     public MethodRunner(Config config, String fullClassName, MethodInfo methodInfo) throws IOException {
         super(config, fullClassName);
         this.methodInfo = methodInfo;
+        this.validator = new ValidatorImpl(config);
+    }
+
+    public void setValidator(Validator validator) {
+        this.validator = validator;
     }
 
     @Override
@@ -211,10 +223,9 @@ public class MethodRunner extends ClassRunner {
         }
 
         // Compilation
-        TestCompiler compiler = new TestCompiler(config, code);
         Path compilationErrorPath = config.getErrorOutput().resolve(testName + "_CompilationError_" + rounds + ".txt");
         Path executionErrorPath = config.getErrorOutput().resolve(testName + "_ExecutionError_" + rounds + ".txt");
-        boolean compileResult = compiler.compileTest(testName, compilationErrorPath, promptInfo);
+        boolean compileResult = validator.semanticValidate(code, testName, compilationErrorPath, promptInfo);
         if (!compileResult) {
             config.getLog().info("Test for method < " + methodInfo.methodName + " > compilation failed round " + rounds);
             return false;
@@ -226,17 +237,15 @@ public class MethodRunner extends ClassRunner {
         }
 
         // Execution
-        TestExecutionSummary summary = compiler.executeTest(fullTestName);
+        TestExecutionSummary summary = validator.execute(fullTestName);
         if (summary.getTestsFailedCount() > 0) {
             String testProcessed = testProcessor.removeErrorTest(promptInfo, summary);
 
             // Remove errors successfully, recompile and re-execute test
             if (testProcessed != null) {
                 config.getLog().debug("[Original Test]:\n" + code);
-                TestCompiler newCompiler = new TestCompiler(config, testProcessed);
-                if (newCompiler.compileTest(testName, compilationErrorPath, null)) {
-                    TestExecutionSummary newSummary = newCompiler.executeTest(fullTestName);
-                    if (newSummary.getTestsFailedCount() == 0) {
+                if (validator.semanticValidate(testProcessed, testName, compilationErrorPath, null)) {
+                    if (validator.runtimeValidate(fullTestName)) {
                         exportTest(testProcessed, savePath);
                         config.getLog().debug("[Processed Test]:\n" + testProcessed);
                         config.getLog().info("Processed test for method < " + methodInfo.methodName + " > generated successfully round " + rounds);
@@ -261,7 +270,7 @@ public class MethodRunner extends ClassRunner {
             testMessage.setErrorType(TestMessage.ErrorType.RUNTIME_ERROR);
             testMessage.setErrorMessage(errors);
             promptInfo.setErrorMsg(testMessage);
-            compiler.exportError(errors, executionErrorPath);
+            exportError(code, errors, executionErrorPath);
             testProcessor.removeCorrectTest(promptInfo, summary);
             config.getLog().info("Test for method < " + methodInfo.methodName + " > execution failed round " + rounds);
             return false;
@@ -270,5 +279,18 @@ public class MethodRunner extends ClassRunner {
         exportTest(code, savePath);
         config.getLog().info("Test for method < " + methodInfo.methodName + " > compile and execute successfully round " + rounds);
         return true;
+    }
+
+
+    public void exportError(String code, List<String> errors, Path outputPath) {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(outputPath.toFile()));
+            writer.write(code);
+            writer.write("\n--------------------------------------------\n");
+            writer.write(errors.stream().collect(Collectors.joining("\n")));
+            writer.close();
+        } catch (Exception e) {
+            throw new RuntimeException("In TestCompiler.exportError: " + e);
+        }
     }
 }

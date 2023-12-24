@@ -1,5 +1,6 @@
 package zju.cst.aces.util;
 
+import lombok.Data;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.DefaultProjectBuildingRequest;
 import org.apache.maven.project.ProjectBuildingRequest;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
+@Data
 public class TestCompiler {
     public static File srcTestFolder = new File("src" + File.separator + "test" + File.separator + "java");
     public static File testBackupFolder = new File("src" + File.separator + "backup");

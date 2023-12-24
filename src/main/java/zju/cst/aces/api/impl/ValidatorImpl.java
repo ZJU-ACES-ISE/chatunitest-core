@@ -32,7 +32,8 @@ public class ValidatorImpl implements Validator {
     }
 
     @Override
-    public boolean semanticValidate(String className, Path outputPath, PromptInfo promptInfo) {
+    public boolean semanticValidate(String code, String className, Path outputPath, PromptInfo promptInfo) {
+        setCode(code);
         return compiler.compileTest(className, outputPath, promptInfo);
     }
 
@@ -41,10 +42,16 @@ public class ValidatorImpl implements Validator {
         return compiler.executeTest(fullTestName).getTestsFailedCount() == 0;
     }
 
+    public void setCode(String code) {
+        compiler.setCode(code);
+    }
+
+    @Override
     public boolean compile(String className, Path outputPath, PromptInfo promptInfo) {
         return compiler.compileTest(className, outputPath, promptInfo);
     }
 
+    @Override
     public TestExecutionSummary execute(String fullTestName) {
         return compiler.executeTest(fullTestName);
     }
