@@ -4,7 +4,6 @@ package zju.cst.aces.prompt;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import org.mockito.internal.matchers.Find;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.runner.AbstractRunner;
 
