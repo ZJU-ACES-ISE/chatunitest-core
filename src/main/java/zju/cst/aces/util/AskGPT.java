@@ -55,20 +55,15 @@ public class AskGPT {
                     Thread.sleep(config.sleepTime);
                 } catch (InterruptedException ie) {
                     throw new RuntimeException("In AskGPT.askChatGPT: " + ie);
-                } finally {
-                    if (response != null) {
-                        response.close();
-                    }
                 }
 
                 return response;
             } catch (IOException e) {
-                config.getLog().error("In AskGPT.askChatGPT: " + e);
-                maxTry--;
-            } finally {
                 if (response != null) {
                     response.close();
                 }
+                config.getLog().error("In AskGPT.askChatGPT: " + e);
+                maxTry--;
             }
         }
         config.getLog().debug("AskGPT: Failed to get response\n");
