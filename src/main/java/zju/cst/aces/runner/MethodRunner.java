@@ -164,7 +164,7 @@ public class MethodRunner extends ClassRunner {
         promptInfo.setUnitTest(code);
 
         record.setCode(code);
-        repair.LLMBasedRepair(code, record.getRound());
+        repair.LLMBasedRepair(this.validator, code, record.getRound());
         if (repair.isSuccess()) {
             record.setHasError(false);
             return true;
@@ -205,11 +205,11 @@ public class MethodRunner extends ClassRunner {
         code = repair.ruleBasedRepair(code);
         promptInfo.setUnitTest(code);
 
-        repair.LLMBasedRepair(code);
+        repair.LLMBasedRepair(this.validator, code);
         return repair.isSuccess();
     }
 
-    public boolean runTest(String fullTestName, PromptInfo promptInfo, int rounds) {
+    public static boolean runTest(Config config, Validator validator, String fullTestName, PromptInfo promptInfo, int rounds) {
         String testName = fullTestName.substring(fullTestName.lastIndexOf(".") + 1);
         Path savePath = config.getTestOutput().resolve(fullTestName.replace(".", File.separator) + ".java");
         if (promptInfo.getTestPath() == null) {
@@ -227,12 +227,12 @@ public class MethodRunner extends ClassRunner {
         Path executionErrorPath = config.getErrorOutput().resolve(testName + "_ExecutionError_" + rounds + ".txt");
         boolean compileResult = validator.semanticValidate(code, testName, compilationErrorPath, promptInfo);
         if (!compileResult) {
-            config.getLog().info("Test for method < " + methodInfo.methodName + " > compilation failed round " + rounds);
+            config.getLog().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > compilation failed round " + rounds);
             return false;
         }
         if (config.isNoExecution()) {
             exportTest(code, savePath);
-            config.getLog().info("Test for method < " + methodInfo.methodName + " > generated successfully round " + rounds);
+            config.getLog().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > generated successfully round " + rounds);
             return true;
         }
 
@@ -248,7 +248,7 @@ public class MethodRunner extends ClassRunner {
                     if (validator.runtimeValidate(fullTestName)) {
                         exportTest(testProcessed, savePath);
                         config.getLog().debug("[Processed Test]:\n" + testProcessed);
-                        config.getLog().info("Processed test for method < " + methodInfo.methodName + " > generated successfully round " + rounds);
+                        config.getLog().info("Processed test for method < " + promptInfo.getMethodInfo().getMethodName() + " > generated successfully round " + rounds);
                         return true;
                     }
                 }
@@ -272,17 +272,17 @@ public class MethodRunner extends ClassRunner {
             promptInfo.setErrorMsg(testMessage);
             exportError(code, errors, executionErrorPath);
             testProcessor.removeCorrectTest(promptInfo, summary);
-            config.getLog().info("Test for method < " + methodInfo.methodName + " > execution failed round " + rounds);
+            config.getLog().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > execution failed round " + rounds);
             return false;
         }
 //            summary.printTo(new PrintWriter(System.out));
         exportTest(code, savePath);
-        config.getLog().info("Test for method < " + methodInfo.methodName + " > compile and execute successfully round " + rounds);
+        config.getLog().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > compile and execute successfully round " + rounds);
         return true;
     }
 
 
-    public void exportError(String code, List<String> errors, Path outputPath) {
+    public static void exportError(String code, List<String> errors, Path outputPath) {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(outputPath.toFile()));
             writer.write(code);
