@@ -8,8 +8,10 @@ import com.google.gson.GsonBuilder;
 import lombok.Getter;
 import lombok.Setter;
 import okhttp3.OkHttpClient;
+import zju.cst.aces.api.Validator;
 import zju.cst.aces.api.impl.LoggerImpl;
 import zju.cst.aces.api.Logger;
+import zju.cst.aces.api.impl.ValidatorImpl;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -75,6 +77,7 @@ public class Config {
     public OkHttpClient client;
     public static AtomicInteger sharedInteger = new AtomicInteger(0);
     public static Map<String, Map<String, String>> classMapping;
+    public Validator validator;
 
     public static class ConfigBuilder {
         public String date;
@@ -125,6 +128,7 @@ public class Config {
                 .writeTimeout(5, TimeUnit.MINUTES)
                 .readTimeout(5, TimeUnit.MINUTES)
                 .build();
+        public Validator validator;
 
         public ConfigBuilder(Project project) {
             this.date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")).toString();
@@ -143,6 +147,8 @@ public class Config {
             this.classNameMapPath = this.tmpOutput.resolve("classNameMapping.json");
             this.historyPath = this.tmpOutput.resolve("history" + this.date);
             this.symbolFramePath = this.tmpOutput.resolve("symbolFrames.json");
+            this.validator = new ValidatorImpl(this.testOutput, this.compileOutputPath,
+                    this.project.getBasedir().toPath().resolve("target"), this.classPaths);
         }
 
         public ConfigBuilder maxThreads(int maxThreads) {
@@ -178,6 +184,8 @@ public class Config {
             this.classNameMapPath = this.tmpOutput.resolve("classNameMapping.json");
             this.historyPath = this.tmpOutput.resolve("history" + this.date);
             this.symbolFramePath = this.tmpOutput.resolve("symbolFrames.json");
+            this.validator = new ValidatorImpl(this.testOutput, this.compileOutputPath,
+                    this.project.getBasedir().toPath().resolve("target"), this.classPaths);
             return this;
         }
 
@@ -205,6 +213,8 @@ public class Config {
 
         public ConfigBuilder classPaths(List<String> classPaths) {
             this.classPaths = classPaths;
+            this.validator = new ValidatorImpl(this.testOutput, this.compileOutputPath,
+                    this.project.getBasedir().toPath().resolve("target"), this.classPaths);
             return this;
         }
 
@@ -424,6 +434,10 @@ public class Config {
                     .build();
         }
 
+        public void setValidator(Validator validator) {
+            this.validator = validator;
+        }
+
         public Config build() {
             Config config = new Config();
             config.setDate(this.date);
@@ -471,6 +485,7 @@ public class Config {
             config.setPort(this.port);
             config.setClient(this.client);
             config.setLog(this.log);
+            config.setValidator(this.validator);
             return config;
         }
     }

@@ -10,6 +10,8 @@ import zju.cst.aces.dto.PromptInfo;
 import zju.cst.aces.util.TestCompiler;
 
 import java.nio.file.Path;
+import java.util.List;
+
 import zju.cst.aces.api.Validator;
 
 @Data
@@ -17,8 +19,8 @@ public class ValidatorImpl implements Validator {
 
     TestCompiler compiler;
 
-    public ValidatorImpl(Config config) {
-        this.compiler = new TestCompiler(config);
+    public ValidatorImpl(Path testOutputPath, Path compileOutputPath, Path targetPath, List<String> classpathElements) {
+        this.compiler = new TestCompiler(testOutputPath, compileOutputPath, targetPath, classpathElements);
     }
 
     @Override
@@ -33,17 +35,13 @@ public class ValidatorImpl implements Validator {
 
     @Override
     public boolean semanticValidate(String code, String className, Path outputPath, PromptInfo promptInfo) {
-        setCode(code);
+        compiler.setCode(code);
         return compiler.compileTest(className, outputPath, promptInfo);
     }
 
     @Override
     public boolean runtimeValidate(String fullTestName) {
         return compiler.executeTest(fullTestName).getTestsFailedCount() == 0;
-    }
-
-    public void setCode(String code) {
-        compiler.setCode(code);
     }
 
     @Override

@@ -7,6 +7,7 @@ import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
 import org.codehaus.plexus.util.FileUtils;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.platform.engine.TestEngine;
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
@@ -15,7 +16,6 @@ import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
-import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.PromptInfo;
 import zju.cst.aces.dto.TestMessage;
 import zju.cst.aces.parser.ProjectParser;
@@ -39,40 +39,44 @@ import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 
 @Data
 public class TestCompiler {
+    public static String OS = System.getProperty("os.name").toLowerCase();
     public static File srcTestFolder = new File("src" + File.separator + "test" + File.separator + "java");
     public static File testBackupFolder = new File("src" + File.separator + "backup");
-    public static Config config;
+    public static File testOutputFolder;
     public static File buildFolder;
+    public static File targetTestsFolder;
     public static File buildBackupFolder;
+    public List<String> classpathElements;
     public String testName;
     public String fullTestName;
     public String code;
 
-    public TestCompiler(Config config) {
-        this.config = config;
+    public TestCompiler(Path testOutputPath, Path compileOutputPath, Path targetPath, List<String> classpathElements) {
         this.code = "";
-        this.buildFolder = config.getCompileOutputPath().toFile();
-        this.buildBackupFolder = config.project.getBasedir().toPath().resolve("target").resolve("test-classes-backup").toFile();
+        this.testOutputFolder = testOutputPath.toFile();
+        this.buildFolder = compileOutputPath.toFile();
+        this.buildBackupFolder = targetPath.resolve("test-classes-backup").toFile();
+        this.targetTestsFolder = targetPath.resolve("test-classes").toFile();
+        this.classpathElements = classpathElements;
     }
-    public TestCompiler(Config config, String code) {
-        this.config = config;
+    public TestCompiler(String code, Path testOutputPath, Path compileOutputPath, Path targetPath, List<String> classpathElements) {
         this.code = code;
-        this.buildFolder = config.getCompileOutputPath().toFile();
-        this.buildBackupFolder = config.project.getBasedir().toPath().resolve("target").resolve("test-classes-backup").toFile();
+        this.testOutputFolder = testOutputPath.toFile();
+        this.buildFolder = compileOutputPath.toFile();
+        this.buildBackupFolder = targetPath.resolve("test-classes-backup").toFile();
+        this.targetTestsFolder = targetPath.resolve("test-classes").toFile();
+        this.classpathElements = classpathElements;
     }
 
     public TestExecutionSummary executeTest(String fullTestName) {
-        File file = config.getCompileOutputPath().toFile();
         this.fullTestName = fullTestName;
         try {
-            List<String> classpathElements = new ArrayList<>();
-            classpathElements.addAll(config.getClassPaths());
             List<URL> urls = new ArrayList<>();
-            for (String classpath : classpathElements) {
+            for (String classpath : this.classpathElements) {
                 URL url = new File(classpath).toURI().toURL();
                 urls.add(url);
             }
-            urls.add(file.toURI().toURL());
+            urls.add(this.buildFolder.toURI().toURL());
             ClassLoader classLoader = new URLClassLoader(urls.toArray(new URL[0]), getClass().getClassLoader());
 
             // Use the ServiceLoader API to load TestEngine implementations
@@ -127,7 +131,7 @@ public class TestCompiler {
             };
 
             Iterable<? extends JavaFileObject> compilationUnits = Arrays.asList(sourceJavaFileObject);
-            Iterable<String> options = Arrays.asList("-classpath", String.join(config.getOS().contains("win") ? ";" : ":", config.getClassPaths()),
+            Iterable<String> options = Arrays.asList("-classpath", String.join(this.OS.contains("win") ? ";" : ":", this.classpathElements),
                     "-d", buildFolder.toPath().toString());
 
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
@@ -204,7 +208,7 @@ public class TestCompiler {
             try {
                 FileUtils.copyDirectoryStructure(srcTestFolder, testBackupFolder);
                 FileUtils.deleteDirectory(srcTestFolder);
-                FileUtils.copyDirectoryStructure(config.getTestOutput().toFile(), srcTestFolder);
+                FileUtils.copyDirectoryStructure(this.testOutputFolder, srcTestFolder);
             } catch (IOException e) {
                 throw new RuntimeException("In TestCompiler.copyAndBackupTestFolder: " + e);
             }
@@ -215,7 +219,7 @@ public class TestCompiler {
      * Copy compiled generated tests to target/test-classes and move the original folder to a backup folder
      */
     public void copyAndBackupCompiledTest() {
-        File target = config.project.getBasedir().toPath().resolve("target/test-classes").toFile();
+        File target = this.targetTestsFolder;
         try {
             if (!buildBackupFolder.exists() && target.exists()) {
                 FileUtils.copyDirectoryStructure(target, buildBackupFolder);
@@ -243,7 +247,7 @@ public class TestCompiler {
             }
         }
         if (buildBackupFolder.exists()) {
-            File target = config.project.getBasedir().toPath().resolve("target/test-classes").toFile();
+            File target = this.targetTestsFolder;
             try {
                 if (target.exists()) {
                     FileUtils.deleteDirectory(target);

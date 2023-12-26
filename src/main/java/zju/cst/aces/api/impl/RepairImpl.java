@@ -36,11 +36,11 @@ public class RepairImpl implements Repair {
     }
 
     @Override
-    public String LLMBasedRepair(Validator validator, String code, int rounds) {
+    public String LLMBasedRepair(String code, int rounds) {
         PromptInfo promptInfo = promptConstructorImpl.getPromptInfo();
         promptInfo.setUnitTest(code);
         String fullClassName = promptInfo.getClassInfo().getPackageName() + "." + promptInfo.getClassInfo().getClassName();
-        if (MethodRunner.runTest(config, validator, promptConstructorImpl.getFullTestName(), promptInfo, rounds)) {
+        if (MethodRunner.runTest(config, promptConstructorImpl.getFullTestName(), promptInfo, rounds)) {
             this.success = true;
             return code;
         }
@@ -61,11 +61,11 @@ public class RepairImpl implements Repair {
     }
 
     @Override
-    public String LLMBasedRepair(Validator validator, String code) {
+    public String LLMBasedRepair(String code) {
         PromptInfo promptInfo = promptConstructorImpl.getPromptInfo();
         promptInfo.setUnitTest(code);
         String fullClassName = promptInfo.getClassInfo().getPackageName() + "." + promptInfo.getClassInfo().getClassName();
-        if (MethodRunner.runTest(config, validator, promptConstructorImpl.getFullTestName(), promptInfo, 0)) {
+        if (MethodRunner.runTest(config, promptConstructorImpl.getFullTestName(), promptInfo, 0)) {
             config.getLog().info("Test for method < " + promptInfo.methodInfo.methodName + " > doesn't need repair");
             return code;
         }

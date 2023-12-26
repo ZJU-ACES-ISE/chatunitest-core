@@ -31,16 +31,10 @@ import java.util.stream.Collectors;
 public class MethodRunner extends ClassRunner {
 
     public MethodInfo methodInfo;
-    public Validator validator;
 
     public MethodRunner(Config config, String fullClassName, MethodInfo methodInfo) throws IOException {
         super(config, fullClassName);
         this.methodInfo = methodInfo;
-        this.validator = new ValidatorImpl(config);
-    }
-
-    public void setValidator(Validator validator) {
-        this.validator = validator;
     }
 
     @Override
@@ -164,7 +158,7 @@ public class MethodRunner extends ClassRunner {
         promptInfo.setUnitTest(code);
 
         record.setCode(code);
-        repair.LLMBasedRepair(this.validator, code, record.getRound());
+        repair.LLMBasedRepair(code, record.getRound());
         if (repair.isSuccess()) {
             record.setHasError(false);
             return true;
@@ -205,11 +199,11 @@ public class MethodRunner extends ClassRunner {
         code = repair.ruleBasedRepair(code);
         promptInfo.setUnitTest(code);
 
-        repair.LLMBasedRepair(this.validator, code);
+        repair.LLMBasedRepair(code);
         return repair.isSuccess();
     }
 
-    public static boolean runTest(Config config, Validator validator, String fullTestName, PromptInfo promptInfo, int rounds) {
+    public static boolean runTest(Config config, String fullTestName, PromptInfo promptInfo, int rounds) {
         String testName = fullTestName.substring(fullTestName.lastIndexOf(".") + 1);
         Path savePath = config.getTestOutput().resolve(fullTestName.replace(".", File.separator) + ".java");
         if (promptInfo.getTestPath() == null) {
@@ -225,7 +219,7 @@ public class MethodRunner extends ClassRunner {
         // Compilation
         Path compilationErrorPath = config.getErrorOutput().resolve(testName + "_CompilationError_" + rounds + ".txt");
         Path executionErrorPath = config.getErrorOutput().resolve(testName + "_ExecutionError_" + rounds + ".txt");
-        boolean compileResult = validator.semanticValidate(code, testName, compilationErrorPath, promptInfo);
+        boolean compileResult = config.getValidator().semanticValidate(code, testName, compilationErrorPath, promptInfo);
         if (!compileResult) {
             config.getLog().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > compilation failed round " + rounds);
             return false;
@@ -237,15 +231,15 @@ public class MethodRunner extends ClassRunner {
         }
 
         // Execution
-        TestExecutionSummary summary = validator.execute(fullTestName);
+        TestExecutionSummary summary = config.getValidator().execute(fullTestName);
         if (summary.getTestsFailedCount() > 0) {
             String testProcessed = testProcessor.removeErrorTest(promptInfo, summary);
 
             // Remove errors successfully, recompile and re-execute test
             if (testProcessed != null) {
                 config.getLog().debug("[Original Test]:\n" + code);
-                if (validator.semanticValidate(testProcessed, testName, compilationErrorPath, null)) {
-                    if (validator.runtimeValidate(fullTestName)) {
+                if (config.getValidator().semanticValidate(testProcessed, testName, compilationErrorPath, null)) {
+                    if (config.getValidator().runtimeValidate(fullTestName)) {
                         exportTest(testProcessed, savePath);
                         config.getLog().debug("[Processed Test]:\n" + testProcessed);
                         config.getLog().info("Processed test for method < " + promptInfo.getMethodInfo().getMethodName() + " > generated successfully round " + rounds);
