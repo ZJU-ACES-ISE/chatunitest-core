@@ -147,6 +147,7 @@ public class Config {
             this.classNameMapPath = this.tmpOutput.resolve("classNameMapping.json");
             this.historyPath = this.tmpOutput.resolve("history" + this.date);
             this.symbolFramePath = this.tmpOutput.resolve("symbolFrames.json");
+            this.testOutput = project.getBasedir().toPath().resolve("chatunitest-tests");
             this.validator = new ValidatorImpl(this.testOutput, this.compileOutputPath,
                     this.project.getBasedir().toPath().resolve("target"), this.classPaths);
         }
