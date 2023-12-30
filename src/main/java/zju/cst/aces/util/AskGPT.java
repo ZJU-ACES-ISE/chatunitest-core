@@ -7,6 +7,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import zju.cst.aces.api.config.Config;
+import zju.cst.aces.api.config.ModelConfig;
 import zju.cst.aces.dto.Message;
 
 import java.io.IOException;
@@ -16,14 +17,12 @@ import java.util.Map;
 import java.util.Objects;
 
 public class AskGPT {
-    private static String URL;
     private static final MediaType MEDIA_TYPE = MediaType.parse("application/json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     public Config config;
 
     public AskGPT(Config config) {
         this.config = config;
-        this.URL = config.getUrl();
     }
 
     public Response askChatGPT(List<Message> messages) {
@@ -38,16 +37,18 @@ public class AskGPT {
 //                    payload.put("max_tokens", 8092);
 //                }
 
+                ModelConfig modelConfig = config.getModel().getDefaultConfig();
+
                 payload.put("messages", messages);
-                payload.put("model", config.getModel());
-                payload.put("temperature", config.getTemperature());
-                payload.put("top_p", config.getTopP());
-                payload.put("frequency_penalty", config.getFrequencyPenalty());
-                payload.put("presence_penalty", config.getPresencePenalty());
+                payload.put("model", modelConfig.getModelName());
+                payload.put("temperature", modelConfig.getTemperature());
+                payload.put("frequency_penalty", modelConfig.getFrequencyPenalty());
+                payload.put("presence_penalty", modelConfig.getPresencePenalty());
+                payload.put("max_tokens", config.getMaxResponseTokens());
                 String jsonPayload = GSON.toJson(payload);
 
                 RequestBody body = RequestBody.create(MEDIA_TYPE, jsonPayload);
-                Request request = new Request.Builder().url(URL).post(body).addHeader("Content-Type", "application/json").addHeader("Authorization", "Bearer " + apiKey).build();
+                Request request = new Request.Builder().url(modelConfig.getUrl()).post(body).addHeader("Content-Type", "application/json").addHeader("Authorization", "Bearer " + apiKey).build();
 
                 response = config.getClient().newCall(request).execute();
                 if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);

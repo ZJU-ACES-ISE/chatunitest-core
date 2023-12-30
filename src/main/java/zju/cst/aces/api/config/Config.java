@@ -53,10 +53,11 @@ public class Config {
     public int testNumber;
     public int maxRounds;
     public int maxPromptTokens;
+    public int maxResponseTokens;
     public int minErrorTokens;
     public int sleepTime;
     public int dependencyDepth;
-    public String model;
+    public Model model;
     public Double temperature;
     public int topP;
     public int frequencyPenalty;
@@ -103,10 +104,11 @@ public class Config {
         public int testNumber = 5;
         public int maxRounds = 5;
         public int maxPromptTokens = 2600;
+        public int maxResponseTokens = 1024;
         public int minErrorTokens = 500;
         public int sleepTime = 0;
         public int dependencyDepth = 1;
-        public String model = "gpt-3.5-turbo";
+        public Model model = Model.GPT_3_5_TURBO;
         public Double temperature = 0.5;
         public int topP = 1;
         public int frequencyPenalty = 0;
@@ -134,6 +136,13 @@ public class Config {
             this.date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")).toString();
             this.project = project;
             this.log = new LoggerImpl();
+
+            this.maxPromptTokens = this.model.getDefaultConfig().getContextLength() * 2 / 3;
+            this.maxResponseTokens = 1024;
+            this.minErrorTokens = this.maxPromptTokens * 1 / 3 - this.maxResponseTokens;
+            if (this.minErrorTokens < 0) {
+                this.minErrorTokens = 512;
+            }
 
             Project parent = project.getParent();
             while(parent != null && parent.getBasedir() != null) {
@@ -275,10 +284,11 @@ public class Config {
         }
 
         public ConfigBuilder url(String url) {
-            if (!this.model.contains("gpt-4") && !this.model.contains("gpt-3.5") && url.equals("https://api.openai.com/v1/chat/completions")) {
+            if (!this.model.getModelName().contains("gpt-4") && !this.model.getModelName().contains("gpt-3.5") && url.equals("https://api.openai.com/v1/chat/completions")) {
                 throw new RuntimeException("Invalid url for model: " + this.model + ". Please configure the url in plugin configuration.");
             }
             this.url = url;
+            this.model.getDefaultConfig().setUrl(url);
             return this;
         }
 
@@ -302,6 +312,11 @@ public class Config {
             return this;
         }
 
+        public ConfigBuilder maxResponseTokens(int maxResponseTokens) {
+            this.maxResponseTokens = maxResponseTokens;
+            return this;
+        }
+
         public ConfigBuilder minErrorTokens(int minErrorTokens) {
             this.minErrorTokens = minErrorTokens;
             return this;
@@ -317,8 +332,14 @@ public class Config {
             return this;
         }
 
-        public ConfigBuilder model(String model) {
+        public ConfigBuilder model(Model model) {
             this.model = model;
+            this.maxPromptTokens = this.model.getDefaultConfig().getContextLength() * 2 / 3;
+            this.maxResponseTokens = 1024;
+            this.minErrorTokens = this.maxPromptTokens * 1 / 2 - this.maxResponseTokens;
+            if (this.minErrorTokens < 0) {
+                this.minErrorTokens = 512;
+            }
             return this;
         }
 
@@ -514,6 +535,12 @@ public class Config {
         log.info(" TmpOutput Path >>> " + this.getTmpOutput());
         log.info(" Prompt path >>> " + this.getPromptPath());
         log.info(" Example path >>> " + this.getExamplePath());
+        log.info(" --- ");
+        log.info(" Model >>> " + this.getModel());
+        log.info(" Url >>> " + this.getUrl());
+        log.info(" MaxPromptTokens >>> " + this.getMaxPromptTokens());
+        log.info(" MaxResponseTokens >>> " + this.getMaxResponseTokens());
+        log.info(" MinErrorTokens >>> " + this.getMinErrorTokens());
         log.info(" MaxThreads >>> " + this.getMaxThreads());
         log.info(" TestNumber >>> " + this.getTestNumber());
         log.info(" MaxRounds >>> " + this.getMaxRounds());
