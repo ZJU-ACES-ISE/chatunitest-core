@@ -1,5 +1,8 @@
 package zju.cst.aces.api.config;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 public enum Model {
     GPT_3_5_TURBO("gpt-3.5-turbo", new ModelConfig.Builder()
             .withModelName("gpt-3.5-turbo")
@@ -49,6 +52,7 @@ public enum Model {
                 return model;
             }
         }
-        throw new IllegalArgumentException("No Model with name " + modelName);
+        throw new IllegalArgumentException("No Model with name " + modelName +
+                "\nSupport models: " + Arrays.stream(Model.values()).map(Model::getModelName).collect(Collectors.joining(", ")));
     }
 }

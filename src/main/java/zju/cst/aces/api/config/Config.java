@@ -332,8 +332,8 @@ public class Config {
             return this;
         }
 
-        public ConfigBuilder model(Model model) {
-            this.model = model;
+        public ConfigBuilder model(String model) {
+            this.model = Model.fromString(model);
             this.maxPromptTokens = this.model.getDefaultConfig().getContextLength() * 2 / 3;
             this.maxResponseTokens = 1024;
             this.minErrorTokens = this.maxPromptTokens * 1 / 2 - this.maxResponseTokens;
