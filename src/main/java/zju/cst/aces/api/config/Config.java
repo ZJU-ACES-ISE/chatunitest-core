@@ -485,6 +485,7 @@ public class Config {
             config.setTestNumber(this.testNumber);
             config.setMaxRounds(this.maxRounds);
             config.setMaxPromptTokens(this.maxPromptTokens);
+            config.setMaxResponseTokens(this.maxResponseTokens);
             config.setMinErrorTokens(this.minErrorTokens);
             config.setSleepTime(this.sleepTime);
             config.setDependencyDepth(this.dependencyDepth);
