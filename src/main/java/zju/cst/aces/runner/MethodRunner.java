@@ -139,6 +139,7 @@ public class MethodRunner extends ClassRunner {
 
         Response response = generator.chat(config, prompt);
         String content = generator.getContentByResponse(response);
+        config.getLog().debug("[Response]:\n" + content);
         String code = generator.extractCodeByContent(content);
 
         record.setPrompt(prompt);
