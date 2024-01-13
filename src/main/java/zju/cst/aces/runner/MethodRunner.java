@@ -10,12 +10,9 @@ import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.ChatGenerator;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
 import zju.cst.aces.api.impl.RepairImpl;
-import zju.cst.aces.api.impl.ValidatorImpl;
 import zju.cst.aces.api.impl.obfuscator.Obfuscator;
 import zju.cst.aces.dto.*;
-import zju.cst.aces.prompt.PromptTemplate;
-import zju.cst.aces.util.AskGPT;
-import zju.cst.aces.util.TestCompiler;
+import zju.cst.aces.util.CodeExtractor;
 import zju.cst.aces.util.TestProcessor;
 
 import java.io.BufferedWriter;
@@ -155,7 +152,12 @@ public class MethodRunner extends ClassRunner {
             code = obfuscator.deobfuscateJava(code);
         }
 
-        code = repair.ruleBasedRepair(code);
+        if (CodeExtractor.isTestMethod(code)) {
+            TestSkeleton skeleton = new TestSkeleton(promptInfo); // test skeleton to wrap a test method
+            code = skeleton.build(code);
+        } else {
+            code = repair.ruleBasedRepair(code);
+        }
         promptInfo.setUnitTest(code);
 
         record.setCode(code);

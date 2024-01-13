@@ -3,28 +3,29 @@ package zju.cst.aces.util;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class CodeExtractor {
-    private static JavaParser java_parser = new JavaParser();
     private boolean hasCode;
     private boolean hasSyntacticError;
     private String extractedCode;
 
-    public CodeExtractor(String code) {
-        extractedCode = extract(code);
+    public CodeExtractor(String text) {
+        extractedCode = extract(text);
     }
 
-    public String extract(String code) {
+    public String extract(String text) {
         String ec = "";
 
         // If the string is valid code, return true
-        if (isSyntacticCorrect(code)) {
+        if (isSyntacticCorrect(text)) {
             hasCode = true;
-            ec = code;
+            ec = text;
             hasSyntacticError = false;
         } else {
             hasCode = false;
@@ -32,35 +33,44 @@ public class CodeExtractor {
 
             // Define regex pattern to match the code blocks
             Pattern pattern = Pattern.compile("```[java]*([\\s\\S]*?)```");
-            Matcher matcher = pattern.matcher(code);
+            Matcher matcher = pattern.matcher(text);
 
             // Find all matches in the text
             while (matcher.find()) {
                 String match = matcher.group(1).trim();
-                if ((match.contains("@Test") || match.contains("@ParameterizedTest")) && match.contains("class") && match.contains("import")) {
-                    ec= syntacticCheck(match);
-                    hasSyntacticError = !match.equals(ec);
-                    if (!ec.equals("")) {
-                        hasCode = true;
-                        break;
+                if (isTest(match)) {
+                    if (match.contains("class") && match.contains("import")) { // class
+                        ec= syntacticCheck(match);
+                        hasSyntacticError = !match.equals(ec);
+                        if (!ec.equals("")) {
+                            hasCode = true;
+                            break;
+                        }
+                    } else if (isTestMethod(match)) { // method
+                        ec = syntacticCheck(match);
+                        hasSyntacticError = !match.equals(ec);
+                        if (!ec.equals("")) {
+                            hasCode = true;
+                            break;
+                        }
                     }
                 }
             }
 
             if (!hasCode) {
-                if (code.contains("```java")) {
-                    String separateString = code.split("```java")[1];
-                    if (separateString.contains("@Test") || separateString.contains("@ParameterizedTest")) {
+                if (text.contains("```java")) {
+                    String separateString = text.split("```java")[1];
+                    if (isTest(separateString)) {
                         ec = syntacticCheck(separateString);
                         hasSyntacticError = !separateString.equals(ec);
                         if (!ec.equals("")) {
                             hasCode = true;
                         }
                     }
-                } else if (code.contains("```")) {
-                    String[] separateStrings = code.split("```");
+                } else if (text.contains("```")) {
+                    String[] separateStrings = text.split("```");
                     for (String separateString : separateStrings) {
-                        if (separateString.contains("@Test") || separateString.contains("@ParameterizedTest")) {
+                        if (isTest(separateString)) {
                             ec = syntacticCheck(separateString);
                             hasSyntacticError = !separateString.equals(ec);
                             if (!ec.equals("")) {
@@ -72,7 +82,7 @@ public class CodeExtractor {
                 } else {
                     // Define boundary
                     String[] allowed = {"import", "packages", "", "@"};
-                    String[] codeLines = code.split("\\n");
+                    String[] codeLines = text.split("\\n");
                     int start = -1, anchor = -1, end = -1;
                     boolean[] allowedLines = new boolean[codeLines.length];
                     Map<Integer, Integer> leftBrace = new HashMap<>();
@@ -134,11 +144,49 @@ public class CodeExtractor {
         return ec;
     }
 
-    private boolean isSyntacticCorrect(String code) {
+    private static boolean isSyntacticCorrect(String code) {
+        return checkFileCorrect(code) || checkClassCorrect(code) || checkMethodCorrect(code);
+    }
+
+    private static boolean checkMethodCorrect(String code) {
+        try {
+            MethodDeclaration md = StaticJavaParser.parseMethodDeclaration(code);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static boolean checkClassCorrect(String code) {
+        try {
+            ClassOrInterfaceType cd = StaticJavaParser.parseClassOrInterfaceType(code);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static boolean checkFileCorrect(String code) {
         try {
             CompilationUnit cu = StaticJavaParser.parse(code);
             return true;
         } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static boolean isTest(String code) {
+        if (code.contains("@Test") || code.contains("@ParameterizedTest")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean isTestMethod(String code) {
+        if (isTest(code)) {
+            return checkMethodCorrect(code);
+        } else {
             return false;
         }
     }

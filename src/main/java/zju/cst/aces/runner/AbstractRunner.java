@@ -94,6 +94,8 @@ public abstract class AbstractRunner {
         cu.addImport("org.junit.jupiter.api", false, true);
         cu.addImport("org.mockito.Mockito", true, true);
         cu.addImport("org.junit.jupiter.api.Assertions", true, true);
+        cu.addImport("org.junit.jupiter.api.extension.ExtendWith", false, false);
+        cu.addImport("org.mockito.junit.jupiter.MockitoExtension", false, false);
         imports.forEach(i -> cu.addImport(i.replace("import ", "").replace(";", "")));
         return cu.toString();
     }
