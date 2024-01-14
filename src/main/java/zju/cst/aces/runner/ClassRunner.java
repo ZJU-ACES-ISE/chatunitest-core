@@ -3,6 +3,7 @@ package zju.cst.aces.runner;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 import zju.cst.aces.api.config.Config;
+import zju.cst.aces.util.Counter;
 import zju.cst.aces.util.TestClassMerger;
 
 import java.io.File;
@@ -35,7 +36,7 @@ public class ClassRunner extends AbstractRunner {
         } else {
             for (String mSig : classInfo.methodSigs.keySet()) {
                 MethodInfo methodInfo = getMethodInfo(config, classInfo, mSig);
-                if (!filter(methodInfo)) {
+                if (!Counter.filter(methodInfo)) {
                     config.getLog().info("Skip method: " + mSig + " in class: " + fullClassName);
                     continue;
                 }
@@ -58,7 +59,7 @@ public class ClassRunner extends AbstractRunner {
                     if (methodInfo == null) {
                         return "No parsed info found for " + mSig + " in " + fullClassName;
                     }
-                    if (!filter(methodInfo)) {
+                    if (!Counter.filter(methodInfo)) {
                         return "Skip method: " + mSig + " in class: " + fullClassName;
                     }
                     new MethodRunner(config, fullClassName, methodInfo).start();
@@ -85,13 +86,5 @@ public class ClassRunner extends AbstractRunner {
         }
 
         executor.shutdown();
-    }
-
-    private boolean filter(MethodInfo methodInfo) {
-        if (methodInfo == null
-                || methodInfo.isConstructor || methodInfo.isGetSet || methodInfo.isBoolean || !methodInfo.isPublic) {
-            return false;
-        }
-        return true;
     }
 }

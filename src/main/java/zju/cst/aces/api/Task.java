@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import zju.cst.aces.api.Logger;
+import zju.cst.aces.util.Counter;
 
 public class Task {
 
@@ -135,7 +136,7 @@ public class Task {
                     String fullClassName = getFullClassName(config, className);
                     log.info("\n==========================\n[ChatUniTest] Generating tests for class < " + className + " > ...");
                     ClassRunner runner = new ClassRunner(config, fullClassName);
-                    if (!filter(runner.classInfo)) {
+                    if (!Counter.filter(runner.classInfo)) {
                         config.getLog().info("Skip class: " + classPath);
                         continue;
                     }
@@ -161,7 +162,7 @@ public class Task {
                         String fullClassName = getFullClassName(config, className);
                         log.info("\n==========================\n[ChatUniTest] Generating tests for class < " + className + " > ...");
                         ClassRunner runner = new ClassRunner(config, fullClassName);
-                        if (!filter(runner.classInfo)) {
+                        if (!Counter.filter(runner.classInfo)) {
                             return "Skip class: " + classPath;
                         }
                         runner.start();
@@ -229,12 +230,5 @@ public class Task {
                     "The project is not compiled to the target directory. " +
                     "Please run 'mvn install' first.");
         }
-    }
-
-    private boolean filter(ClassInfo classInfo) {
-        if (!classInfo.isPublic || classInfo.isAbstract || classInfo.isInterface) {
-            return false;
-        }
-        return true;
     }
 }
