@@ -109,10 +109,13 @@ public class TestProcessor {
             promptInfo.getCorrectTests().keySet().forEach(className -> {
                 cu.getClassByName(className).ifPresent(classOrInterfaceDeclaration -> {
                     promptInfo.getCorrectTests().get(className).forEach(methodDeclaration -> {
-                        classOrInterfaceDeclaration.addMember(methodDeclaration);
+                        if (classOrInterfaceDeclaration.getMethodsByName(methodDeclaration.getNameAsString()).isEmpty()) {
+                            classOrInterfaceDeclaration.addMember(methodDeclaration);
+                        }
                     });
                 });
             });
+            promptInfo.getCorrectTests().clear();
             result = cu.toString();
         } catch (Exception e) {
             System.out.println("In TestProcessor.addCorrectTest: " + e);

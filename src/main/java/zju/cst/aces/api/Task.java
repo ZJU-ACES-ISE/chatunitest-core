@@ -64,7 +64,7 @@ public class Task {
                 try {
                     new MethodRunner(config, fullClassName, methodInfo).start();
                 } catch (Exception e) {
-                    log.error("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId());
+                    log.error("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId() + "\n" + e.getMessage());
                 }
             } else {
                 for (String mSig : classInfo.methodSigs.keySet()) {
@@ -76,7 +76,7 @@ public class Task {
                         try {
                             new MethodRunner(config, fullClassName, methodInfo).start(); // generate for all methods with the same name;
                         } catch (Exception e) {
-                            log.error("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId());
+                            log.error("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId() + "\n" + e.getMessage());
                         }
                     }
                 }
