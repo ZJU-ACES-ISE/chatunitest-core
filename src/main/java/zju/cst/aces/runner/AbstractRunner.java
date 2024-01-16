@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -273,12 +274,16 @@ public abstract class AbstractRunner {
     }
 
     public static ClassInfo getClassInfo(Config config, String className) throws IOException {
-        String fullClassName = Task.getFullClassName(config, className);
-        Path classInfoPath = config.getParseOutput().resolve(fullClassName.replace(".", File.separator)).resolve("class.json");
-        if (!classInfoPath.toFile().exists()) {
+        try {
+            String fullClassName = Task.getFullClassName(config, className);
+            Path classInfoPath = config.getParseOutput().resolve(fullClassName.replace(".", File.separator)).resolve("class.json");
+            if (!classInfoPath.toFile().exists()) {
+                return null;
+            }
+            return GSON.fromJson(Files.readString(classInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+        } catch (InvalidPathException e) {
             return null;
         }
-        return GSON.fromJson(Files.readString(classInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
     }
 
     public static MethodInfo getMethodInfo(Config config, ClassInfo info, String mSig) throws IOException {
