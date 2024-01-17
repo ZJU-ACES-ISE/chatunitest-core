@@ -423,7 +423,11 @@ public class ClassParser {
                     String dependentType = p.resolve().getType().asArrayType().getComponentType().describe();
                     dependentMethods.put(dependentType, new HashSet<String>());
                     continue;
-                } else {
+                } else if (p.getTypeAsString().split("<")[0].endsWith("Map")
+                        || p.getTypeAsString().split("<")[0].endsWith("List")
+                        || p.getTypeAsString().split("<")[0].endsWith("Set")) {
+                    continue;
+                } else if (p.getType().getChildNodes().size() == 1) {
                     String dependentType = p.resolve().describeType();
                     dependentMethods.put(dependentType, new HashSet<String>());
                 }
