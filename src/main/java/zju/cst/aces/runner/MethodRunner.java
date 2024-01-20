@@ -235,6 +235,10 @@ public class MethodRunner extends ClassRunner {
 
         // Execution
         TestExecutionSummary summary = config.getValidator().execute(fullTestName);
+        if (summary.getTestsSucceededCount() == 0) {
+            config.getLog().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > execution failed round " + rounds);
+            return false;
+        }
         if (summary.getTestsFailedCount() > 0) {
             String testProcessed = testProcessor.removeErrorTest(promptInfo, summary);
 
