@@ -114,6 +114,7 @@ public class ClassParser {
                 getConstructorDeps(cu, classNode));
 
         ci.setPublic(classNode.isPublic());
+//        ci.setPublic(!classNode.isPrivate() && !classNode.isProtected());
         ci.setAbstract(classNode.isAbstract());
         ci.setInterface(classNode.isInterface());
         ci.setCode(cu.toString(), classNode.toString());
