@@ -5,8 +5,10 @@ This repository contains the survey documents for the project.
 Here is the original report pdf: [ChatUniTest_Survey_Report.pdf](ChatUniTest_Survey_Report.pdf)
 
 ## Questionaire
+TBD
 
 ## Answers
+TBD
 
 ## Statistics
 
@@ -31,8 +33,6 @@ Here is the original report pdf: [ChatUniTest_Survey_Report.pdf](ChatUniTest_Sur
 - [Q7](q7.pdf)
 ![Q7](img/q7.jpg)
 
-- [Q8](q8.pdf)
-![Q8](img/q8.jpg)
 
 - [Q9](q9.pdf)
 ![Q9](img/q9.jpg)
