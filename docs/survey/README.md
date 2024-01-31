@@ -17,41 +17,41 @@ Here is the original report pdf in Chinese: [ChatUniTest_Survey_Report.pdf](Chat
 <table>
   <tr>
     <td>
-      <div>Q1</div>
+      <div><strong>Q1</strong></div>
       <img src="img/q1.jpg" width="100%"/>
     </td>
     <td>
-      <div>Q2</div>
+      <div><strong>Q2</strong></div>
       <img src="img/q2.jpg" width="94%"/>
     </td>
   </tr>
   <tr>
     <td>
-      <div>Q3</div>
+      <div><strong>Q3</strong></div>
       <img src="img/q3.jpg" width="100%"/>
     </td>
     <td>
-      <div>Q4</div>
+      <div><strong>Q4</strong></div>
       <img src="img/q4.jpg" width="94%"/>
     </td>
   </tr>
   <tr>
     <td>
-      <div>Q5</div>
+      <div><strong>Q5</strong></div>
       <img src="img/q5.jpg" width="100%"/>
     </td>
     <td>
-      <div>Q6</div>
+      <div><strong>Q6</strong></div>
       <img src="img/q6.jpg" width="94%"/>
     </td>
   </tr>
   <tr>
     <td>
-      <div>Q7</div>
+      <div><strong>Q7</strong></div>
       <img src="img/q7.jpg" width="100%"/>
     </td>
     <td>
-      <div>Q9</div>
+      <div><strong>Q9</strong></div>
       <img src="img/q9.jpg" width="94%"/>
     </td>
   </tr>
