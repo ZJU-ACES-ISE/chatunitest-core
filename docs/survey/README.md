@@ -6,13 +6,19 @@ Here is the original report pdf in Chinese: [ChatUniTest_Survey_Report.pdf](Chat
 
 ## Questionaire
 
+This is our questionnaire, containing all the questions and potential answer options we wanted to explore. 
+
 ![Questionaire](img/survey_table_1.jpg)
 
 ## Answers
 
+These are the participants' answers to our questions.
+
 ![Answers](img/survey_table_2.jpg)
 
 ## Statistics
+
+These are the results of our analysis of the collected responses, which can help us better understand and interpret the data.
 
 <table>
   <tr>
