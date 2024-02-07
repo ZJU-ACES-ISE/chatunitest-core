@@ -5,6 +5,7 @@ import okhttp3.Response;
 import zju.cst.aces.api.Repair;
 import zju.cst.aces.api.Validator;
 import zju.cst.aces.api.config.Config;
+import zju.cst.aces.dto.ChatResponse;
 import zju.cst.aces.dto.PromptInfo;
 import zju.cst.aces.runner.MethodRunner;
 
@@ -50,7 +51,7 @@ public class RepairImpl implements Repair {
             config.getLog().error("Exceed max prompt tokens: " + promptInfo.methodInfo.methodName + " Skipped.");
             return code;
         }
-        Response response = chat(config, promptConstructorImpl.getMessages());
+        ChatResponse response = chat(config, promptConstructorImpl.getMessages());
         String newcode = extractCodeByResponse(response);
         if (newcode.isEmpty()) {
             config.getLog().warn("Test for method < " + promptInfo.methodInfo.methodName + " > extract code failed");
@@ -76,7 +77,7 @@ public class RepairImpl implements Repair {
             config.getLog().error("Exceed max prompt tokens: " + promptInfo.methodInfo.methodName + " Skipped.");
             return code;
         }
-        Response response = chat(config, promptConstructorImpl.getMessages());
+        ChatResponse response = chat(config, promptConstructorImpl.getMessages());
         String newcode = extractCodeByResponse(response);
         if (newcode.isEmpty()) {
             config.getLog().warn("Test for method < " + promptInfo.methodInfo.methodName + " > extract code failed");

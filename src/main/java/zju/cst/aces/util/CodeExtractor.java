@@ -22,6 +22,18 @@ public class CodeExtractor {
     public String extract(String text) {
         String ec = "";
 
+        if (text.contains("<INFO>")) {
+            List<String> infoList = List.of(text.split("<INFO>"));
+            // reverse traverse the list
+            for (int i = infoList.size() - 1; i >= 0; i--) {
+                String info = infoList.get(i);
+                if (info.contains("```")) {
+                    text = info;
+                    break;
+                }
+            }
+        }
+
         // If the string is valid code, return true
         if (isSyntacticCorrect(text)) {
             hasCode = true;

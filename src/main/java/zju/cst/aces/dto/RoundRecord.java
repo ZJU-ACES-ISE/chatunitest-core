@@ -10,6 +10,8 @@ public class RoundRecord {
     public int round;
     public List<Message> prompt;
     public String response;
+    public int promptToken;
+    public int responseToken;
     public boolean hasCode;
     public String code;
     public boolean hasError;

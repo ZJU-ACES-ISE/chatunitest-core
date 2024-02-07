@@ -54,7 +54,7 @@ public class Runner {
         RoundRecord record = promptInfo.getRecords().get(rounds);
         record.setAttempt(num);
         MethodRunner mRunner = new MethodRunner(config, fullClassName, methodInfo);
-        if (mRunner.generateTest(generator, pc, repair, record)) {
+        if (mRunner.generateTest(pc, repair, record)) {
             mRunner.exportRecord(pc.getPromptInfo(), classInfo, num);
             return true;
         }
@@ -82,6 +82,6 @@ public class Runner {
         promptInfo.setTestPath(savePath);
 
         MethodRunner mRunner = new MethodRunner(config, fullClassName, methodInfo);
-        return mRunner.generateTest(generator, pc, repair);
+        return mRunner.generateTest(pc, repair);
     }
 }

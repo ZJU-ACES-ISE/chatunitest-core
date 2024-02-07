@@ -1,11 +1,6 @@
 package zju.cst.aces.runner;
 
-import lombok.Data;
-import okhttp3.Response;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
-import zju.cst.aces.api.PromptConstructor;
-import zju.cst.aces.api.Repair;
-import zju.cst.aces.api.Validator;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.ChatGenerator;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
@@ -88,7 +83,7 @@ public class MethodRunner extends ClassRunner {
         PromptConstructorImpl pc = new PromptConstructorImpl(config);
         RepairImpl repair = new RepairImpl(config, pc);
 
-        if (methodInfo.dependentMethods.size() > 0) {
+        if (!methodInfo.dependentMethods.isEmpty()) {
             pc.setPromptInfoWithDep(classInfo, methodInfo);
         } else {
             pc.setPromptInfoWithoutDep(classInfo, methodInfo);
@@ -110,7 +105,7 @@ public class MethodRunner extends ClassRunner {
             promptInfo.addRecord(new RoundRecord(rounds));
             RoundRecord record = promptInfo.getRecords().get(rounds);
             record.setAttempt(num);
-            if (generateTest(generator, pc, repair, record)) {
+            if (generateTest(pc, repair, record)) {
                 exportRecord(promptInfo, classInfo, record.getAttempt());
                 return true;
             }
@@ -119,7 +114,7 @@ public class MethodRunner extends ClassRunner {
         return false;
     }
 
-    public boolean generateTest(ChatGenerator generator, PromptConstructorImpl pc, RepairImpl repair, RoundRecord record) throws IOException {
+    public boolean generateTest(PromptConstructorImpl pc, RepairImpl repair, RoundRecord record) throws IOException {
         PromptInfo promptInfo = pc.getPromptInfo();
         Obfuscator obfuscator = new Obfuscator(config);
         PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
@@ -134,11 +129,13 @@ public class MethodRunner extends ClassRunner {
         }
         config.getLog().debug("[Prompt]:\n" + prompt.toString());
 
-        Response response = generator.chat(config, prompt);
-        String content = generator.getContentByResponse(response);
+        ChatResponse response = ChatGenerator.chat(config, prompt);
+        String content = ChatGenerator.getContentByResponse(response);
         config.getLog().debug("[Response]:\n" + content);
-        String code = generator.extractCodeByContent(content);
+        String code = ChatGenerator.extractCodeByContent(content);
 
+        record.setPromptToken(response.getUsage().getPromptTokens());
+        record.setResponseToken(response.getUsage().getCompletionTokens());
         record.setPrompt(prompt);
         record.setResponse(content);
         if (code.isEmpty()) {
@@ -171,7 +168,7 @@ public class MethodRunner extends ClassRunner {
         return false;
     }
 
-    public boolean generateTest(ChatGenerator generator, PromptConstructorImpl pc, RepairImpl repair) throws IOException {
+    public boolean generateTest(PromptConstructorImpl pc, RepairImpl repair) throws IOException {
         PromptInfo promptInfo = pc.getPromptInfo();
         Obfuscator obfuscator = new Obfuscator(config);
         PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
@@ -186,9 +183,9 @@ public class MethodRunner extends ClassRunner {
         }
         config.getLog().debug("[Prompt]:\n" + prompt.toString());
 
-        Response response = generator.chat(config, prompt);
-        String content = generator.getContentByResponse(response);
-        String code = generator.extractCodeByContent(content);
+        ChatResponse response = ChatGenerator.chat(config, prompt);
+        String content = ChatGenerator.getContentByResponse(response);
+        String code = ChatGenerator.extractCodeByContent(content);
 
         if (code.isEmpty()) {
             config.getLog().info("Test for method < " + methodInfo.methodName + " > extract code failed");
@@ -235,11 +232,7 @@ public class MethodRunner extends ClassRunner {
 
         // Execution
         TestExecutionSummary summary = config.getValidator().execute(fullTestName);
-        if (summary.getTestsSucceededCount() == 0) {
-            config.getLog().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > execution failed round " + rounds);
-            return false;
-        }
-        if (summary.getTestsFailedCount() > 0) {
+        if (summary.getTestsFailedCount() > 0 || summary.getTestsSucceededCount() == 0) {
             String testProcessed = testProcessor.removeErrorTest(promptInfo, summary);
 
             // Remove errors successfully, recompile and re-execute test
@@ -288,7 +281,7 @@ public class MethodRunner extends ClassRunner {
             BufferedWriter writer = new BufferedWriter(new FileWriter(outputPath.toFile()));
             writer.write(code);
             writer.write("\n--------------------------------------------\n");
-            writer.write(errors.stream().collect(Collectors.joining("\n")));
+            writer.write(String.join("\n", errors));
             writer.close();
         } catch (Exception e) {
             throw new RuntimeException("In TestCompiler.exportError: " + e);

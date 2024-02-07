@@ -8,10 +8,7 @@ import com.google.gson.GsonBuilder;
 import okhttp3.Response;
 import zju.cst.aces.api.Task;
 import zju.cst.aces.api.config.Config;
-import zju.cst.aces.dto.ClassInfo;
-import zju.cst.aces.dto.Message;
-import zju.cst.aces.dto.MethodInfo;
-import zju.cst.aces.dto.PromptInfo;
+import zju.cst.aces.dto.*;
 import zju.cst.aces.parser.ClassParser;
 import zju.cst.aces.prompt.PromptGenerator;
 import zju.cst.aces.util.CodeExtractor;
@@ -57,14 +54,11 @@ public abstract class AbstractRunner {
                 .collect(Collectors.joining("\n"));
     }
 
-    public static String parseResponse(Response response) {
+    public static String parseResponse(ChatResponse response) {
         if (response == null) {
             return "";
         }
-        Map<String, Object> body = GSON.fromJson(response.body().charStream(), Map.class);
-        String content = ((Map<String, String>) ((Map<String, Object>) ((ArrayList<?>) body.get("choices")).get(0)).get("message")).get("content");
-        response.close();
-        return content;
+        return response.getContent();
     }
 
     public static void exportTest(String code, Path savePath) {

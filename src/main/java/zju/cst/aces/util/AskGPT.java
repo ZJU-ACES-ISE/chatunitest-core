@@ -8,13 +8,13 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.config.ModelConfig;
+import zju.cst.aces.dto.ChatResponse;
 import zju.cst.aces.dto.Message;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class AskGPT {
     private static final MediaType MEDIA_TYPE = MediaType.parse("application/json");
@@ -25,7 +25,7 @@ public class AskGPT {
         this.config = config;
     }
 
-    public Response askChatGPT(List<Message> messages) {
+    public ChatResponse askChatGPT(List<Message> messages) {
         String apiKey = config.getRandomKey();
         int maxTry = 5;
         while (maxTry > 0) {
@@ -41,9 +41,9 @@ public class AskGPT {
 
                 payload.put("messages", messages);
                 payload.put("model", modelConfig.getModelName());
-                payload.put("temperature", modelConfig.getTemperature());
-                payload.put("frequency_penalty", modelConfig.getFrequencyPenalty());
-                payload.put("presence_penalty", modelConfig.getPresencePenalty());
+                payload.put("temperature", config.getTemperature());
+                payload.put("frequency_penalty", config.getFrequencyPenalty());
+                payload.put("presence_penalty", config.getPresencePenalty());
                 payload.put("max_tokens", config.getMaxResponseTokens());
                 String jsonPayload = GSON.toJson(payload);
 
@@ -57,8 +57,10 @@ public class AskGPT {
                 } catch (InterruptedException ie) {
                     throw new RuntimeException("In AskGPT.askChatGPT: " + ie);
                 }
-
-                return response;
+                if (response.body() == null) throw new IOException("Response body is null.");
+                ChatResponse chatResponse = GSON.fromJson(response.body().string(), ChatResponse.class);
+                response.close();
+                return chatResponse;
             } catch (IOException e) {
                 if (response != null) {
                     response.close();
