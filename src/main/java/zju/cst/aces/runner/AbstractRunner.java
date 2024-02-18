@@ -1,5 +1,7 @@
 package zju.cst.aces.runner;
 
+import com.github.javaparser.ParseException;
+import com.github.javaparser.ParseProblemException;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -84,15 +86,19 @@ public abstract class AbstractRunner {
     }
 
     public static String repairImports(String code, List<String> imports) {
-        CompilationUnit cu = StaticJavaParser.parse(code);
-        cu.addImport("org.mockito", false, true);
-        cu.addImport("org.junit.jupiter.api", false, true);
-        cu.addImport("org.mockito.Mockito", true, true);
-        cu.addImport("org.junit.jupiter.api.Assertions", true, true);
-        cu.addImport("org.junit.jupiter.api.extension.ExtendWith", false, false);
-        cu.addImport("org.mockito.junit.jupiter.MockitoExtension", false, false);
-        imports.forEach(i -> cu.addImport(i.replace("import ", "").replace(";", "")));
-        return cu.toString();
+        try {
+            CompilationUnit cu = StaticJavaParser.parse(code);
+            cu.addImport("org.mockito", false, true);
+            cu.addImport("org.junit.jupiter.api", false, true);
+            cu.addImport("org.mockito.Mockito", true, true);
+            cu.addImport("org.junit.jupiter.api.Assertions", true, true);
+            cu.addImport("org.junit.jupiter.api.extension.ExtendWith", false, false);
+            cu.addImport("org.mockito.junit.jupiter.MockitoExtension", false, false);
+            imports.forEach(i -> cu.addImport(i.replace("import ", "").replace(";", "")));
+            return cu.toString();
+        } catch (ParseProblemException e) {
+            return code;
+        }
     }
 
     public static String repairPackage(String code, String packageName) {

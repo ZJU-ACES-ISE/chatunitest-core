@@ -5,6 +5,7 @@ import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import zju.cst.aces.runner.AbstractRunner;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -16,23 +17,36 @@ public class CodeExtractor {
     private String extractedCode;
 
     public CodeExtractor(String text) {
-        extractedCode = extract(text);
+        extractedCode = extractText(text);
+    }
+
+    public String extractText(String text) {
+        if (text.contains("<INFO>")) {
+            List<String> infoList = List.of(text.split("<INFO>"));
+
+            String importsInfo = infoList.get(1);
+            Pattern pattern = Pattern.compile("```[java]*([\\s\\S]*?)```");
+            Matcher matcher = pattern.matcher(importsInfo);
+            List<String> importList = new ArrayList<>();
+            while (matcher.find()) {
+                importList.addAll(Arrays.asList(matcher.group(1).trim().split("\n")));
+                break;
+            }
+
+            for (int i = infoList.size() - 1; i >= 0; i--) {
+                String info = infoList.get(i);
+                if (info.contains("```")) {
+                    text = AbstractRunner.repairImports(extract(info), importList);
+                    return text;
+                }
+            }
+        }
+        return extract(text);
     }
 
     public String extract(String text) {
         String ec = "";
 
-        if (text.contains("<INFO>")) {
-            List<String> infoList = List.of(text.split("<INFO>"));
-            // reverse traverse the list
-            for (int i = infoList.size() - 1; i >= 0; i--) {
-                String info = infoList.get(i);
-                if (info.contains("```")) {
-                    text = info;
-                    break;
-                }
-            }
-        }
 
         // If the string is valid code, return true
         if (isSyntacticCorrect(text)) {
