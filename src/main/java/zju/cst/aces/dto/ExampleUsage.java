@@ -15,9 +15,8 @@ public class ExampleUsage {
     public Map<String, List<String>> methodUsages;
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
-    public ExampleUsage(Config config, String className) {
+    public ExampleUsage(Path examplePath, String className) {
         this.className = className;
-        Path examplePath = config.getExamplePath();
         this.methodUsages  = loadUsages(examplePath, className);
     }
 

@@ -445,20 +445,20 @@ public abstract class AbstractRunner {
         }
     }
 
-    public static boolean isExceedMaxTokens(Config config, List<Message> prompt) {
+    public static boolean isExceedMaxTokens(int maxPromptTokens, List<Message> prompt) {
         int count = 0;
         for (Message p : prompt) {
             count += TokenCounter.countToken(p.getContent());
         }
-        if (count > config.maxPromptTokens) {
+        if (count > maxPromptTokens) {
             return true;
         }
         return false;
     }
 
-    public static boolean isExceedMaxTokens(Config config, String prompt) {
+    public static boolean isExceedMaxTokens(int maxPromptTokens, String prompt) {
         int count = TokenCounter.countToken(prompt);
-        if (count > config.maxPromptTokens) {
+        if (count > maxPromptTokens) {
             return true;
         }
         return false;

@@ -12,8 +12,11 @@ import zju.cst.aces.api.Validator;
 import zju.cst.aces.api.impl.LoggerImpl;
 import zju.cst.aces.api.Logger;
 import zju.cst.aces.api.impl.ValidatorImpl;
+import zju.cst.aces.prompt.PromptTemplate;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.nio.file.Path;
@@ -22,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,6 +40,7 @@ public class Config {
     public JavaParserFacade parserFacade;
     public List<String> classPaths;
     public Path promptPath;
+    public Properties properties;
     public String url;
     public String[] apiKeys;
     public Logger log;
@@ -87,6 +92,7 @@ public class Config {
         public JavaParserFacade parserFacade;
         public List<String> classPaths;
         public Path promptPath;
+        public Properties properties;
         public String url;
         public String[] apiKeys;
         public Logger log;
@@ -136,6 +142,8 @@ public class Config {
             this.date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")).toString();
             this.project = project;
             this.log = new LoggerImpl();
+
+            this.properties("config.properties");
 
             this.maxPromptTokens = this.model.getDefaultConfig().getContextLength() * 2 / 3;
             this.maxResponseTokens = 1024;
@@ -266,6 +274,19 @@ public class Config {
         public ConfigBuilder enableObfuscate(boolean enableObfuscate) {
             this.enableObfuscate = enableObfuscate;
             return this;
+        }
+
+        public ConfigBuilder properties(String configFile) {
+            try {
+                Properties properties = new Properties();
+                InputStream inputStream = PromptTemplate.class.getClassLoader().getResourceAsStream(configFile);
+                properties.load(inputStream);
+                this.properties = properties;
+                return this;
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new RuntimeException("Failed to load properties file: " + configFile);
+            }
         }
 
         public ConfigBuilder obfuscateGroupIds(String[] obfuscateGroupIds) {

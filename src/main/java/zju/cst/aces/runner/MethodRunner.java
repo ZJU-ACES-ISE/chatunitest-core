@@ -97,35 +97,61 @@ public class MethodRunner extends ClassRunner {
         promptInfo.setTestPath(savePath);
 
         for (int rounds = 0; rounds < config.getMaxRounds(); rounds++) {
+            promptInfo.addRecord(new RoundRecord(rounds));
+            RoundRecord record = promptInfo.getRecords().get(rounds);
+            record.setAttempt(num);
+
             if (rounds == 0) {
                 config.getLog().info("Generating test for method < " + methodInfo.methodName + " > round " + rounds + " ...");
             } else {
                 config.getLog().info("Fixing test for method < " + methodInfo.methodName + " > round " + rounds + " ...");
             }
-            promptInfo.addRecord(new RoundRecord(rounds));
-            RoundRecord record = promptInfo.getRecords().get(rounds);
-            record.setAttempt(num);
-            if (generateTest(pc, repair, record)) {
+
+            List<Message> prompt;
+            Obfuscator obfuscator = new Obfuscator(config);
+            if (config.isEnableObfuscate()) {
+                PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
+                obfuscator.obfuscatePromptInfo(obfuscatedPromptInfo);
+                prompt = promptGenerator.generateMessages(obfuscatedPromptInfo);
+            } else {
+                prompt = promptGenerator.generateMessages(promptInfo);
+            }
+
+            String code = generateTest(prompt, record);
+            if (!record.isHasCode()) {
+                continue;
+            }
+
+            if (config.isEnableObfuscate()) {
+                code = obfuscator.deobfuscateJava(code);
+            }
+            if (CodeExtractor.isTestMethod(code)) {
+                TestSkeleton skeleton = new TestSkeleton(promptInfo); // test skeleton to wrap a test method
+                code = skeleton.build(code);
+            } else {
+                code = repair.ruleBasedRepair(code);
+            }
+            promptInfo.setUnitTest(code);
+
+            record.setCode(code);
+            repair.LLMBasedRepair(code, record.getRound());
+            if (repair.isSuccess()) {
+                record.setHasError(false);
                 exportRecord(promptInfo, classInfo, record.getAttempt());
                 return true;
             }
+            record.setHasError(true);
+            record.setErrorMsg(promptInfo.getErrorMsg());
         }
         exportRecord(pc.getPromptInfo(), classInfo, num);
         return false;
     }
 
-    public boolean generateTest(PromptConstructorImpl pc, RepairImpl repair, RoundRecord record) throws IOException {
-        PromptInfo promptInfo = pc.getPromptInfo();
-        Obfuscator obfuscator = new Obfuscator(config);
-        PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
-        if (config.isEnableObfuscate()) {
-            obfuscator.obfuscatePromptInfo(obfuscatedPromptInfo);
-        }
+    public String generateTest(List<Message> prompt, RoundRecord record) throws IOException {
 
-        List<Message> prompt = promptGenerator.generateMessages(obfuscatedPromptInfo);
-        if (isExceedMaxTokens(config, prompt)) {
+        if (isExceedMaxTokens(config.getMaxPromptTokens(), prompt)) {
             config.getLog().error("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
-            return false;
+            return "";
         }
         config.getLog().debug("[Prompt]:\n" + prompt.toString());
 
@@ -141,45 +167,17 @@ public class MethodRunner extends ClassRunner {
         if (code.isEmpty()) {
             config.getLog().info("Test for method < " + methodInfo.methodName + " > extract code failed");
             record.setHasCode(false);
-            return false;
+            return "";
         }
         record.setHasCode(true);
-
-        if (config.isEnableObfuscate()) {
-            code = obfuscator.deobfuscateJava(code);
-        }
-
-        if (CodeExtractor.isTestMethod(code)) {
-            TestSkeleton skeleton = new TestSkeleton(promptInfo); // test skeleton to wrap a test method
-            code = skeleton.build(code);
-        } else {
-            code = repair.ruleBasedRepair(code);
-        }
-        promptInfo.setUnitTest(code);
-
-        record.setCode(code);
-        repair.LLMBasedRepair(code, record.getRound());
-        if (repair.isSuccess()) {
-            record.setHasError(false);
-            return true;
-        }
-        record.setHasError(true);
-        record.setErrorMsg(promptInfo.getErrorMsg());
-        return false;
+        return code;
     }
 
-    public boolean generateTest(PromptConstructorImpl pc, RepairImpl repair) throws IOException {
-        PromptInfo promptInfo = pc.getPromptInfo();
-        Obfuscator obfuscator = new Obfuscator(config);
-        PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
-        if (config.isEnableObfuscate()) {
-            obfuscator.obfuscatePromptInfo(obfuscatedPromptInfo);
-        }
+    public String generateTest(List<Message> prompt) throws IOException {
 
-        List<Message> prompt = promptGenerator.generateMessages(obfuscatedPromptInfo);
-        if (isExceedMaxTokens(config, prompt)) {
+        if (isExceedMaxTokens(config.getMaxPromptTokens(), prompt)) {
             config.getLog().error("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
-            return false;
+            return "";
         }
         config.getLog().debug("[Prompt]:\n" + prompt.toString());
 
@@ -189,18 +187,9 @@ public class MethodRunner extends ClassRunner {
 
         if (code.isEmpty()) {
             config.getLog().info("Test for method < " + methodInfo.methodName + " > extract code failed");
-            return false;
+            return "";
         }
-
-        if (config.isEnableObfuscate()) {
-            code = obfuscator.deobfuscateJava(code);
-        }
-
-        code = repair.ruleBasedRepair(code);
-        promptInfo.setUnitTest(code);
-
-        repair.LLMBasedRepair(code);
-        return repair.isSuccess();
+        return code;
     }
 
     public static boolean runTest(Config config, String fullTestName, PromptInfo promptInfo, int rounds) {
