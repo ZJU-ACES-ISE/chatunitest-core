@@ -1,11 +1,12 @@
 package zju.cst.aces.api;
 
+import zju.cst.aces.api.Project;
+import zju.cst.aces.api.Runner;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 import zju.cst.aces.parser.ProjectParser;
-import zju.cst.aces.runner.ClassRunner;
-import zju.cst.aces.runner.MethodRunner;
+import zju.cst.aces.runner.AbstractRunner;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,10 +24,12 @@ public class Task {
 
     Config config;
     Logger log;
+    Runner runner;
 
-    public Task(Config config) {
+    public Task(Config config, Runner runner) {
         this.config = config;
         this.log = config.getLog();
+        this.runner = runner;
     }
 
     public void startMethodTask(String className, String methodName) {
@@ -47,14 +50,13 @@ public class Task {
 
         try {
             String fullClassName = getFullClassName(config, className);
-            ClassRunner classRunner = new ClassRunner(config, fullClassName);
-            ClassInfo classInfo = classRunner.classInfo;
+            ClassInfo classInfo = AbstractRunner.getClassInfo(config, fullClassName);
             MethodInfo methodInfo = null;
             if (methodName.matches("\\d+")) { // use method id instead of method name
                 String methodId = methodName;
                 for (String mSig : classInfo.methodSigs.keySet()) {
                     if (classInfo.methodSigs.get(mSig).equals(methodId)) {
-                        methodInfo = classRunner.getMethodInfo(config, classInfo, mSig);
+                        methodInfo = AbstractRunner.getMethodInfo(config, classInfo, mSig);
                         break;
                     }
                 }
@@ -62,19 +64,19 @@ public class Task {
                     throw new IOException("Method " + methodName + " in class " + fullClassName + " not found");
                 }
                 try {
-                    new MethodRunner(config, fullClassName, methodInfo).start();
+                    this.runner.runMethod(fullClassName, methodInfo);
                 } catch (Exception e) {
                     log.error("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId() + "\n" + e.getMessage());
                 }
             } else {
                 for (String mSig : classInfo.methodSigs.keySet()) {
                     if (mSig.split("\\(")[0].equals(methodName)) {
-                        methodInfo = classRunner.getMethodInfo(config, classInfo, mSig);
+                        methodInfo = AbstractRunner.getMethodInfo(config, classInfo, mSig);
                         if (methodInfo == null) {
                             throw new IOException("Method " + methodName + " in class " + fullClassName + " not found");
                         }
                         try {
-                            new MethodRunner(config, fullClassName, methodInfo).start(); // generate for all methods with the same name;
+                            this.runner.runMethod(fullClassName, methodInfo);
                         } catch (Exception e) {
                             log.error("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId() + "\n" + e.getMessage());
                         }
@@ -105,7 +107,7 @@ public class Task {
         parser.parse();
         log.info("\n==========================\n[ChatUniTest] Generating tests for class < " + className + " > ...");
         try {
-            new ClassRunner(config, getFullClassName(config, className)).start();
+            this.runner.runClass(getFullClassName(config, className));
         } catch (IOException e) {
             log.warn("Class not found: " + className + " in " + config.getProject().getArtifactId());
         }
@@ -135,12 +137,12 @@ public class Task {
                 try {
                     String fullClassName = getFullClassName(config, className);
                     log.info("\n==========================\n[ChatUniTest] Generating tests for class < " + className + " > ...");
-                    ClassRunner runner = new ClassRunner(config, fullClassName);
-                    if (!Counter.filter(runner.classInfo)) {
+                    ClassInfo info = AbstractRunner.getClassInfo(config, fullClassName);
+                    if (!Counter.filter(info)) {
                         config.getLog().info("Skip class: " + classPath);
                         continue;
                     }
-                    runner.start();
+                    this.runner.runClass(fullClassName);
                 } catch (IOException e) {
                     log.error("[ChatUniTest] Generate tests for class " + className + " failed: " + e);
                 }
@@ -161,11 +163,11 @@ public class Task {
                     try {
                         String fullClassName = getFullClassName(config, className);
                         log.info("\n==========================\n[ChatUniTest] Generating tests for class < " + className + " > ...");
-                        ClassRunner runner = new ClassRunner(config, fullClassName);
-                        if (!Counter.filter(runner.classInfo)) {
+                        ClassInfo info = AbstractRunner.getClassInfo(config, fullClassName);
+                        if (!Counter.filter(info)) {
                             return "Skip class: " + classPath;
                         }
-                        runner.start();
+                        runner.runClass(fullClassName);
                     } catch (IOException e) {
                         log.error("[ChatUniTest] Generate tests for class " + className + " failed: " + e);
                     }
