@@ -1,21 +1,10 @@
 package zju.cst.aces.prompt;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import freemarker.template.TemplateException;
-import zju.cst.aces.api.Task;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.*;
-import zju.cst.aces.parser.ProjectParser;
-import zju.cst.aces.runner.AbstractRunner;
 import zju.cst.aces.util.TokenCounter;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 public class PromptGenerator {
@@ -38,7 +27,7 @@ public class PromptGenerator {
             messages.add(Message.ofSystem(createSystemPrompt(promptInfo, promptTemplate.TEMPLATE_INIT)));
             messages.add(Message.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_INIT)));
         } else {
-            messages.add(Message.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_ERROR)));
+            messages.add(Message.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_REPAIR)));
         }
         return messages;
     }
@@ -52,7 +41,8 @@ public class PromptGenerator {
 
     public String createUserPrompt(PromptInfo promptInfo, String templateName) {
         try {
-            if (templateName.equals(promptTemplate.TEMPLATE_ERROR)) { // repair process
+            this.promptTemplate.buildDataModel(config, promptInfo);
+            if (templateName.equals(promptTemplate.TEMPLATE_REPAIR)) { // repair process
 
                 int promptTokens = TokenCounter.countToken(promptInfo.getUnitTest())
                         + TokenCounter.countToken(promptInfo.getMethodSignature())
@@ -73,7 +63,7 @@ public class PromptGenerator {
                 promptTemplate.dataModel.put("unit_test", promptInfo.getUnitTest());
                 promptTemplate.dataModel.put("error_message", processedErrorMsg);
 
-                return promptTemplate.renderTemplate(promptTemplate.TEMPLATE_ERROR);
+                return promptTemplate.renderTemplate(promptTemplate.TEMPLATE_REPAIR);
             } else {
                 return promptTemplate.renderTemplate(templateName);
             }

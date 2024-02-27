@@ -17,7 +17,6 @@ import zju.cst.aces.runner.AbstractRunner;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -34,7 +33,7 @@ public class PromptTemplate {
     public static final String CONFIG_FILE = "config.properties";
     public String TEMPLATE_INIT = "";
     public String TEMPLATE_EXTRA = "";
-    public String TEMPLATE_ERROR = "";
+    public String TEMPLATE_REPAIR = "";
     public Map<String, Object> dataModel = new HashMap<>();
     public Properties properties;
     public Path promptPath;
@@ -46,9 +45,9 @@ public class PromptTemplate {
         this.properties = properties;
         this.promptPath = promptPath;
         this.maxPromptTokens = maxPromptTokens;
-        TEMPLATE_INIT = properties.getProperty("PROMPT_TEMPLATE_INIT"); //p1.ftl
-        TEMPLATE_EXTRA = properties.getProperty("PROMPT_TEMPLATE_EXTRA"); //p2.ftl
-        TEMPLATE_ERROR = properties.getProperty("PROMPT_TEMPLATE_ERROR"); //error.ftl
+        TEMPLATE_INIT = properties.getProperty("PROMPT_TEMPLATE_INIT");
+        TEMPLATE_EXTRA = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
+        TEMPLATE_REPAIR = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
     }
 
     //渲染

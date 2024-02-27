@@ -490,6 +490,7 @@ public class Config {
             config.setParserFacade(this.parserFacade);
             config.setClassPaths(this.classPaths);
             config.setPromptPath(this.promptPath);
+            config.setProperties(this.properties);
             config.setUrl(this.url);
             config.setApiKeys(this.apiKeys);
             config.setOS(this.OS);
