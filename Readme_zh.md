@@ -30,6 +30,31 @@
 </dependency>
 ```
 
+## 设计您的自定义提示
+
+### 1. 使用 Freemarker 创建包含提示文件的目录
+
+参考 `src/main/resources/prompt` 中的示例：
+
+- `initial.ftl` 作为基本生成过程中的初始提示。
+- `initial_system.ftl` 作为基本生成过程中相应的系统提示。
+
+`extra.ftl` 和 `extra_system.ftl` 被设计用于流水线中的进一步扩展（当前未使用）。
+
+`repair.ftl` 用于修复过程的提示。
+
+### 2. 在 `config.properties` 文件中更新模板文件名
+
+```properties
+PROMPT_TEMPLATE_INIT=initial.ftl
+PROMPT_TEMPLATE_EXTRA=extra.ftl
+PROMPT_TEMPLATE_REPAIR=repair.ftl
+```
+
+### 3. 如果使用额外的模板，需要扩展 `MethodRunner` 并重写 `startRounds` 方法
+
+参考 `ChatTester` GitHub仓库中的示例。
+
 ## :email: 联系我们
 
 如果您有任何问题，请随时通过电子邮件与我们联系，联系方式如下：

@@ -34,6 +34,31 @@ Many people have tried using ChatGPT to help them with various programming tasks
 </dependency>
 ```
 
+## Design Your Custom Prompt
+
+### 1.Create a Directory Containing Your Prompt Files Using Freemarker
+
+Refer to the examples in `src/main/resources/prompt`:
+
+`initial.ftl` serves as the initial prompt in the basic generation process.
+`initial_system.ftl` serves as the corresponding system prompt in the basic generation process.
+
+`extra.ftl` and `extra_system.ftl` are designed for further extensions in the pipeline (currently not in use).
+
+`repair.ftl` serves as the repair prompt in the repair process. 
+
+### 2. Update the Template Filenames in the `config.properties` File
+
+```properties
+PROMPT_TEMPLATE_INIT=initial.ftl
+PROMPT_TEMPLATE_EXTRA=extra.ftl
+PROMPT_TEMPLATE_REPAIR=repair.ftl
+```
+
+### 3. To Use an Extra Template, Extend the `MethodRunner` and Override the `startRounds` Method
+
+Refer to the example in `ChatTester Github Repository`.
+
 ## :email: Contact us
 
 If you have any questions, please feel free to contact us via email. The email addresses of the authors are as follows:
