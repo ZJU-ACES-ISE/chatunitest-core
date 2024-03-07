@@ -14,6 +14,7 @@ import zju.cst.aces.dto.MethodInfo;
 import zju.cst.aces.dto.PromptInfo;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.runner.AbstractRunner;
+import zju.cst.aces.util.TokenCounter;
 
 import java.io.File;
 import java.io.IOException;
@@ -116,8 +117,11 @@ public class PromptTemplate {
         this.dataModel.put("dep_gs_sigs", getDepGSSigs(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
         this.dataModel.put("dep_gs_bodies", getDepGSBodies(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
         this.dataModel.put("dep_m_sigs_ano_com",getDepBriefWithAnoAndCom(promptInfo.getClassInfo(),promptInfo.getMethodInfo()));
-        this.dataModel.put("dep_m_sigs_ano",getDepBriefWithAno(promptInfo.getClassInfo(),promptInfo.getMethodInfo()));
-
+        if(isTokenExceed(promptInfo.getMethodInfo().full_method_info,
+                getDepClassSigs(promptInfo.getClassInfo(), promptInfo.getMethodInfo()),
+                getDepBriefWithAnoAndCom(promptInfo.getClassInfo(),promptInfo.getMethodInfo()))){
+            this.dataModel.put("dep_m_sigs_ano_com",getDepBriefWithAno(promptInfo.getClassInfo(),promptInfo.getMethodInfo()));
+        }
         // String
         this.dataModel.put("example_usage", exampleUsage.getShortestUsage(promptInfo.getMethodInfo().methodSignature));
         this.dataModel.put("project_full_code", getFullProjectCode(promptInfo.getClassName(), config));
@@ -220,6 +224,21 @@ public class PromptTemplate {
         return depBrief;
     }
 
+    /**
+     * if token of testspark exceed
+     */
+    public boolean isTokenExceed(String full_method_info,Map<String,String> dep_class_sigs,Map<String,String> dep_m_sigs_ano_com ){
+        String prompt=full_method_info;
+        for (String dep_class_sig : dep_class_sigs.keySet()) {
+            prompt+=dep_class_sig;
+            prompt+=dep_m_sigs_ano_com.get(dep_class_sig);
+        }
+        if(AbstractRunner.isExceedMaxTokens(config.maxPromptTokens,prompt)){
+            return true;
+        }
+        return false;
+    }
+
     public Map<String, String> getDepBriefWithAno(ClassInfo classInfo, MethodInfo methodInfo) throws IOException {
         Map<String, String> depBrief = new HashMap<>();
         for (Map.Entry<String, ClassInfo> entry : getDepClassInfos(classInfo,methodInfo).entrySet()) {
@@ -236,7 +255,7 @@ public class PromptTemplate {
                 if(mInfo==null){
                     continue;
                 }
-                info+="-"+mInfo.method_annotation+mInfo.brief.replace("{}","") + "\n";
+                info+="-"+mInfo.brief.replace("{}","") + "\n";
             }
             depBrief.put(depClassName, info.trim());
         }
