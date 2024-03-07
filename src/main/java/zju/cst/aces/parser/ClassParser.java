@@ -7,11 +7,15 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.*;
+import com.github.javaparser.ast.comments.Comment;
+import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.ReturnStmt;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
+import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
 import org.jetbrains.annotations.NotNull;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.ClassInfo;
@@ -111,7 +115,9 @@ public class ClassParser {
                 getBriefConstructors(cu, classNode),
                 getGetterSetterSig(cu, classNode),
                 getGetterSetter(cu, classNode),
-                getConstructorDeps(cu, classNode));
+                getConstructorDeps(cu, classNode),
+                getSubClasses(classNode)
+        );
 
         ci.setPublic(classNode.isPublic());
 //        ci.setPublic(!classNode.isPrivate() && !classNode.isProtected());
@@ -134,8 +140,11 @@ public class ClassParser {
                 getMethodSig(node),
                 getMethodCode(cu, node),
                 getParameters(node),
-                getDependentMethods(cu, node));
-
+                getDependentMethods(cu, node),
+                node.toString(),
+                getMethodComment(node),
+                getMethodAnnotation(node)
+        );
         mi.setUseField(useField(node));
         mi.setConstructor(node.isConstructorDeclaration());
         mi.setGetSet(isGetSet2(node));
@@ -217,6 +226,33 @@ public class ClassParser {
             superClasses.add(sup.getNameAsString());
         });
         return superClasses;
+    }
+
+    public List<String> getSubClasses(ClassOrInterfaceDeclaration node) {
+        String targetClassName = node.getFullyQualifiedName().orElseThrow().toString();
+        List<String> subClasses = new ArrayList<>();
+        List<String> classPaths = ProjectParser.scanSourceDirectory(config.project);
+        if (classPaths.isEmpty()) {
+            return null;
+        }
+        try {
+            for (String classPath : classPaths) {
+                ParseResult<CompilationUnit> parseResult = parser.parse(new File(classPath));
+                CompilationUnit cu = parseResult.getResult().orElseThrow();
+                String packageName=cu.getPackageDeclaration().isEmpty()?"":cu.getPackageDeclaration().get().getNameAsString();
+                List<ClassOrInterfaceDeclaration> classes = cu.findAll(ClassOrInterfaceDeclaration.class);
+                for (ClassOrInterfaceDeclaration classDeclaration : classes) {
+                    for (ClassOrInterfaceType extendedType : classDeclaration.getExtendedTypes()) {
+                        if (targetClassName.equals(packageName+"."+extendedType.getNameAsString())) {
+                            subClasses.add(classDeclaration.getFullyQualifiedName().orElseThrow().toString());
+                        }
+                    }
+                }
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return subClasses;
     }
 
     private List<String> getInterfaces(ClassOrInterfaceDeclaration node) {
@@ -318,6 +354,27 @@ public class ClassParser {
      */
     private String getMethodCode(CompilationUnit cu, CallableDeclaration node) {
         return node.getTokenRange().orElseThrow().toString();
+    }
+
+    private String getMethodAnnotation(CallableDeclaration node) {
+        StringBuffer sb = new StringBuffer();
+        // 检查是否有注解
+        if (node.getAnnotations().isEmpty()) {
+            // 如果没有注解，返回空字符串
+            return "";
+        }
+        for (Object annotation : node.getAnnotations()) {
+            sb.append(annotation.toString() + "\n");
+        }
+        return sb.toString();
+    }
+
+    private String getMethodComment(CallableDeclaration node) {
+        Optional<Comment> comment = node.getComment();
+        if (comment.isEmpty()) {
+            return "";
+        }
+        return node.getComment().get().toString();
     }
 
     /**
@@ -518,7 +575,7 @@ public class ClassParser {
         }
         Path classInfoPath = classOutputDir.resolve("class.json");
         //set charset utf-8
-        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(classInfoPath.toFile()), StandardCharsets.UTF_8)){
+        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(classInfoPath.toFile()), StandardCharsets.UTF_8)) {
             writer.write(config.getGSON().toJson(classInfo));
         }
     }
@@ -530,7 +587,7 @@ public class ClassParser {
         }
         Path info = classOutputDir.resolve(getFilePathBySig(node.getSignature().asString()));
         //set charset utf-8
-        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(info.toFile()),StandardCharsets.UTF_8)){
+        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(info.toFile()), StandardCharsets.UTF_8)) {
             writer.write(config.getGSON().toJson(methodInfo));
         }
     }
@@ -542,7 +599,7 @@ public class ClassParser {
         }
         Path info = classOutputDir.resolve(getFilePathBySig(node.getSignature().asString()));
         //set charset utf-8
-        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(info.toFile()),StandardCharsets.UTF_8)){
+        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(info.toFile()), StandardCharsets.UTF_8)) {
             writer.write(config.getGSON().toJson(methodInfo));
         }
     }
@@ -585,4 +642,5 @@ public class ClassParser {
         }
         config.classMapping.put("class" + classInfo.index, map);
     }
+
 }
