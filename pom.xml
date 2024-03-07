@@ -9,12 +9,17 @@
     <packaging>jar</packaging>
     <name>chatunitest-core</name>
     <description>A framework to generate unit tests using LLMs</description>
+    <url>https://github.com/ZJU-ACES-ISE/chatunitest-core</url>
     <licenses>
         <license>
             <name>MIT License</name>
             <url>https://www.opensource.org/licenses/mit-license.php</url>
         </license>
     </licenses>
+    <scm>
+        <connection>git@github.com:ZJU-ACES-ISE/chatunitest-core.git</connection>
+        <url>https://github.com/ZJU-ACES-ISE/chatunitest-core</url>
+    </scm>
     <developers>
         <developer>
             <name></name>
@@ -181,7 +186,7 @@
         <profile>
             <id>release</id>
             <activation>
-                <activeByDefault>false</activeByDefault>
+                <activeByDefault>true</activeByDefault>
             </activation>
             <build>
                 <plugins>
