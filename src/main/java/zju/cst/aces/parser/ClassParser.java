@@ -370,11 +370,12 @@ public class ClassParser {
     }
 
     private String getMethodComment(CallableDeclaration node) {
-        Optional<Comment> comment = node.getComment();
-        if (comment.isEmpty()) {
-            return "";
+        Optional<Comment> commentOptional = node.getComment();
+        if (commentOptional.isPresent()) {
+            Comment comment = commentOptional.get();
+            return comment.getContent();
         }
-        return node.getComment().get().toString();
+        return "";
     }
 
     /**
