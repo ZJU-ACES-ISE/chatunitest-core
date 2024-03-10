@@ -171,7 +171,7 @@ public class Counter {
     }
 
     public static boolean filter(ClassInfo classInfo) {
-        if (!classInfo.isPublic || classInfo.isAbstract || classInfo.isInterface) {
+        if (classInfo == null || !classInfo.isPublic || classInfo.isAbstract || classInfo.isInterface) {
             return false;
         }
         return true;
