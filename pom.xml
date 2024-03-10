@@ -134,45 +134,45 @@
             <version>0.0.9</version>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-api</artifactId>
-            <version>1.1.0</version>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-api</artifactId>
+            <version>2.0.0-alpha-2</version>
         </dependency>
         <!-- Aether SPI -->
         <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-spi</artifactId>
-            <version>1.1.0</version>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-spi</artifactId>
+            <version>2.0.0-alpha-2</version>
         </dependency>
         <!-- Aether Implementation -->
         <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-impl</artifactId>
-            <version>1.1.0</version>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-impl</artifactId>
+            <version>2.0.0-alpha-8</version>
         </dependency>
         <!-- Aether Connector Basic -->
         <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-connector-basic</artifactId>
-            <version>1.1.0</version>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-connector-basic</artifactId>
+            <version>2.0.0-alpha-2</version>
         </dependency>
         <!-- Aether Transport File -->
         <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-transport-file</artifactId>
-            <version>1.1.0</version>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-transport-file</artifactId>
+            <version>2.0.0-alpha-2</version>
         </dependency>
         <!-- Aether Transport HTTP -->
         <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-transport-http</artifactId>
-            <version>1.1.0</version>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-transport-http</artifactId>
+            <version>2.0.0-alpha-2</version>
         </dependency>
         <!-- Aether Util -->
         <dependency>
-            <groupId>org.eclipse.aether</groupId>
-            <artifactId>aether-util</artifactId>
-            <version>1.1.0</version>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-util</artifactId>
+            <version>2.0.0-alpha-2</version>
         </dependency>
         <!-- Maven Core -->
         <dependency>
