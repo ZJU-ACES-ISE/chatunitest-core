@@ -152,9 +152,10 @@ public abstract class AbstractRunner {
                 + "\n" + imports
                 + "\n" + classInfo.classSignature
                 + " {\n";
-        if (methodInfo.useField) {
-            information += fields + "\n";
-        }
+//        if (methodInfo.useField) {
+//            information += fields + "\n";
+//        }
+        information += fields + "\n";
         information += methodInfo.sourceCode + "\n}";
 
         promptInfo.setContext(information);
@@ -227,11 +228,15 @@ public abstract class AbstractRunner {
             otherMethods += joinLines(classInfo.constructorBrief) + "\n";
             otherFullMethods += getBodies(config, classInfo, classInfo.constructorSigs) + "\n";
         }
-        if (methodInfo.useField) {
-            information += fields + "\n";
-            otherMethods +=  joinLines(classInfo.getterSetterBrief) + "\n";
-            otherFullMethods += getBodies(config, classInfo, classInfo.getterSetterSigs) + "\n";
-        }
+//        if (methodInfo.useField) {
+//            information += fields + "\n";
+//            otherMethods +=  joinLines(classInfo.getterSetterBrief) + "\n";
+//            otherFullMethods += getBodies(config, classInfo, classInfo.getterSetterSigs) + "\n";
+//        }
+        information += fields + "\n";
+        otherMethods +=  joinLines(classInfo.getterSetterBrief) + "\n";
+        otherFullMethods += getBodies(config, classInfo, classInfo.getterSetterSigs) + "\n";
+
         otherMethods += joinLines(otherBriefMethods) + "\n";
         otherFullMethods += joinLines(otherMethodBodies) + "\n";
         information += methodInfo.sourceCode + "\n}";
