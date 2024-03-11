@@ -84,6 +84,7 @@ public class Config {
     public static AtomicInteger sharedInteger = new AtomicInteger(0);
     public static Map<String, Map<String, String>> classMapping;
     public Validator validator;
+    public String pluginSign;
 
     public static class ConfigBuilder {
         public String date;
@@ -137,6 +138,7 @@ public class Config {
                 .readTimeout(5, TimeUnit.MINUTES)
                 .build();
         public Validator validator;
+        public String pluginSign;
 
         public ConfigBuilder(Project project) {
             this.date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")).toString();
@@ -209,6 +211,11 @@ public class Config {
 
         public ConfigBuilder project(Project project) {
             this.project = project;
+            return this;
+        }
+
+        public ConfigBuilder pluginSign(String pluginSign){
+            this.pluginSign=pluginSign;
             return this;
         }
 
@@ -531,6 +538,7 @@ public class Config {
             config.setClient(this.client);
             config.setLog(this.log);
             config.setValidator(this.validator);
+            config.setPluginSign(this.pluginSign);
             return config;
         }
     }
@@ -546,6 +554,7 @@ public class Config {
 
     public void print() {
         log.info("\n========================== Configuration ==========================\n");
+        log.info("PluginSign >>>>"+this.getPluginSign() );
         log.info(" Multithreading >>>> " + this.isEnableMultithreading());
         if (this.isEnableMultithreading()) {
             log.info(" - Class threads: " + this.getClassThreads() + ", Method threads: " + this.getMethodThreads());

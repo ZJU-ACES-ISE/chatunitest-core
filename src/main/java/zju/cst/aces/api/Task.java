@@ -40,12 +40,12 @@ public class Task {
             return;
         }
         if (config.getProject().getPackaging().equals("pom")) {
-            log.info("\n==========================\n[ChatUniTest] Skip pom-packaging ...");
+            log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...",config.pluginSign));
             return;
         }
         ProjectParser parser = new ProjectParser(config);
         parser.parse();
-        log.info("\n==========================\n[ChatUniTest] Generating tests for class: < " + className
+        log.info(String.format("\n==========================\n[%s] Generating tests for class: < ",config.pluginSign) + className
                 + "> method: < " + methodName + " > ...");
 
         try {
@@ -89,7 +89,7 @@ public class Task {
             return;
         }
 
-        log.info("\n==========================\n[ChatUniTest] Generation finished");
+        log.info(String.format("\n==========================\n[%s] Generation finished", config.pluginSign));
     }
 
     public void startClassTask(String className) {
@@ -100,18 +100,18 @@ public class Task {
             return;
         }
         if (config.getProject().getPackaging().equals("pom")) {
-            log.info("\n==========================\n[ChatUniTest] Skip pom-packaging ...");
+            log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...",config.pluginSign));
             return;
         }
         ProjectParser parser = new ProjectParser(config);
         parser.parse();
-        log.info("\n==========================\n[ChatUniTest] Generating tests for class < " + className + " > ...");
+        log.info(String.format("\n==========================\n[%s] Generating tests for class < " + className + " > ...",config.pluginSign));
         try {
             this.runner.runClass(getFullClassName(config, className));
         } catch (IOException e) {
             log.warn("Class not found: " + className + " in " + config.getProject().getArtifactId());
         }
-        log.info("\n==========================\n[ChatUniTest] Generation finished");
+        log.info(String.format("\n==========================\n[%s] Generation finished",config.pluginSign));
     }
 
     public void startProjectTask() {
@@ -123,7 +123,7 @@ public class Task {
             return;
         }
         if (project.getPackaging().equals("pom")) {
-            log.info("\n==========================\n[ChatUniTest] Skip pom-packaging ...");
+            log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...",config.pluginSign));
             return;
         }
         ProjectParser parser = new ProjectParser(config);
@@ -136,7 +136,7 @@ public class Task {
                 String className = classPath.substring(classPath.lastIndexOf(File.separator) + 1, classPath.lastIndexOf("."));
                 try {
                     String fullClassName = getFullClassName(config, className);
-                    log.info("\n==========================\n[ChatUniTest] Generating tests for class < " + className + " > ...");
+                    log.info(String.format("\n==========================\n[%s] Generating tests for class < ",config.pluginSign) + className + " > ...");
                     ClassInfo info = AbstractRunner.getClassInfo(config, fullClassName);
                     if (!Counter.filter(info)) {
                         config.getLog().info("Skip class: " + classPath);
@@ -144,12 +144,12 @@ public class Task {
                     }
                     this.runner.runClass(fullClassName);
                 } catch (IOException e) {
-                    log.error("[ChatUniTest] Generate tests for class " + className + " failed: " + e);
+                    log.error(String.format("[%s] Generate tests for class ",config.pluginSign) + className + " failed: " + e);
                 }
             }
         }
 
-        log.info("\n==========================\n[ChatUniTest] Generation finished");
+        log.info(String.format("\n==========================\n[%s] Generation finished",config.pluginSign));
     }
 
     public void projectJob(List<String> classPaths) {
@@ -162,14 +162,14 @@ public class Task {
                     String className = classPath.substring(classPath.lastIndexOf(File.separator) + 1, classPath.lastIndexOf("."));
                     try {
                         String fullClassName = getFullClassName(config, className);
-                        log.info("\n==========================\n[ChatUniTest] Generating tests for class < " + className + " > ...");
+                        log.info(String.format("\n==========================\n[%s] Generating tests for class < ",config.pluginSign) + className + " > ...");
                         ClassInfo info = AbstractRunner.getClassInfo(config, fullClassName);
                         if (!Counter.filter(info)) {
                             return "Skip class: " + classPath;
                         }
                         runner.runClass(fullClassName);
                     } catch (IOException e) {
-                        log.error("[ChatUniTest] Generate tests for class " + className + " failed: " + e);
+                        log.error(String.format("[%s] Generate tests for class ",config.pluginSign) + className + " failed: " + e);
                     }
                     return "Processed " + classPath;
                 }
@@ -204,7 +204,7 @@ public class Task {
         Map<String, List<String>> classMap = config.getGSON().fromJson(Files.readString(classMapPath, StandardCharsets.UTF_8), Map.class);
         if (classMap.containsKey(name)) {
             if (classMap.get(name).size() > 1) {
-                throw new RuntimeException("[ChatUniTest] Multiple classes Named " + name + ": " + classMap.get(name)
+                throw new RuntimeException((String.format("[%s] Multiple classes Named ",config.pluginSign)) + name + ": " + classMap.get(name)
                         + " Please use full qualified name!");
             }
             return classMap.get(name).get(0);

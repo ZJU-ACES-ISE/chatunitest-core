@@ -186,7 +186,8 @@
         <profile>
             <id>release</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+<!--                release时改成true-->
+                <activeByDefault>false</activeByDefault>
             </activation>
             <build>
                 <plugins>
