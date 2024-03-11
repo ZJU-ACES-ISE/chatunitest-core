@@ -76,7 +76,7 @@ public class MethodRunner extends ClassRunner {
                 + classInfo.methodSigs.get(methodInfo.methodSignature) + separator + num + separator + "Test";
         String fullTestName = fullClassName + separator + methodInfo.methodName + separator
                 + classInfo.methodSigs.get(methodInfo.methodSignature) + separator + num + separator + "Test";
-        config.getLog().info("\n==========================\n[ChatUniTest] Generating test for method < "
+        config.getLog().info(String.format("\n==========================\n[%s] Generating test for method < ",config.pluginSign)
                 + methodInfo.methodName + " > number " + num + "...\n");
 
         ChatGenerator generator = new ChatGenerator(config);
