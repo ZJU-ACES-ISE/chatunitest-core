@@ -202,7 +202,8 @@ public class CodeExtractor {
     }
 
     public static boolean isTest(String code) {
-        if (code.contains("@Test") || code.contains("@ParameterizedTest")) {
+        if ((code.contains("@Test") || code.contains("@ParameterizedTest"))
+                && (code.contains("assert") ||  code.contains("Assert"))) {
             return true;
         } else {
             return false;

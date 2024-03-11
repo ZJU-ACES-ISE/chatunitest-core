@@ -151,6 +151,8 @@ public class MethodRunner extends ClassRunner {
 
         if (isExceedMaxTokens(config.getMaxPromptTokens(), prompt)) {
             config.getLog().error("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
+            record.setPromptToken(-1);
+            record.setHasCode(false);
             return "";
         }
         config.getLog().debug("[Prompt]:\n" + prompt.toString());

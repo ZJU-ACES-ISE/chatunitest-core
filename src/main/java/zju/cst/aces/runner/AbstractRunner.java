@@ -156,6 +156,9 @@ public abstract class AbstractRunner {
 //            information += fields + "\n";
 //        }
         information += fields + "\n";
+        if (classInfo.hasConstructor) {
+            information += joinLines(classInfo.constructorBrief) + "\n";
+        }
         information += methodInfo.sourceCode + "\n}";
 
         promptInfo.setContext(information);
