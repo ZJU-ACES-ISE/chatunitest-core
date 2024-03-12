@@ -1,13 +1,11 @@
 package zju.cst.aces.runner;
 
-import com.github.javaparser.ParseException;
 import com.github.javaparser.ParseProblemException;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import okhttp3.Response;
 import zju.cst.aces.api.Task;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.*;
@@ -80,7 +78,7 @@ public abstract class AbstractRunner {
         try {
             return new CodeExtractor(content).getExtractedCode();
         } catch (Exception e) {
-            config.getLog().error("In AbstractRunner.extractCode: " + e);
+            config.getLogger().error("In AbstractRunner.extractCode: " + e);
         }
         return "";
     }
@@ -125,7 +123,7 @@ public abstract class AbstractRunner {
             testCase = repairImports(testCase, timeoutImport);
             return testCase.replace("@Test\n", String.format("@Test%n    @Timeout(%d)%n", timeout));
         } else {
-            config.getLog().warn("Generated with unknown JUnit version, try without adding timeout.");
+            config.getLogger().warn("Generated with unknown JUnit version, try without adding timeout.");
         }
         return testCase;
     }
@@ -453,9 +451,9 @@ public abstract class AbstractRunner {
         }
     }
 
-    public static boolean isExceedMaxTokens(int maxPromptTokens, List<Message> prompt) {
+    public static boolean isExceedMaxTokens(int maxPromptTokens, List<ChatMessage> prompt) {
         int count = 0;
-        for (Message p : prompt) {
+        for (ChatMessage p : prompt) {
             count += TokenCounter.countToken(p.getContent());
         }
         if (count > maxPromptTokens) {

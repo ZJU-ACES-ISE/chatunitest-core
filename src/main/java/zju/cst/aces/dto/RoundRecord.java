@@ -8,7 +8,7 @@ import java.util.List;
 public class RoundRecord {
     public int attempt;
     public int round;
-    public List<Message> prompt;
+    public List<ChatMessage> prompt;
     public String response;
     public int promptToken;
     public int responseToken;

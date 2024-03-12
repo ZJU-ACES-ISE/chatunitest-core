@@ -14,7 +14,6 @@ import zju.cst.aces.dto.MethodInfo;
 import zju.cst.aces.dto.PromptInfo;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.runner.AbstractRunner;
-import zju.cst.aces.util.TokenCounter;
 
 import java.io.File;
 import java.io.IOException;
@@ -688,7 +687,7 @@ public class PromptTemplate {
             try {
                 fullProjectCode += Files.readString(Paths.get(path), StandardCharsets.UTF_8) + "\n";
             } catch (IOException e) {
-                config.getLog().warn("Failed to append class code for " + className);
+                config.getLogger().warn("Failed to append class code for " + className);
             }
         }
         return fullProjectCode;

@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class ChatChoice {
     Integer index;
-    Message message;
+    ChatMessage chatMessage;
     @SerializedName("finish_reason")
     String finishReason;
 }

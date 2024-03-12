@@ -1,7 +1,5 @@
 package zju.cst.aces.api;
 
-import zju.cst.aces.api.Project;
-import zju.cst.aces.api.Runner;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
@@ -17,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
-import zju.cst.aces.api.Logger;
+
 import zju.cst.aces.util.Counter;
 
 public class Task {
@@ -28,7 +26,7 @@ public class Task {
 
     public Task(Config config, Runner runner) {
         this.config = config;
-        this.log = config.getLog();
+        this.log = config.getLogger();
         this.runner = runner;
     }
 
@@ -139,7 +137,7 @@ public class Task {
                     log.info(String.format("\n==========================\n[%s] Generating tests for class < ",config.pluginSign) + className + " > ...");
                     ClassInfo info = AbstractRunner.getClassInfo(config, fullClassName);
                     if (!Counter.filter(info)) {
-                        config.getLog().info("Skip class: " + classPath);
+                        config.getLogger().info("Skip class: " + classPath);
                         continue;
                     }
                     this.runner.runClass(fullClassName);

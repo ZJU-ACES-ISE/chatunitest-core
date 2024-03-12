@@ -1,5 +1,11 @@
 package zju.cst.aces.api.config;
 
+import com.github.javaparser.symbolsolver.JavaSymbolSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.JarTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
+import zju.cst.aces.api.PreProcess;
 import zju.cst.aces.api.Project;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.symbolsolver.javaparsermodel.JavaParserFacade;
@@ -12,6 +18,7 @@ import zju.cst.aces.api.Validator;
 import zju.cst.aces.api.impl.LoggerImpl;
 import zju.cst.aces.api.Logger;
 import zju.cst.aces.api.impl.ValidatorImpl;
+import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.prompt.PromptTemplate;
 
 import java.io.File;
@@ -37,13 +44,14 @@ public class Config {
     public Gson GSON;
     public Project project;
     public JavaParser parser;
+    public PreProcess preProcessor;
     public JavaParserFacade parserFacade;
     public List<String> classPaths;
     public Path promptPath;
     public Properties properties;
     public String url;
     public String[] apiKeys;
-    public Logger log;
+    public Logger logger;
     public String OS;
     public boolean stopWhenSuccess;
     public boolean noExecution;
@@ -86,17 +94,20 @@ public class Config {
     public Validator validator;
     public String pluginSign;
 
+    @Getter
+    @Setter
     public static class ConfigBuilder {
         public String date;
         public Project project;
         public JavaParser parser;
+        public PreProcess preProcessor;
         public JavaParserFacade parserFacade;
         public List<String> classPaths;
         public Path promptPath;
         public Properties properties;
         public String url;
         public String[] apiKeys;
-        public Logger log;
+        public Logger logger;
         public String OS = System.getProperty("os.name").toLowerCase();
         public boolean stopWhenSuccess = true;
         public boolean noExecution = false;
@@ -141,9 +152,18 @@ public class Config {
         public String pluginSign;
 
         public ConfigBuilder(Project project) {
+            initDefault(project);
+        }
+
+        public void initDefault(Project project) {
             this.date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")).toString();
             this.project = project;
-            this.log = new LoggerImpl();
+            this.logger = new LoggerImpl();
+
+            this.parser = new JavaParser();
+            JavaSymbolSolver symbolSolver = getSymbolSolver();
+            parser.getParserConfiguration().setSymbolResolver(symbolSolver);
+            ProjectParser.setLanguageLevel(parser.getParserConfiguration());
 
             this.properties("config.properties");
 
@@ -231,6 +251,11 @@ public class Config {
             return this;
         }
 
+        public ConfigBuilder preProcessor(PreProcess preProcessor) {
+            this.preProcessor = preProcessor;
+            return this;
+        }
+
         public ConfigBuilder parserFacade(JavaParserFacade parserFacade) {
             this.parserFacade = parserFacade;
             return this;
@@ -243,8 +268,8 @@ public class Config {
             return this;
         }
 
-        public ConfigBuilder log(Logger log) {
-            this.log = log;
+        public ConfigBuilder logger(Logger logger) {
+            this.logger = logger;
             return this;
         }
 
@@ -488,12 +513,38 @@ public class Config {
             this.validator = validator;
         }
 
+        public JavaSymbolSolver getSymbolSolver() {
+            CombinedTypeSolver combinedTypeSolver = new CombinedTypeSolver();
+            combinedTypeSolver.add(new ReflectionTypeSolver());
+            for (String dep : this.getClassPaths()) {
+                try {
+                    File depFile = new File(dep);
+                    if (!depFile.exists() || !dep.endsWith("jar")) {
+                        continue;
+                    }
+                    combinedTypeSolver.add(new JarTypeSolver(depFile));
+                } catch (Exception e) {
+                    this.getLogger().warn(e.getMessage());
+                    this.getLogger().debug(e.getMessage());
+                }
+            }
+            for (String src : this.getProject().getCompileSourceRoots()) { // TODO: remove MavenProject
+                if (new File(src).exists()) {
+                    combinedTypeSolver.add(new JavaParserTypeSolver(src));
+                }
+            }
+            JavaSymbolSolver symbolSolver = new JavaSymbolSolver(combinedTypeSolver);
+            this.setParserFacade(JavaParserFacade.get(combinedTypeSolver));
+            return symbolSolver;
+        }
+
         public Config build() {
             Config config = new Config();
             config.setDate(this.date);
             config.setGSON(new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create());
             config.setProject(this.project);
             config.setParser(this.parser);
+            config.setPreProcessor(this.preProcessor);
             config.setParserFacade(this.parserFacade);
             config.setClassPaths(this.classPaths);
             config.setPromptPath(this.promptPath);
@@ -536,7 +587,7 @@ public class Config {
             config.setHostname(this.hostname);
             config.setPort(this.port);
             config.setClient(this.client);
-            config.setLog(this.log);
+            config.setLogger(this.logger);
             config.setValidator(this.validator);
             config.setPluginSign(this.pluginSign);
             return config;
@@ -553,34 +604,34 @@ public class Config {
     }
 
     public void print() {
-        log.info("\n========================== Configuration ==========================\n");
-        log.info("PluginSign >>>>"+this.getPluginSign() );
-        log.info(" Multithreading >>>> " + this.isEnableMultithreading());
+        logger.info("\n========================== Configuration ==========================\n");
+        logger.info("PluginSign >>>>"+this.getPluginSign() );
+        logger.info(" Multithreading >>>> " + this.isEnableMultithreading());
         if (this.isEnableMultithreading()) {
-            log.info(" - Class threads: " + this.getClassThreads() + ", Method threads: " + this.getMethodThreads());
+            logger.info(" - Class threads: " + this.getClassThreads() + ", Method threads: " + this.getMethodThreads());
         }
-        log.info(" Stop when success >>>> " + this.isStopWhenSuccess());
-        log.info(" No execution >>>> " + this.isNoExecution());
-        log.info(" Enable Merge >>>> " + this.isEnableMerge());
-        log.info(" --- ");
-        log.info(" TestOutput Path >>> " + this.getTestOutput());
-        log.info(" TmpOutput Path >>> " + this.getTmpOutput());
-        log.info(" Prompt path >>> " + this.getPromptPath());
-        log.info(" Example path >>> " + this.getExamplePath());
-        log.info(" --- ");
-        log.info(" Model >>> " + this.getModel());
-        log.info(" Url >>> " + this.getUrl());
-        log.info(" MaxPromptTokens >>> " + this.getMaxPromptTokens());
-        log.info(" MaxResponseTokens >>> " + this.getMaxResponseTokens());
-        log.info(" MinErrorTokens >>> " + this.getMinErrorTokens());
-        log.info(" MaxThreads >>> " + this.getMaxThreads());
-        log.info(" TestNumber >>> " + this.getTestNumber());
-        log.info(" MaxRounds >>> " + this.getMaxRounds());
-        log.info(" MinErrorTokens >>> " + this.getMinErrorTokens());
-        log.info(" MaxPromptTokens >>> " + this.getMaxPromptTokens());
-        log.info(" SleepTime >>> " + this.getSleepTime());
-        log.info(" DependencyDepth >>> " + this.getDependencyDepth());
-        log.info("\n===================================================================\n");
+        logger.info(" Stop when success >>>> " + this.isStopWhenSuccess());
+        logger.info(" No execution >>>> " + this.isNoExecution());
+        logger.info(" Enable Merge >>>> " + this.isEnableMerge());
+        logger.info(" --- ");
+        logger.info(" TestOutput Path >>> " + this.getTestOutput());
+        logger.info(" TmpOutput Path >>> " + this.getTmpOutput());
+        logger.info(" Prompt path >>> " + this.getPromptPath());
+        logger.info(" Example path >>> " + this.getExamplePath());
+        logger.info(" --- ");
+        logger.info(" Model >>> " + this.getModel());
+        logger.info(" Url >>> " + this.getUrl());
+        logger.info(" MaxPromptTokens >>> " + this.getMaxPromptTokens());
+        logger.info(" MaxResponseTokens >>> " + this.getMaxResponseTokens());
+        logger.info(" MinErrorTokens >>> " + this.getMinErrorTokens());
+        logger.info(" MaxThreads >>> " + this.getMaxThreads());
+        logger.info(" TestNumber >>> " + this.getTestNumber());
+        logger.info(" MaxRounds >>> " + this.getMaxRounds());
+        logger.info(" MinErrorTokens >>> " + this.getMinErrorTokens());
+        logger.info(" MaxPromptTokens >>> " + this.getMaxPromptTokens());
+        logger.info(" SleepTime >>> " + this.getSleepTime());
+        logger.info(" DependencyDepth >>> " + this.getDependencyDepth());
+        logger.info("\n===================================================================\n");
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {

@@ -1,23 +1,28 @@
 package zju.cst.aces.api.impl;
 
 import lombok.Data;
-import zju.cst.aces.api.PreProcess;
-import zju.cst.aces.api.Task;
+import zju.cst.aces.api.*;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.parser.ProjectParser;
 
 import zju.cst.aces.api.PreProcess;
+
+import java.nio.file.Path;
 
 @Data
 public class Parser implements PreProcess {
 
     ProjectParser parser;
 
-    Config config;
+    Project project;
+    Path parseOutput;
+    Logger log;
 
-    public Parser(Config config) {
-        this.config = config;
-        this.parser = new ProjectParser(config);
+    public Parser(ProjectParser parser, Project project, Path parseOutput, Logger log) {
+        this.parser = parser;
+        this.project = project;
+        this.parseOutput = parseOutput;
+        this.log = log;
     }
 
     @Override
@@ -27,21 +32,21 @@ public class Parser implements PreProcess {
 
     public void parse() {
         try {
-            Task.checkTargetFolder(config.getProject());
+            Task.checkTargetFolder(project);
         } catch (RuntimeException e) {
-            config.getLog().error(e.toString());
+            getLog().error(e.toString());
             return;
         }
-        if (config.getProject().getPackaging().equals("pom")) {
-            config.getLog().info("\n==========================\n[ChatUniTest] Skip pom-packaging ...");
+        if (project.getPackaging().equals("pom")) {
+            log.info("\n==========================\n[ChatUniTest] Skip pom-packaging ...");
             return;
         }
-        if (! config.getParseOutput().toFile().exists()) {
-            config.getLog().info("\n==========================\n[ChatUniTest] Parsing class info ...");
+        if (! parseOutput.toFile().exists()) {
+            log.info("\n==========================\n[ChatUniTest] Parsing class info ...");
             parser.parse();
-            config.getLog().info("\n==========================\n[ChatUniTest] Parse finished");
+            log.info("\n==========================\n[ChatUniTest] Parse finished");
         } else {
-            config.getLog().info("\n==========================\n[ChatUniTest] Parse output already exists, skip parsing!");
+            log.info("\n==========================\n[ChatUniTest] Parse output already exists, skip parsing!");
         }
     }
 }

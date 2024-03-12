@@ -1,11 +1,10 @@
 package zju.cst.aces.api.impl;
 
-import com.google.j2objc.annotations.ObjectiveCName;
 import lombok.Data;
 import zju.cst.aces.api.PromptConstructor;
 import zju.cst.aces.api.config.Config;
+import zju.cst.aces.dto.ChatMessage;
 import zju.cst.aces.dto.ClassInfo;
-import zju.cst.aces.dto.Message;
 import zju.cst.aces.dto.MethodInfo;
 import zju.cst.aces.dto.PromptInfo;
 import zju.cst.aces.prompt.PromptGenerator;
@@ -14,14 +13,13 @@ import zju.cst.aces.util.TokenCounter;
 
 import java.io.IOException;
 import java.util.List;
-import zju.cst.aces.api.PromptConstructor;
 
 @Data
 public class PromptConstructorImpl implements PromptConstructor {
 
     Config config;
     PromptInfo promptInfo;
-    List<Message> messages;
+    List<ChatMessage> chatMessages;
     int tokenCount = 0;
     String testName;
     String fullTestName;
@@ -32,14 +30,14 @@ public class PromptConstructorImpl implements PromptConstructor {
     }
 
     @Override
-    public List<Message> generate() {
+    public List<ChatMessage> generate() {
         try {
             if (promptInfo == null) {
                 throw new RuntimeException("PromptInfo is null, you need to initialize it first.");
             }
-            this.messages = new PromptGenerator(config).generateMessages(promptInfo);
+            this.chatMessages = new PromptGenerator(config).generateMessages(promptInfo);
             countToken();
-            return this.messages;
+            return this.chatMessages;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -64,7 +62,7 @@ public class PromptConstructorImpl implements PromptConstructor {
     }
 
     public void countToken() {
-        for (Message p : messages) {
+        for (ChatMessage p : chatMessages) {
             this.tokenCount += TokenCounter.countToken(p.getContent());
         }
     }

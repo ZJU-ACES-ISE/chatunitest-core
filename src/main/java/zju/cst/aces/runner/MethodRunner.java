@@ -18,7 +18,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
 
 public class MethodRunner extends ClassRunner {
 
@@ -76,7 +75,7 @@ public class MethodRunner extends ClassRunner {
                 + classInfo.methodSigs.get(methodInfo.methodSignature) + separator + num + separator + "Test";
         String fullTestName = fullClassName + separator + methodInfo.methodName + separator
                 + classInfo.methodSigs.get(methodInfo.methodSignature) + separator + num + separator + "Test";
-        config.getLog().info(String.format("\n==========================\n[%s] Generating test for method < ",config.pluginSign)
+        config.getLogger().info(String.format("\n==========================\n[%s] Generating test for method < ",config.pluginSign)
                 + methodInfo.methodName + " > number " + num + "...\n");
 
         ChatGenerator generator = new ChatGenerator(config);
@@ -102,12 +101,12 @@ public class MethodRunner extends ClassRunner {
             record.setAttempt(num);
 
             if (rounds == 0) {
-                config.getLog().info("Generating test for method < " + methodInfo.methodName + " > round " + rounds + " ...");
+                config.getLogger().info("Generating test for method < " + methodInfo.methodName + " > round " + rounds + " ...");
             } else {
-                config.getLog().info("Fixing test for method < " + methodInfo.methodName + " > round " + rounds + " ...");
+                config.getLogger().info("Fixing test for method < " + methodInfo.methodName + " > round " + rounds + " ...");
             }
 
-            List<Message> prompt;
+            List<ChatMessage> prompt;
             Obfuscator obfuscator = new Obfuscator(config);
             if (config.isEnableObfuscate()) {
                 PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
@@ -147,19 +146,19 @@ public class MethodRunner extends ClassRunner {
         return false;
     }
 
-    public String generateTest(List<Message> prompt, RoundRecord record) throws IOException {
+    public String generateTest(List<ChatMessage> prompt, RoundRecord record) throws IOException {
 
         if (isExceedMaxTokens(config.getMaxPromptTokens(), prompt)) {
-            config.getLog().error("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
+            config.getLogger().error("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
             record.setPromptToken(-1);
             record.setHasCode(false);
             return "";
         }
-        config.getLog().debug("[Prompt]:\n" + prompt.toString());
+        config.getLogger().debug("[Prompt]:\n" + prompt.toString());
 
         ChatResponse response = ChatGenerator.chat(config, prompt);
         String content = ChatGenerator.getContentByResponse(response);
-        config.getLog().debug("[Response]:\n" + content);
+        config.getLogger().debug("[Response]:\n" + content);
         String code = ChatGenerator.extractCodeByContent(content);
 
         record.setPromptToken(response.getUsage().getPromptTokens());
@@ -167,7 +166,7 @@ public class MethodRunner extends ClassRunner {
         record.setPrompt(prompt);
         record.setResponse(content);
         if (code.isEmpty()) {
-            config.getLog().info("Test for method < " + methodInfo.methodName + " > extract code failed");
+            config.getLogger().info("Test for method < " + methodInfo.methodName + " > extract code failed");
             record.setHasCode(false);
             return "";
         }
@@ -175,20 +174,20 @@ public class MethodRunner extends ClassRunner {
         return code;
     }
 
-    public String generateTest(List<Message> prompt) throws IOException {
+    public String generateTest(List<ChatMessage> prompt) throws IOException {
 
         if (isExceedMaxTokens(config.getMaxPromptTokens(), prompt)) {
-            config.getLog().error("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
+            config.getLogger().error("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
             return "";
         }
-        config.getLog().debug("[Prompt]:\n" + prompt.toString());
+        config.getLogger().debug("[Prompt]:\n" + prompt.toString());
 
         ChatResponse response = ChatGenerator.chat(config, prompt);
         String content = ChatGenerator.getContentByResponse(response);
         String code = ChatGenerator.extractCodeByContent(content);
 
         if (code.isEmpty()) {
-            config.getLog().info("Test for method < " + methodInfo.methodName + " > extract code failed");
+            config.getLogger().info("Test for method < " + methodInfo.methodName + " > extract code failed");
             return "";
         }
         return code;
@@ -212,12 +211,12 @@ public class MethodRunner extends ClassRunner {
         Path executionErrorPath = config.getErrorOutput().resolve(testName + "_ExecutionError_" + rounds + ".txt");
         boolean compileResult = config.getValidator().semanticValidate(code, testName, compilationErrorPath, promptInfo);
         if (!compileResult) {
-            config.getLog().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > compilation failed round " + rounds);
+            config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > compilation failed round " + rounds);
             return false;
         }
         if (config.isNoExecution()) {
             exportTest(code, savePath);
-            config.getLog().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > generated successfully round " + rounds);
+            config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > generated successfully round " + rounds);
             return true;
         }
 
@@ -228,12 +227,12 @@ public class MethodRunner extends ClassRunner {
 
             // Remove errors successfully, recompile and re-execute test
             if (testProcessed != null) {
-                config.getLog().debug("[Original Test]:\n" + code);
+                config.getLogger().debug("[Original Test]:\n" + code);
                 if (config.getValidator().semanticValidate(testProcessed, testName, compilationErrorPath, null)) {
                     if (config.getValidator().runtimeValidate(fullTestName)) {
                         exportTest(testProcessed, savePath);
-                        config.getLog().debug("[Processed Test]:\n" + testProcessed);
-                        config.getLog().info("Processed test for method < " + promptInfo.getMethodInfo().getMethodName() + " > generated successfully round " + rounds);
+                        config.getLogger().debug("[Processed Test]:\n" + testProcessed);
+                        config.getLogger().info("Processed test for method < " + promptInfo.getMethodInfo().getMethodName() + " > generated successfully round " + rounds);
                         return true;
                     }
                 }
@@ -257,12 +256,12 @@ public class MethodRunner extends ClassRunner {
             promptInfo.setErrorMsg(testMessage);
             exportError(code, errors, executionErrorPath);
             testProcessor.removeCorrectTest(promptInfo, summary);
-            config.getLog().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > execution failed round " + rounds);
+            config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > execution failed round " + rounds);
             return false;
         }
 //            summary.printTo(new PrintWriter(System.out));
         exportTest(code, savePath);
-        config.getLog().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > compile and execute successfully round " + rounds);
+        config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > compile and execute successfully round " + rounds);
         return true;
     }
 
