@@ -223,7 +223,15 @@ public class MethodRunner extends ClassRunner {
 
         // Execution
         TestExecutionSummary summary = config.getValidator().execute(fullTestName);
+
+        List<String> errors = extractErrorBySummary(summary, fullTestName);
         if (summary.getTestsFailedCount() > 0 || summary.getTestsSucceededCount() == 0) {
+            if (isOnlyAssertionError(errors)) {
+                exportTest(code, savePath);
+                config.getLog().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > compile and execute successfully with only assertion error, round " + rounds);
+                return true;
+            }
+
             String testProcessed = testProcessor.removeErrorTest(promptInfo, summary);
 
             // Remove errors successfully, recompile and re-execute test
@@ -242,16 +250,6 @@ public class MethodRunner extends ClassRunner {
 
             // Set promptInfo error message
             TestMessage testMessage = new TestMessage();
-            List<String> errors = new ArrayList<>();
-            summary.getFailures().forEach(failure -> {
-                for (StackTraceElement st : failure.getException().getStackTrace()) {
-                    if (st.getClassName().contains(fullTestName)) {
-                        errors.add("Error in " + failure.getTestIdentifier().getLegacyReportingName()
-                                + ": line " + st.getLineNumber() + " : "
-                                + failure.getException().toString());
-                    }
-                }
-            });
             testMessage.setErrorType(TestMessage.ErrorType.RUNTIME_ERROR);
             testMessage.setErrorMessage(errors);
             promptInfo.setErrorMsg(testMessage);
@@ -266,6 +264,29 @@ public class MethodRunner extends ClassRunner {
         return true;
     }
 
+    public static boolean isOnlyAssertionError(List<String> errors) {
+        for (String error : errors) {
+            if (!error.toLowerCase().contains("AssertionError".toLowerCase())
+            && !error.toLowerCase().contains("AssertionFailed".toLowerCase())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static List<String> extractErrorBySummary(TestExecutionSummary summary, String matchName) {
+        List<String> errors = new ArrayList<>();
+        summary.getFailures().forEach(failure -> {
+            for (StackTraceElement st : failure.getException().getStackTrace()) {
+                if (st.getClassName().contains(matchName)) {
+                    errors.add("Error in " + failure.getTestIdentifier().getLegacyReportingName()
+                            + ": line " + st.getLineNumber() + " : "
+                            + failure.getException().toString());
+                }
+            }
+        });
+        return errors;
+    }
 
     public static void exportError(String code, List<String> errors, Path outputPath) {
         try {
