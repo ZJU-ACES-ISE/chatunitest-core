@@ -1,6 +1,7 @@
 package zju.cst.aces.runner;
 
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
+import zju.cst.aces.api.Phase;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.ChatGenerator;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
@@ -71,76 +72,20 @@ public class MethodRunner extends ClassRunner {
     }
 
     public boolean startRounds(final int num) throws IOException {
-        String testName = className + separator + methodInfo.methodName + separator
-                + classInfo.methodSigs.get(methodInfo.methodSignature) + separator + num + separator + "Test";
-        String fullTestName = fullClassName + separator + methodInfo.methodName + separator
-                + classInfo.methodSigs.get(methodInfo.methodSignature) + separator + num + separator + "Test";
-        config.getLogger().info(String.format("\n==========================\n[%s] Generating test for method < ",config.pluginSign)
-                + methodInfo.methodName + " > number " + num + "...\n");
 
-        ChatGenerator generator = new ChatGenerator(config);
-        PromptConstructorImpl pc = new PromptConstructorImpl(config);
-        RepairImpl repair = new RepairImpl(config, pc);
-
-        if (!methodInfo.dependentMethods.isEmpty()) {
-            pc.setPromptInfoWithDep(classInfo, methodInfo);
-        } else {
-            pc.setPromptInfoWithoutDep(classInfo, methodInfo);
-        }
-        pc.setFullTestName(fullTestName);
-        pc.setTestName(testName);
+        Phase phase = new Phase(config);
+        PromptConstructorImpl pc = phase.new PromptGeneration(classInfo, methodInfo).execute(num);
 
         PromptInfo promptInfo = pc.getPromptInfo();
-        promptInfo.setFullTestName(fullTestName);
-        Path savePath = config.getTestOutput().resolve(fullTestName.replace(".", File.separator) + ".java");
-        promptInfo.setTestPath(savePath);
-
+        promptInfo.setRound(config.getMaxRounds());
         for (int rounds = 0; rounds < config.getMaxRounds(); rounds++) {
-            promptInfo.addRecord(new RoundRecord(rounds));
-            RoundRecord record = promptInfo.getRecords().get(rounds);
-            record.setAttempt(num);
 
-            if (rounds == 0) {
-                config.getLogger().info("Generating test for method < " + methodInfo.methodName + " > round " + rounds + " ...");
-            } else {
-                config.getLogger().info("Fixing test for method < " + methodInfo.methodName + " > round " + rounds + " ...");
-            }
+            phase.new TestGeneration().execute(pc);
 
-            List<ChatMessage> prompt;
-            Obfuscator obfuscator = new Obfuscator(config);
-            if (config.isEnableObfuscate()) {
-                PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
-                obfuscator.obfuscatePromptInfo(obfuscatedPromptInfo);
-                prompt = promptGenerator.generateMessages(obfuscatedPromptInfo);
-            } else {
-                prompt = promptGenerator.generateMessages(promptInfo);
-            }
-
-            String code = generateTest(prompt, record);
-            if (!record.isHasCode()) {
-                continue;
-            }
-
-            if (config.isEnableObfuscate()) {
-                code = obfuscator.deobfuscateJava(code);
-            }
-            if (CodeExtractor.isTestMethod(code)) {
-                TestSkeleton skeleton = new TestSkeleton(promptInfo); // test skeleton to wrap a test method
-                code = skeleton.build(code);
-            } else {
-                code = repair.ruleBasedRepair(code);
-            }
-            promptInfo.setUnitTest(code);
-
-            record.setCode(code);
-            repair.LLMBasedRepair(code, record.getRound());
-            if (repair.isSuccess()) {
-                record.setHasError(false);
-                exportRecord(promptInfo, classInfo, record.getAttempt());
+            if (phase.new Validation().execute(pc)) {
+                exportRecord(pc.getPromptInfo(), classInfo, num);
                 return true;
             }
-            record.setHasError(true);
-            record.setErrorMsg(promptInfo.getErrorMsg());
         }
         exportRecord(pc.getPromptInfo(), classInfo, num);
         return false;
