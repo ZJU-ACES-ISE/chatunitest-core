@@ -118,7 +118,6 @@ public class Task {
     public void startProjectTask() {
         Project project = config.getProject();
         try {
-            config.setJobCount(new AtomicInteger(Counter.countMethod(config.getTmpOutput())));
             checkTargetFolder(project);
         } catch (Exception e) {
             log.error(e.toString());
@@ -132,8 +131,12 @@ public class Task {
         phase.new Preparation().execute();
         List<String> classPaths = ProjectParser.scanSourceDirectory(project);
 
-        int totalClassNum = classPaths.size();
-        log.info(String.format("\n==========================\n[%s] Total Class Tasks:   %s", config.pluginSign, totalClassNum));
+        try {
+            config.setJobCount(new AtomicInteger(Counter.countMethod(config.getTmpOutput())));
+        } catch (IOException e) {
+            log.error("Error when counting methods: " + e);
+        }
+
         if (config.isEnableMultithreading() == true) {
             projectJob(classPaths);
         } else {
@@ -161,7 +164,6 @@ public class Task {
     public void projectJob(List<String> classPaths) {
         ExecutorService executor = Executors.newFixedThreadPool(config.getClassThreads());
         List<Future<String>> futures = new ArrayList<>();
-        int totalClassNum = classPaths.size();
         for (String classPath : classPaths) {
             Callable<String> callable = new Callable<String>() {
                 @Override
