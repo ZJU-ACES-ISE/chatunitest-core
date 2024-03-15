@@ -41,6 +41,8 @@ public class ClassRunner extends AbstractRunner {
                     continue;
                 }
                 new MethodRunner(config, fullClassName, methodInfo).start();
+                int newCount = config.getCompletedJobCount().incrementAndGet();
+                config.getLogger().info(String.format("\n==========================\n[%s] Completed Method Jobs:   [ %s /  %s]", config.pluginSign, newCount, config.getJobCount()));
             }
         }
         if (config.isEnableMerge()) {
@@ -63,6 +65,8 @@ public class ClassRunner extends AbstractRunner {
                         return "Skip method: " + mSig + " in class: " + fullClassName;
                     }
                     new MethodRunner(config, fullClassName, methodInfo).start();
+                    int newCount = config.getCompletedJobCount().incrementAndGet();
+                    config.getLogger().info(String.format("\n==========================\n[%s] Completed Method Jobs:   [ %s /  %s]", config.pluginSign, newCount, config.getJobCount()));
                     return "Processed " + mSig;
                 }
             };
