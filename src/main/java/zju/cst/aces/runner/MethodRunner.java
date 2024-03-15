@@ -27,7 +27,7 @@ public class MethodRunner extends ClassRunner {
                 int finalNum = num;
                 Callable<String> callable = () -> {
                     startRounds(finalNum);
-                    int newCount = config.getJobCount().incrementAndGet();
+                    int newCount = config.getCompletedJobCount().incrementAndGet();
                     config.getLogger().info(String.format("\n==========================\n[%s] Completed Method Jobs:   [ %s /  %s]", config.pluginSign, newCount, config.getJobCount()));
                     return "";
                 };
@@ -49,7 +49,7 @@ public class MethodRunner extends ClassRunner {
         } else {
             for (int num = 0; num < config.getTestNumber(); num++) {
                 boolean result = startRounds(num);
-                int newCount = config.getJobCount().incrementAndGet();
+                int newCount = config.getCompletedJobCount().incrementAndGet();
                 config.getLogger().info(String.format("\n==========================\n[%s] Completed Method Jobs:   [ %s /  %s]", config.pluginSign, newCount, config.getJobCount()));
                 if (result && config.isStopWhenSuccess()) {
                     break;
