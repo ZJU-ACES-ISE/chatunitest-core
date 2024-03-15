@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import zju.cst.aces.util.Counter;
 
@@ -23,6 +24,8 @@ public class Task {
     Config config;
     Logger log;
     Runner runner;
+
+    final AtomicInteger jobCount = new AtomicInteger(0);
 
     public Task(Config config, Runner runner) {
         this.config = config;
@@ -129,6 +132,9 @@ public class Task {
         Phase phase = new Phase(config);
         phase.new Preparation().execute();
         List<String> classPaths = ProjectParser.scanSourceDirectory(project);
+
+        int totalClassNum = classPaths.size();
+        log.info(String.format("\n==========================\n[%s] Total Class Tasks:   %s", config.pluginSign, totalClassNum));
         if (config.isEnableMultithreading() == true) {
             projectJob(classPaths);
         } else {
@@ -142,7 +148,10 @@ public class Task {
                         config.getLogger().info("Skip class: " + classPath);
                         continue;
                     }
+
                     this.runner.runClass(fullClassName);
+                    int newCount = jobCount.incrementAndGet();
+                    log.info(String.format("\n==========================\n[%s] Completed Class Tasks:   [ %s /  %s]", config.pluginSign, newCount, totalClassNum));
                 } catch (IOException e) {
                     log.error(String.format("[%s] Generate tests for class ",config.pluginSign) + className + " failed: " + e);
                 }
@@ -155,6 +164,7 @@ public class Task {
     public void projectJob(List<String> classPaths) {
         ExecutorService executor = Executors.newFixedThreadPool(config.getClassThreads());
         List<Future<String>> futures = new ArrayList<>();
+        int totalClassNum = classPaths.size();
         for (String classPath : classPaths) {
             Callable<String> callable = new Callable<String>() {
                 @Override
@@ -168,6 +178,8 @@ public class Task {
                             return "Skip class: " + classPath;
                         }
                         runner.runClass(fullClassName);
+                        int newCount = jobCount.incrementAndGet();
+                        log.info(String.format("\n==========================\n[%s] Completed Class Tasks:   [%s / %s]", config.pluginSign, newCount, totalClassNum));
                     } catch (IOException e) {
                         log.error(String.format("[%s] Generate tests for class ",config.pluginSign) + className + " failed: " + e);
                     }

@@ -18,6 +18,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+import static zju.cst.aces.api.impl.ChatGenerator.chat;
+import static zju.cst.aces.api.impl.ChatGenerator.extractCodeByResponse;
+import static zju.cst.aces.runner.AbstractRunner.runTest;
+
 public class Phase {
     Config config;
     public static final String separator = "_";
@@ -173,15 +177,15 @@ public class Phase {
 
         public boolean execute(PromptConstructorImpl pc) {
 
-            RepairImpl repair = new RepairImpl(config, pc);
             PromptInfo promptInfo = pc.getPromptInfo();
-            String code = promptInfo.getUnitTest();
             RoundRecord record = promptInfo.getRecords().get(promptInfo.getRound());
-            repair.LLMBasedRepair(code, record.getRound());
-            if (repair.isSuccess()) {
+
+            // compilation and runtime validation
+            if (runTest(config, pc.getFullTestName(), promptInfo, promptInfo.getRound())) {
                 record.setHasError(false);
                 return true;
             }
+
             record.setHasError(true);
             record.setErrorMsg(promptInfo.getErrorMsg());
             return false;
