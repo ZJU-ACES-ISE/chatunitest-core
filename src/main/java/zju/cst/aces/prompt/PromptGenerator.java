@@ -11,7 +11,7 @@ public class PromptGenerator {
     public Config config;
     public PromptTemplate promptTemplate;
 
-    public PromptGenerator(Config config) throws IOException {
+    public PromptGenerator(Config config) {
         this.config = config;
         this.promptTemplate = new PromptTemplate(config, config.properties, config.getPromptPath(), config.getMaxPromptTokens());
     }
@@ -21,22 +21,22 @@ public class PromptGenerator {
         this.promptTemplate = new PromptTemplate(config, config.properties, config.getPromptPath(), config.getMaxPromptTokens());
     }
 
-    public List<Message> generateMessages(PromptInfo promptInfo) {
-        List<Message> messages = new ArrayList<>();
+    public List<ChatMessage> generateMessages(PromptInfo promptInfo) {
+        List<ChatMessage> chatMessages = new ArrayList<>();
         if (promptInfo.errorMsg == null) { // round 0
-            messages.add(Message.ofSystem(createSystemPrompt(promptInfo, promptTemplate.TEMPLATE_INIT)));
-            messages.add(Message.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_INIT)));
+            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, promptTemplate.TEMPLATE_INIT)));
+            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_INIT)));
         } else {
-            messages.add(Message.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_REPAIR)));
+            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_REPAIR)));
         }
-        return messages;
+        return chatMessages;
     }
 
-    public List<Message> generateMessages(PromptInfo promptInfo, String templateName) {
-        List<Message> messages = new ArrayList<>();
-        messages.add(Message.ofSystem(createSystemPrompt(promptInfo, templateName)));
-        messages.add(Message.of(createUserPrompt(promptInfo, templateName)));
-        return messages;
+    public List<ChatMessage> generateMessages(PromptInfo promptInfo, String templateName) {
+        List<ChatMessage> chatMessages = new ArrayList<>();
+        chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, templateName)));
+        chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, templateName)));
+        return chatMessages;
     }
 
     public String createUserPrompt(PromptInfo promptInfo, String templateName) {
@@ -57,8 +57,8 @@ public class PromptGenerator {
                         processedErrorMsg += error + "\n";
                     }
                 }
-                config.getLog().debug("Allowed tokens: " + allowedTokens);
-                config.getLog().debug("Processed error message: \n" + processedErrorMsg);
+                config.getLogger().debug("Allowed tokens: " + allowedTokens);
+                config.getLogger().debug("Processed error message: \n" + processedErrorMsg);
 
                 promptTemplate.dataModel.put("unit_test", promptInfo.getUnitTest());
                 promptTemplate.dataModel.put("error_message", processedErrorMsg);

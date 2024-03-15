@@ -1,7 +1,5 @@
 package zju.cst.aces.api;
 
-import zju.cst.aces.api.Project;
-import zju.cst.aces.api.Runner;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
@@ -17,7 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
-import zju.cst.aces.api.Logger;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import zju.cst.aces.util.Counter;
 
 public class Task {
@@ -28,7 +27,7 @@ public class Task {
 
     public Task(Config config, Runner runner) {
         this.config = config;
-        this.log = config.getLog();
+        this.log = config.getLogger();
         this.runner = runner;
     }
 
@@ -43,8 +42,10 @@ public class Task {
             log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...",config.pluginSign));
             return;
         }
-        ProjectParser parser = new ProjectParser(config);
-        parser.parse();
+
+        Phase phase = new Phase(config);
+        phase.new Preparation().execute();
+
         log.info(String.format("\n==========================\n[%s] Generating tests for class: < ",config.pluginSign) + className
                 + "> method: < " + methodName + " > ...");
 
@@ -103,8 +104,8 @@ public class Task {
             log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...",config.pluginSign));
             return;
         }
-        ProjectParser parser = new ProjectParser(config);
-        parser.parse();
+        Phase phase = new Phase(config);
+        phase.new Preparation().execute();
         log.info(String.format("\n==========================\n[%s] Generating tests for class < " + className + " > ...",config.pluginSign));
         try {
             this.runner.runClass(getFullClassName(config, className));
@@ -118,7 +119,7 @@ public class Task {
         Project project = config.getProject();
         try {
             checkTargetFolder(project);
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             log.error(e.toString());
             return;
         }
@@ -126,9 +127,16 @@ public class Task {
             log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...",config.pluginSign));
             return;
         }
-        ProjectParser parser = new ProjectParser(config);
-        parser.parse();
+        Phase phase = new Phase(config);
+        phase.new Preparation().execute();
         List<String> classPaths = ProjectParser.scanSourceDirectory(project);
+
+        try {
+            config.setJobCount(new AtomicInteger(Counter.countMethod(config.getTmpOutput())));
+        } catch (IOException e) {
+            log.error("Error when counting methods: " + e);
+        }
+
         if (config.isEnableMultithreading() == true) {
             projectJob(classPaths);
         } else {
@@ -139,9 +147,10 @@ public class Task {
                     log.info(String.format("\n==========================\n[%s] Generating tests for class < ",config.pluginSign) + className + " > ...");
                     ClassInfo info = AbstractRunner.getClassInfo(config, fullClassName);
                     if (!Counter.filter(info)) {
-                        config.getLog().info("Skip class: " + classPath);
+                        config.getLogger().info("Skip class: " + classPath);
                         continue;
                     }
+
                     this.runner.runClass(fullClassName);
                 } catch (IOException e) {
                     log.error(String.format("[%s] Generate tests for class ",config.pluginSign) + className + " failed: " + e);

@@ -24,6 +24,8 @@ public class PromptInfo {
     public String fullTestName;
     public Path testPath;
     public Map<String, List<MethodDeclaration>> correctTests = new HashMap<>();
+    public Integer testNum;
+    public Integer round;
     public List<RoundRecord> records = new ArrayList<>();
     public MethodInfo methodInfo;
     public ClassInfo classInfo;

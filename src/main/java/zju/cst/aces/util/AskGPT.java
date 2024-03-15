@@ -8,8 +8,8 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.config.ModelConfig;
+import zju.cst.aces.dto.ChatMessage;
 import zju.cst.aces.dto.ChatResponse;
-import zju.cst.aces.dto.Message;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -25,7 +25,7 @@ public class AskGPT {
         this.config = config;
     }
 
-    public ChatResponse askChatGPT(List<Message> messages) {
+    public ChatResponse askChatGPT(List<ChatMessage> chatMessages) {
         String apiKey = config.getRandomKey();
         int maxTry = 5;
         while (maxTry > 0) {
@@ -39,7 +39,7 @@ public class AskGPT {
 
                 ModelConfig modelConfig = config.getModel().getDefaultConfig();
 
-                payload.put("messages", messages);
+                payload.put("messages", chatMessages);
                 payload.put("model", modelConfig.getModelName());
                 payload.put("temperature", config.getTemperature());
                 payload.put("frequency_penalty", config.getFrequencyPenalty());
@@ -65,11 +65,11 @@ public class AskGPT {
                 if (response != null) {
                     response.close();
                 }
-                config.getLog().error("In AskGPT.askChatGPT: " + e);
+                config.getLogger().error("In AskGPT.askChatGPT: " + e);
                 maxTry--;
             }
         }
-        config.getLog().debug("AskGPT: Failed to get response\n");
+        config.getLogger().debug("AskGPT: Failed to get response\n");
         return null;
     }
 }

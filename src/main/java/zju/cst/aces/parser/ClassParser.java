@@ -8,16 +8,17 @@ import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.comments.Comment;
-import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
-import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
+import com.google.gson.Gson;
+import javassist.ClassMap;
 import org.jetbrains.annotations.NotNull;
-import zju.cst.aces.api.config.Config;
+import zju.cst.aces.api.Logger;
+import zju.cst.aces.api.Project;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 
@@ -27,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,18 +38,22 @@ public class ClassParser {
     private static ClassInfo classInfo;
     private static JavaParser parser;
     public int methodCount = 0;
-    private final Config config;
+    Project project;
+    Logger logger;
+    Gson GSON;
+    AtomicInteger sharedInteger;
+    Map<String, Map<String, String>> classMapping;
 
-    public ClassParser(Config config, String path) {
-        this.config = config;
-        this.parser = config.getParser();
-        setOutputPath(path);
-    }
-
-    public ClassParser(Config config, Path path) {
-        this.config = config;
-        this.parser = config.getParser();
-        setOutputPath(path.toString());
+    public ClassParser(JavaParser javaParser, Project project, Path path,
+                       Logger logger, Gson gson, AtomicInteger sharedInteger,
+                       Map<String, Map<String, String>> classMapping) {
+        this.parser = javaParser;
+        this.classOutputPath = path;
+        this.project = project;
+        this.logger = logger;
+        this.GSON = gson;
+        this.sharedInteger = sharedInteger;
+        this.classMapping = classMapping;
     }
 
     public int extractClass(String classPath) throws FileNotFoundException {
@@ -65,7 +71,7 @@ public class ClassParser {
                 addClassMapping(classInfo);
                 methodCount += classDeclaration.getMethods().size();
             } catch (Exception e) {
-                config.getLog().error("In ClassParser.extractClass Exception: when parse class " + classDeclaration.getNameAsString() + " :\n" + e);
+                logger.error("In ClassParser.extractClass Exception: when parse class " + classDeclaration.getNameAsString() + " :\n" + e);
             }
         }
         return classes.size();
@@ -74,10 +80,6 @@ public class ClassParser {
     private static boolean isJavaSourceDir(Path path) {
         return Files.isDirectory(path) && Files.exists(path.resolve(
                 "src" + File.separator + "main" + File.separator + "java"));
-    }
-
-    private void setOutputPath(String path) {
-        classOutputPath = Paths.get(path);
     }
 
     private void extractMethods(CompilationUnit cu, ClassOrInterfaceDeclaration classDeclaration) throws IOException {
@@ -103,7 +105,7 @@ public class ClassParser {
         ClassInfo ci = new ClassInfo(
                 cu,
                 classNode,
-                config.sharedInteger.getAndIncrement(),
+                this.sharedInteger.getAndIncrement(),
                 getClassSignature(cu, classNode),
                 getImports(getImportDeclarations(cu)),
                 getFields(cu, classNode.getFields()),
@@ -231,7 +233,7 @@ public class ClassParser {
     public List<String> getSubClasses(ClassOrInterfaceDeclaration node) {
         String targetClassName = node.getFullyQualifiedName().orElseThrow().toString();
         List<String> subClasses = new ArrayList<>();
-        List<String> classPaths = ProjectParser.scanSourceDirectory(config.project);
+        List<String> classPaths = ProjectParser.scanSourceDirectory(this.project);
         if (classPaths.isEmpty()) {
             return null;
         }
@@ -506,7 +508,7 @@ public class ClassParser {
                 invocations.add(mSig);
                 dependentMethods.put(dependentType, invocations);
             } catch (Exception e) {
-//                config.getLog().warn("Cannot resolve method call: " + m.getNameAsString() + " in: " + node.getNameAsString());
+//                logger.warn("Cannot resolve method call: " + m.getNameAsString() + " in: " + node.getNameAsString());
             }
         }
         return dependentMethods;
@@ -577,7 +579,7 @@ public class ClassParser {
         Path classInfoPath = classOutputDir.resolve("class.json");
         //set charset utf-8
         try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(classInfoPath.toFile()), StandardCharsets.UTF_8)) {
-            writer.write(config.getGSON().toJson(classInfo));
+            writer.write(this.GSON.toJson(classInfo));
         }
     }
 
@@ -589,7 +591,7 @@ public class ClassParser {
         Path info = classOutputDir.resolve(getFilePathBySig(node.getSignature().asString()));
         //set charset utf-8
         try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(info.toFile()), StandardCharsets.UTF_8)) {
-            writer.write(config.getGSON().toJson(methodInfo));
+            writer.write(this.GSON.toJson(methodInfo));
         }
     }
 
@@ -601,7 +603,7 @@ public class ClassParser {
         Path info = classOutputDir.resolve(getFilePathBySig(node.getSignature().asString()));
         //set charset utf-8
         try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(info.toFile()), StandardCharsets.UTF_8)) {
-            writer.write(config.getGSON().toJson(methodInfo));
+            writer.write(this.GSON.toJson(methodInfo));
         }
     }
 
@@ -638,10 +640,10 @@ public class ClassParser {
         map.put("modifier", classInfo.modifier);
         map.put("extend", classInfo.extend);
         map.put("implement", classInfo.implement);
-        if (config.classMapping == null) {
-            config.classMapping = new LinkedHashMap<>();
+        if (this.classMapping == null) {
+            this.classMapping = new LinkedHashMap<>();
         }
-        config.classMapping.put("class" + classInfo.index, map);
+        this.classMapping.put("class" + classInfo.index, map);
     }
 
 }

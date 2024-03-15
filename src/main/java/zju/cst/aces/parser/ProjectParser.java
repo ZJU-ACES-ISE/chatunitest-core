@@ -3,12 +3,6 @@ package zju.cst.aces.parser;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ParserConfiguration.LanguageLevel;
-import com.github.javaparser.symbolsolver.JavaSymbolSolver;
-import com.github.javaparser.symbolsolver.javaparsermodel.JavaParserFacade;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.JarTypeSolver;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
 import zju.cst.aces.api.Project;
 import zju.cst.aces.api.config.Config;
@@ -25,10 +19,10 @@ import java.util.*;
 
 public class ProjectParser {
 
-    public static final JavaParser parser = new JavaParser();
+    public static JavaParser parser;
     public Path srcFolderPath;
     public Path outputPath;
-    public Map<String, Set<String>> classMap = new HashMap<>();
+    public Map<String, Set<String>> classNameMap = new HashMap<>();
     public static Config config;
     public int classCount = 0;
     public int methodCount = 0;
@@ -37,12 +31,7 @@ public class ProjectParser {
         this.srcFolderPath = Paths.get(config.getProject().getBasedir().getAbsolutePath(), "src", "main", "java");
         this.config = config;
         this.outputPath = config.getParseOutput();
-        JavaSymbolSolver symbolSolver = getSymbolSolver();
-        parser.getParserConfiguration().setSymbolResolver(symbolSolver);
-        setLanguageLevel(parser.getParserConfiguration());
-        if (config.parser == null) {
-            config.setParser(parser);
-        }
+        this.parser = config.getParser();
     }
 
     /**
@@ -51,14 +40,15 @@ public class ProjectParser {
     public void parse() {
         List<String> classPaths = scanSourceDirectory(config.getProject());
         if (classPaths.isEmpty()) {
-            config.getLog().warn("No java file found in " + srcFolderPath);
+            config.getLogger().warn("No java file found in " + srcFolderPath);
             return;
         }
         for (String classPath : classPaths) {
             try {
                 String packagePath = classPath.substring(srcFolderPath.toString().length() + 1);
                 Path output = outputPath.resolve(packagePath).getParent();
-                ClassParser classParser = new ClassParser(config, output);
+                ClassParser classParser = new ClassParser(parser, config.getProject(), output,
+                        config.getLogger(),  config.getGSON(), config.sharedInteger, config.classMapping);
                 int classNum = classParser.extractClass(classPath);
 
                 if (classNum == 0) {
@@ -72,8 +62,8 @@ public class ProjectParser {
             }
         }
         exportClassMapping();
-        exportJson(config.getClassNameMapPath(), classMap);
-        config.getLog().info("\nParsed classes: " + classCount + "\nParsed methods: " + methodCount);
+        exportJson(config.getClassNameMapPath(), classNameMap);
+        config.getLogger().info("\nParsed classes: " + classCount + "\nParsed methods: " + methodCount);
     }
 
     public void addClassMap(Path outputPath, String packagePath) {
@@ -91,12 +81,12 @@ public class ProjectParser {
             if (file.isDirectory()) {
                 String className = file.getName();
                 String fullClassName = packageDeclaration + "." + className;
-                if (classMap.containsKey(className)) {
-                    classMap.get(className).add(fullClassName);
+                if (classNameMap.containsKey(className)) {
+                    classNameMap.get(className).add(fullClassName);
                 } else {
                     Set<String> fullClassNames = new HashSet<>();
                     fullClassNames.add(fullClassName);
-                    classMap.put(className, fullClassNames);
+                    classNameMap.put(className, fullClassNames);
                 }
             }
         }
@@ -136,31 +126,6 @@ public class ProjectParser {
         return classPaths;
     }
 
-    public JavaSymbolSolver getSymbolSolver() {
-        CombinedTypeSolver combinedTypeSolver = new CombinedTypeSolver();
-        combinedTypeSolver.add(new ReflectionTypeSolver());
-        for (String dep : config.getClassPaths()) {
-            try {
-                File depFile = new File(dep);
-                if (!depFile.exists() || !dep.endsWith("jar")) {
-                    continue;
-                }
-                combinedTypeSolver.add(new JarTypeSolver(depFile));
-            } catch (Exception e) {
-                config.getLog().warn(e.getMessage());
-                config.getLog().debug(e.getMessage());
-            }
-        }
-        for (String src : config.getProject().getCompileSourceRoots()) { // TODO: remove MavenProject
-            if (new File(src).exists()) {
-                combinedTypeSolver.add(new JavaParserTypeSolver(src));
-            }
-        }
-        JavaSymbolSolver symbolSolver = new JavaSymbolSolver(combinedTypeSolver);
-        config.setParserFacade(JavaParserFacade.get(combinedTypeSolver));
-        return symbolSolver;
-    }
-
     public static void walkDep(DependencyNode node, Set<DependencyNode> depSet) {
         depSet.add(node);
         for (DependencyNode dep : node.getChildren()) {
@@ -173,7 +138,7 @@ public class ProjectParser {
         exportJson(savePath, config.classMapping);
     }
 
-    private void setLanguageLevel(ParserConfiguration configuration) {
+    public static void setLanguageLevel(ParserConfiguration configuration) {
         int version = Runtime.version().feature();
 //        int versionPrefix = Integer.parseInt(System.getProperty("java.version").split("\\.")[0]);
         switch (version) {

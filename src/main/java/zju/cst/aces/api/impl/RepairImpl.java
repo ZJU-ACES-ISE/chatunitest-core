@@ -1,15 +1,10 @@
 package zju.cst.aces.api.impl;
 
 import lombok.Data;
-import okhttp3.Response;
 import zju.cst.aces.api.Repair;
-import zju.cst.aces.api.Validator;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.ChatResponse;
 import zju.cst.aces.dto.PromptInfo;
-import zju.cst.aces.runner.MethodRunner;
-
-import java.io.IOException;
 
 import static zju.cst.aces.runner.AbstractRunner.*;
 import static zju.cst.aces.api.impl.ChatGenerator.*;
@@ -41,20 +36,20 @@ public class RepairImpl implements Repair {
         PromptInfo promptInfo = promptConstructorImpl.getPromptInfo();
         promptInfo.setUnitTest(code);
         String fullClassName = promptInfo.getClassInfo().getPackageName() + "." + promptInfo.getClassInfo().getClassName();
-        if (MethodRunner.runTest(config, promptConstructorImpl.getFullTestName(), promptInfo, rounds)) {
+        if (runTest(config, promptConstructorImpl.getFullTestName(), promptInfo, rounds)) {
             this.success = true;
             return code;
         }
 
         promptConstructorImpl.generate();
         if (promptConstructorImpl.isExceedMaxTokens()) {
-            config.getLog().error("Exceed max prompt tokens: " + promptInfo.methodInfo.methodName + " Skipped.");
+            config.getLogger().error("Exceed max prompt tokens: " + promptInfo.methodInfo.methodName + " Skipped.");
             return code;
         }
-        ChatResponse response = chat(config, promptConstructorImpl.getMessages());
+        ChatResponse response = chat(config, promptConstructorImpl.getChatMessages());
         String newcode = extractCodeByResponse(response);
         if (newcode.isEmpty()) {
-            config.getLog().warn("Test for method < " + promptInfo.methodInfo.methodName + " > extract code failed");
+            config.getLogger().warn("Test for method < " + promptInfo.methodInfo.methodName + " > extract code failed");
             return code;
         } else {
             return newcode;
@@ -66,21 +61,21 @@ public class RepairImpl implements Repair {
         PromptInfo promptInfo = promptConstructorImpl.getPromptInfo();
         promptInfo.setUnitTest(code);
         String fullClassName = promptInfo.getClassInfo().getPackageName() + "." + promptInfo.getClassInfo().getClassName();
-        if (MethodRunner.runTest(config, promptConstructorImpl.getFullTestName(), promptInfo, 0)) {
-            config.getLog().info("Test for method < " + promptInfo.methodInfo.methodName + " > doesn't need repair");
+        if (runTest(config, promptConstructorImpl.getFullTestName(), promptInfo, 0)) {
+            config.getLogger().info("Test for method < " + promptInfo.methodInfo.methodName + " > doesn't need repair");
             return code;
         }
 
         promptConstructorImpl.generate();
 
         if (promptConstructorImpl.isExceedMaxTokens()) {
-            config.getLog().error("Exceed max prompt tokens: " + promptInfo.methodInfo.methodName + " Skipped.");
+            config.getLogger().error("Exceed max prompt tokens: " + promptInfo.methodInfo.methodName + " Skipped.");
             return code;
         }
-        ChatResponse response = chat(config, promptConstructorImpl.getMessages());
+        ChatResponse response = chat(config, promptConstructorImpl.getChatMessages());
         String newcode = extractCodeByResponse(response);
         if (newcode.isEmpty()) {
-            config.getLog().warn("Test for method < " + promptInfo.methodInfo.methodName + " > extract code failed");
+            config.getLogger().warn("Test for method < " + promptInfo.methodInfo.methodName + " > extract code failed");
             return code;
         } else {
             return newcode;

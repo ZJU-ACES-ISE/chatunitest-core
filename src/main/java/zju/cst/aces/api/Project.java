@@ -16,5 +16,6 @@ public interface Project {
     List<String> getCompileSourceRoots();
     Path getArtifactPath();
     Path getBuildPath();
+    List<String> getClassPaths();
 
 }

@@ -23,7 +23,7 @@ public class ClassRunner extends AbstractRunner {
         super(config, fullClassName);
         infoDir = config.getParseOutput().resolve(fullClassName.replace(".", File.separator)).toFile();
         if (!infoDir.isDirectory()) {
-            config.getLog().warn("Error: " + fullClassName + " no parsed info found");
+            config.getLogger().warn("Error: " + fullClassName + " no parsed info found");
         }
         File classInfoFile = new File(infoDir + File.separator + "class.json");
         classInfo = GSON.fromJson(Files.readString(classInfoFile.toPath(), StandardCharsets.UTF_8), ClassInfo.class);
@@ -37,10 +37,12 @@ public class ClassRunner extends AbstractRunner {
             for (String mSig : classInfo.methodSigs.keySet()) {
                 MethodInfo methodInfo = getMethodInfo(config, classInfo, mSig);
                 if (!Counter.filter(methodInfo)) {
-                    config.getLog().info("Skip method: " + mSig + " in class: " + fullClassName);
+                    config.getLogger().info("Skip method: " + mSig + " in class: " + fullClassName);
                     continue;
                 }
                 new MethodRunner(config, fullClassName, methodInfo).start();
+                int newCount = config.getCompletedJobCount().incrementAndGet();
+                config.getLogger().info(String.format("\n==========================\n[%s] Completed Method Jobs:   [ %s /  %s]", config.pluginSign, newCount, config.getJobCount()));
             }
         }
         if (config.isEnableMerge()) {
@@ -63,6 +65,8 @@ public class ClassRunner extends AbstractRunner {
                         return "Skip method: " + mSig + " in class: " + fullClassName;
                     }
                     new MethodRunner(config, fullClassName, methodInfo).start();
+                    int newCount = config.getCompletedJobCount().incrementAndGet();
+                    config.getLogger().info(String.format("\n==========================\n[%s] Completed Method Jobs:   [ %s /  %s]", config.pluginSign, newCount, config.getJobCount()));
                     return "Processed " + mSig;
                 }
             };
