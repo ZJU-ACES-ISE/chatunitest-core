@@ -16,7 +16,7 @@ public class ChatResponse {
 
     public List<ChatMessage> getMessages() {
         if (this.choices == null || this.choices.isEmpty()) return Collections.emptyList();
-        return this.choices.stream().map(ChatChoice::getChatMessage).collect(Collectors.toList());
+        return this.choices.stream().map(ChatChoice::getMessage).collect(Collectors.toList());
     }
 
     /**
@@ -28,7 +28,7 @@ public class ChatResponse {
         if (this.choices == null || this.choices.isEmpty()) return "";
         StringBuilder sb = new StringBuilder();
         for (ChatChoice choice : choices) {
-            ChatMessage chatMessage = choice.getChatMessage();
+            ChatMessage chatMessage = choice.getMessage();
             if (chatMessage != null && chatMessage.getContent() != null) {
                 sb.append(chatMessage.getContent());
             }
