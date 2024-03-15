@@ -25,8 +25,6 @@ public class Task {
     Logger log;
     Runner runner;
 
-    final AtomicInteger jobCount = new AtomicInteger(0);
-
     public Task(Config config, Runner runner) {
         this.config = config;
         this.log = config.getLogger();
@@ -120,8 +118,9 @@ public class Task {
     public void startProjectTask() {
         Project project = config.getProject();
         try {
+            config.setJobCount(new AtomicInteger(Counter.countMethod(config.getTmpOutput())));
             checkTargetFolder(project);
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             log.error(e.toString());
             return;
         }
@@ -150,8 +149,6 @@ public class Task {
                     }
 
                     this.runner.runClass(fullClassName);
-                    int newCount = jobCount.incrementAndGet();
-                    log.info(String.format("\n==========================\n[%s] Completed Class Tasks:   [ %s /  %s]", config.pluginSign, newCount, totalClassNum));
                 } catch (IOException e) {
                     log.error(String.format("[%s] Generate tests for class ",config.pluginSign) + className + " failed: " + e);
                 }
@@ -178,8 +175,6 @@ public class Task {
                             return "Skip class: " + classPath;
                         }
                         runner.runClass(fullClassName);
-                        int newCount = jobCount.incrementAndGet();
-                        log.info(String.format("\n==========================\n[%s] Completed Class Tasks:   [%s / %s]", config.pluginSign, newCount, totalClassNum));
                     } catch (IOException e) {
                         log.error(String.format("[%s] Generate tests for class ",config.pluginSign) + className + " failed: " + e);
                     }

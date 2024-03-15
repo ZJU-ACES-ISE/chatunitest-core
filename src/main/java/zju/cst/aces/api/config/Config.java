@@ -89,7 +89,9 @@ public class Config {
     public String hostname;
     public String port;
     public OkHttpClient client;
-    public static AtomicInteger sharedInteger = new AtomicInteger(0);
+    public AtomicInteger sharedInteger = new AtomicInteger(0);
+    public AtomicInteger jobCount = new AtomicInteger(0);
+    public AtomicInteger completedJobCount = new AtomicInteger(0);
     public static Map<String, Map<String, String>> classMapping;
     public Validator validator;
     public String pluginSign;

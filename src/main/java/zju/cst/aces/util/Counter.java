@@ -27,12 +27,14 @@ public class Counter {
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
     public static void main(String[] args) throws IOException {
-        String classInfoPath = "/private/tmp/chatunitest-info/commons-cli/class-info";
-        String allMethodCsvPath = "/private/tmp/chatunitest-info/commons-csv/focal_methods_all.csv";
-        String sampledCsvPath = "/private/tmp/chatunitest-info/commons-csv/focal_methods_sampled.csv";
-        int sampleSize = 10; // Specify the desired sample size
-        countClassMethod(Paths.get(classInfoPath), allMethodCsvPath);
-        sampleMethods(allMethodCsvPath, sampledCsvPath, sampleSize);
+        String classInfoPath = "/private/tmp/chatunitest-info/hep-ucs/ucs-server";
+        System.out.println(countMethod(Paths.get(classInfoPath)));
+//        String classInfoPath = "/private/tmp/chatunitest-info/hep-ucs/ucs-server/class-info";
+//        String allMethodCsvPath = "/private/tmp/chatunitest-info/commons-csv/focal_methods_all.csv";
+//        String sampledCsvPath = "/private/tmp/chatunitest-info/commons-csv/focal_methods_sampled.csv";
+//        int sampleSize = 10; // Specify the desired sample size
+//        countClassMethod(Paths.get(classInfoPath), allMethodCsvPath);
+//        sampleMethods(allMethodCsvPath, sampledCsvPath, sampleSize);
     }
 
     public static void sampleMethods(String inputCsvPath, String sampledCsvPath, int sampleSize) throws IOException {
@@ -153,6 +155,37 @@ public class Counter {
 
         System.out.println("Total class count: " + testMap.size());
         System.out.println("Total method count: " + testMap.values().stream().mapToInt(List::size).sum());
+    }
+
+    public static int countMethod(Path tmpOutputPath) throws IOException {
+        Path parseOutputPath = tmpOutputPath.resolve("class-info");
+        Map<String, List<String>> testMap = new HashMap<>();
+        // get all json files names "class.json"
+        List<String> classJsonFiles = Files.walk(parseOutputPath)
+                .filter(Files::isRegularFile)
+                .map(Path::toString)
+                .filter(f -> f.endsWith("class.json"))
+                .collect(Collectors.toList());
+
+        for (String classJsonFile : classJsonFiles) {
+            File classInfoFile = new File(classJsonFile);
+            ClassInfo classInfo = GSON.fromJson(Files.readString(classInfoFile.toPath(), StandardCharsets.UTF_8), ClassInfo.class);
+
+            if (!filter(classInfo)) {
+                continue;
+            }
+            List<String> methodList = new ArrayList<>();
+            for (String mSig : classInfo.methodSigs.keySet()) {
+                MethodInfo methodInfo = getMethodInfo(parseOutputPath, classInfo, mSig);
+                if (!filter(methodInfo)) {
+                    continue;
+                }
+                methodList.add(mSig);
+            }
+            testMap.put(classInfo.fullClassName, methodList);
+        }
+
+        return testMap.values().stream().mapToInt(List::size).sum();
     }
 
     public static MethodInfo getMethodInfo(Path parseOutputPath, ClassInfo info, String mSig) throws IOException {
