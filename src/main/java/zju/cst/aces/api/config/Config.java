@@ -158,8 +158,10 @@ public class Config {
         public void initDefault(Project project) {
             this.date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss")).toString();
             this.project = project;
-            this.logger = new LoggerImpl();
+            assert(project.getClassPaths() != null);
+            this.classPaths = project.getClassPaths();
 
+            this.logger = new LoggerImpl();
             this.parser = new JavaParser();
             JavaSymbolSolver symbolSolver = getSymbolSolver();
             parser.getParserConfiguration().setSymbolResolver(symbolSolver);
