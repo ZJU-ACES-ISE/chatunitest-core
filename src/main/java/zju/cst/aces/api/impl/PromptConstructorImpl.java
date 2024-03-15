@@ -38,7 +38,7 @@ public class PromptConstructorImpl implements PromptConstructor {
             this.chatMessages = new PromptGenerator(config).generateMessages(promptInfo);
             countToken();
             return this.chatMessages;
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

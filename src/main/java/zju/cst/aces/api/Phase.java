@@ -1,5 +1,5 @@
 package zju.cst.aces.api;
-import jdk.jshell.spi.SPIResolutionException;
+
 import lombok.AllArgsConstructor;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.ChatGenerator;
@@ -78,19 +78,17 @@ public class Phase {
     public class TestGeneration {
 
         PromptGenerator promptGenerator;
-        int tokenCount = 0;
         MethodInfo methodInfo;
         ClassInfo classInfo;
 
-        static final String separator = "_";
 
-        public void setUp(PromptInfo promptInfo) throws IOException {
+        public void setUp(PromptInfo promptInfo) {
             this.promptGenerator = new PromptGenerator(config);
             this.methodInfo = promptInfo.getMethodInfo();
             this.classInfo = promptInfo.getClassInfo();
         }
 
-        public String execute(PromptConstructorImpl pc) throws IOException {
+        public void execute(PromptConstructorImpl pc) {
 
             PromptInfo promptInfo = pc.getPromptInfo();
             if (promptGenerator == null) {
@@ -122,7 +120,8 @@ public class Phase {
 
             String code = generateTest(prompt, record);
             if (!record.isHasCode()) {
-                return "";
+                promptInfo.setUnitTest("");
+                return;
             }
 
             if (config.isEnableObfuscate()) {
@@ -135,13 +134,12 @@ public class Phase {
                 RepairImpl repair = new RepairImpl(config, pc);
                 code = repair.ruleBasedRepair(code);
             }
-            promptInfo.setUnitTest(code);
 
+            promptInfo.setUnitTest(code);
             record.setCode(code);
-            return code;
         }
 
-        public String generateTest(List<ChatMessage> prompt, RoundRecord record) throws IOException {
+        public String generateTest(List<ChatMessage> prompt, RoundRecord record) {
 
             if (MethodRunner.isExceedMaxTokens(config.getMaxPromptTokens(), prompt)) {
                 config.getLogger().error("Exceed max prompt tokens: " + methodInfo.methodName + " Skipped.");
@@ -149,7 +147,7 @@ public class Phase {
                 record.setHasCode(false);
                 return "";
             }
-            config.getLogger().debug("[Prompt]:\n" + prompt.toString());
+            config.getLogger().debug("[Prompt]:\n" + prompt);
 
             ChatResponse response = ChatGenerator.chat(config, prompt);
             String content = ChatGenerator.getContentByResponse(response);
@@ -193,6 +191,9 @@ public class Phase {
     @AllArgsConstructor
     public class Repair {
 
+        public void execute(PromptConstructorImpl pc) {
+            new TestGeneration().execute(pc);
+        }
     }
 
 }

@@ -5,7 +5,6 @@ import zju.cst.aces.api.Repair;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.ChatResponse;
 import zju.cst.aces.dto.PromptInfo;
-import zju.cst.aces.runner.MethodRunner;
 
 import static zju.cst.aces.runner.AbstractRunner.*;
 import static zju.cst.aces.api.impl.ChatGenerator.*;
@@ -37,7 +36,7 @@ public class RepairImpl implements Repair {
         PromptInfo promptInfo = promptConstructorImpl.getPromptInfo();
         promptInfo.setUnitTest(code);
         String fullClassName = promptInfo.getClassInfo().getPackageName() + "." + promptInfo.getClassInfo().getClassName();
-        if (MethodRunner.runTest(config, promptConstructorImpl.getFullTestName(), promptInfo, rounds)) {
+        if (runTest(config, promptConstructorImpl.getFullTestName(), promptInfo, rounds)) {
             this.success = true;
             return code;
         }
@@ -62,7 +61,7 @@ public class RepairImpl implements Repair {
         PromptInfo promptInfo = promptConstructorImpl.getPromptInfo();
         promptInfo.setUnitTest(code);
         String fullClassName = promptInfo.getClassInfo().getPackageName() + "." + promptInfo.getClassInfo().getClassName();
-        if (MethodRunner.runTest(config, promptConstructorImpl.getFullTestName(), promptInfo, 0)) {
+        if (runTest(config, promptConstructorImpl.getFullTestName(), promptInfo, 0)) {
             config.getLogger().info("Test for method < " + promptInfo.methodInfo.methodName + " > doesn't need repair");
             return code;
         }

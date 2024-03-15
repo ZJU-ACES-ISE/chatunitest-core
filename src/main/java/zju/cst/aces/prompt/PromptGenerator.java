@@ -11,7 +11,7 @@ public class PromptGenerator {
     public Config config;
     public PromptTemplate promptTemplate;
 
-    public PromptGenerator(Config config) throws IOException {
+    public PromptGenerator(Config config) {
         this.config = config;
         this.promptTemplate = new PromptTemplate(config, config.properties, config.getPromptPath(), config.getMaxPromptTokens());
     }

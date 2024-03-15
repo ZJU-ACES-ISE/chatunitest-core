@@ -41,8 +41,10 @@ public class Task {
             log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...",config.pluginSign));
             return;
         }
-        ProjectParser parser = new ProjectParser(config);
-        parser.parse();
+
+        Phase phase = new Phase(config);
+        phase.new Preparation().execute();
+
         log.info(String.format("\n==========================\n[%s] Generating tests for class: < ",config.pluginSign) + className
                 + "> method: < " + methodName + " > ...");
 
@@ -101,8 +103,8 @@ public class Task {
             log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...",config.pluginSign));
             return;
         }
-        ProjectParser parser = new ProjectParser(config);
-        parser.parse();
+        Phase phase = new Phase(config);
+        phase.new Preparation().execute();
         log.info(String.format("\n==========================\n[%s] Generating tests for class < " + className + " > ...",config.pluginSign));
         try {
             this.runner.runClass(getFullClassName(config, className));
@@ -124,8 +126,8 @@ public class Task {
             log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...",config.pluginSign));
             return;
         }
-        ProjectParser parser = new ProjectParser(config);
-        parser.parse();
+        Phase phase = new Phase(config);
+        phase.new Preparation().execute();
         List<String> classPaths = ProjectParser.scanSourceDirectory(project);
         if (config.isEnableMultithreading() == true) {
             projectJob(classPaths);

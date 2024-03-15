@@ -6,18 +6,17 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import zju.cst.aces.api.Task;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.parser.ClassParser;
 import zju.cst.aces.prompt.PromptGenerator;
 import zju.cst.aces.util.CodeExtractor;
+import zju.cst.aces.util.TestProcessor;
 import zju.cst.aces.util.TokenCounter;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -468,5 +467,90 @@ public abstract class AbstractRunner {
             return true;
         }
         return false;
+    }
+
+    public static boolean runTest(Config config, String fullTestName, PromptInfo promptInfo, int rounds) {
+        String testName = fullTestName.substring(fullTestName.lastIndexOf(".") + 1);
+        Path savePath = config.getTestOutput().resolve(fullTestName.replace(".", File.separator) + ".java");
+        if (promptInfo.getTestPath() == null) {
+            promptInfo.setTestPath(savePath);
+        }
+
+        TestProcessor testProcessor = new TestProcessor(fullTestName);
+        String code = promptInfo.getUnitTest();
+        if (rounds >= 1) {
+            code = testProcessor.addCorrectTest(promptInfo);
+        }
+
+        // Compilation
+        Path compilationErrorPath = config.getErrorOutput().resolve(testName + "_CompilationError_" + rounds + ".txt");
+        Path executionErrorPath = config.getErrorOutput().resolve(testName + "_ExecutionError_" + rounds + ".txt");
+        boolean compileResult = config.getValidator().semanticValidate(code, testName, compilationErrorPath, promptInfo);
+        if (!compileResult) {
+            config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > compilation failed round " + rounds);
+            return false;
+        }
+        if (config.isNoExecution()) {
+            exportTest(code, savePath);
+            config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > generated successfully round " + rounds);
+            return true;
+        }
+
+        // Execution
+        TestExecutionSummary summary = config.getValidator().execute(fullTestName);
+        if (summary.getTestsFailedCount() > 0 || summary.getTestsSucceededCount() == 0) {
+            String testProcessed = testProcessor.removeErrorTest(promptInfo, summary);
+
+            // Remove errors successfully, recompile and re-execute test
+            if (testProcessed != null) {
+                config.getLogger().debug("[Original Test]:\n" + code);
+                if (config.getValidator().semanticValidate(testProcessed, testName, compilationErrorPath, null)) {
+                    if (config.getValidator().runtimeValidate(fullTestName)) {
+                        exportTest(testProcessed, savePath);
+                        config.getLogger().debug("[Processed Test]:\n" + testProcessed);
+                        config.getLogger().info("Processed test for method < " + promptInfo.getMethodInfo().getMethodName() + " > generated successfully round " + rounds);
+                        return true;
+                    }
+                }
+                testProcessor.removeCorrectTest(promptInfo, summary);
+            }
+
+            // Set promptInfo error message
+            TestMessage testMessage = new TestMessage();
+            List<String> errors = new ArrayList<>();
+            summary.getFailures().forEach(failure -> {
+                for (StackTraceElement st : failure.getException().getStackTrace()) {
+                    if (st.getClassName().contains(fullTestName)) {
+                        errors.add("Error in " + failure.getTestIdentifier().getLegacyReportingName()
+                                + ": line " + st.getLineNumber() + " : "
+                                + failure.getException().toString());
+                    }
+                }
+            });
+            testMessage.setErrorType(TestMessage.ErrorType.RUNTIME_ERROR);
+            testMessage.setErrorMessage(errors);
+            promptInfo.setErrorMsg(testMessage);
+            exportError(code, errors, executionErrorPath);
+            testProcessor.removeCorrectTest(promptInfo, summary);
+            config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > execution failed round " + rounds);
+            return false;
+        }
+//            summary.printTo(new PrintWriter(System.out));
+        exportTest(code, savePath);
+        config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > compile and execute successfully round " + rounds);
+        return true;
+    }
+
+
+    public static void exportError(String code, List<String> errors, Path outputPath) {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(outputPath.toFile()));
+            writer.write(code);
+            writer.write("\n--------------------------------------------\n");
+            writer.write(String.join("\n", errors));
+            writer.close();
+        } catch (Exception e) {
+            throw new RuntimeException("In TestCompiler.exportError: " + e);
+        }
     }
 }
