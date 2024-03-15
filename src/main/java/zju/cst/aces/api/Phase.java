@@ -178,6 +178,10 @@ public class Phase {
         public boolean execute(PromptConstructorImpl pc) {
 
             PromptInfo promptInfo = pc.getPromptInfo();
+            if (promptInfo.getUnitTest().isEmpty()) {
+                return false;
+            }
+
             RoundRecord record = promptInfo.getRecords().get(promptInfo.getRound());
 
             // compilation and runtime validation
