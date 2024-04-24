@@ -6,16 +6,19 @@ import com.github.javaparser.Position;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.comments.Comment;
-import com.github.javaparser.ast.expr.AssignExpr;
-import com.github.javaparser.ast.expr.FieldAccessExpr;
-import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.nodeTypes.NodeWithArguments;
+import com.github.javaparser.ast.nodeTypes.NodeWithTypeArguments;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
+import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
+import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.google.gson.Gson;
-import javassist.ClassMap;
 import org.jetbrains.annotations.NotNull;
 import zju.cst.aces.api.Logger;
 import zju.cst.aces.api.Project;
@@ -43,10 +46,11 @@ public class ClassParser {
     Gson GSON;
     AtomicInteger sharedInteger;
     Map<String, Map<String, String>> classMapping;
+    Map<String, TreeSet<String>> objectConstructionCode;
 
     public ClassParser(JavaParser javaParser, Project project, Path path,
                        Logger logger, Gson gson, AtomicInteger sharedInteger,
-                       Map<String, Map<String, String>> classMapping) {
+                       Map<String, Map<String, String>> classMapping, Map<String, TreeSet<String>> objectConstructionCode) {
         this.parser = javaParser;
         this.classOutputPath = path;
         this.project = project;
@@ -54,6 +58,7 @@ public class ClassParser {
         this.GSON = gson;
         this.sharedInteger = sharedInteger;
         this.classMapping = classMapping;
+        this.objectConstructionCode = objectConstructionCode;
     }
 
     public int extractClass(String classPath) throws FileNotFoundException {
@@ -153,6 +158,9 @@ public class ClassParser {
         mi.setPublic(isPublic(node));
         mi.setBoolean(isBoolean(node));
         mi.setAbstract(node.isAbstract());
+        if (node instanceof MethodDeclaration) {
+            findObjectConstructionCode(node.asMethodDeclaration());
+        }
         return mi;
     }
 
@@ -646,4 +654,137 @@ public class ClassParser {
         this.classMapping.put("class" + classInfo.index, map);
     }
 
+    /**
+     * 获取对象创建示例代码，从两种语句中获取:
+     * 1. 直接new了一个对象(ObjectCreationExpr).
+     * 2. 调用函数（MethodCallExpr）创建并返回了一个对象(md.getReturnType().isReferenceType()). (todo: 这种情况难以保证准确，是否保留？)
+     * @param node
+     */
+    public void findObjectConstructionCode(MethodDeclaration node) {
+        List<ObjectCreationExpr> objCreationStmts = node.findAll(ObjectCreationExpr.class);
+        List<MethodCallExpr> methodCalls = node.findAll(MethodCallExpr.class);
+
+        List<VariableDeclarationExpr> varDecls = node.findAll(VariableDeclarationExpr.class);
+
+        Map<String, VariableDeclarationExpr> variableDeclarations = new HashMap<>();
+        for (VariableDeclarationExpr varDecl : varDecls) {
+            varDecl.getVariables().forEach(var -> {
+                variableDeclarations.put(var.getNameAsString(), varDecl);
+            });
+        }
+
+        try {
+            for (ObjectCreationExpr expr : objCreationStmts) {
+                ResolvedReferenceTypeDeclaration objType = expr.resolve().declaringType();
+                String typeName = objType.getQualifiedName();
+
+                ExpressionStmt stmt = findExpressionStmt(expr);
+                if (stmt == null) {
+                    continue;
+                }
+
+                NodeList<Expression> argumentExprs = expr.getArguments();
+                List<String> argNames = argumentExprs.stream().map(Node::toString).collect(Collectors.toList());
+
+                StringBuilder sb = new StringBuilder();
+                List<ExpressionStmt> depExprList = findArgDeclarationStmts(argNames, variableDeclarations);
+
+                if (depExprList.isEmpty()) {
+                    sb.append(stmt);
+                } else {
+                    sb.append(
+                            depExprList.stream().map(Node::toString).collect(Collectors.joining("\n"))
+                    ).append("\n").append(stmt);
+                }
+
+                TreeSet<String> invocations = objectConstructionCode.computeIfAbsent(typeName, k -> new TreeSet<>(new LengthComparator()));
+                invocations.add(sb.toString());
+                objectConstructionCode.put(typeName, invocations);
+            }
+
+            for (MethodCallExpr expr : methodCalls) {
+                ResolvedMethodDeclaration md = expr.resolve();
+
+                // save return type
+                if (!md.getReturnType().isReferenceType()) {
+                    continue;
+                }
+
+                ResolvedReferenceType returnType = md.getReturnType().asReferenceType();
+                String typeName = returnType.getQualifiedName();
+
+                ExpressionStmt stmt = findExpressionStmt(expr);
+                if (stmt == null) {
+                    continue;
+                }
+
+                NodeList<Expression> argumentExprs = expr.getArguments();
+                List<String> argNames = argumentExprs.stream().map(Node::toString).collect(Collectors.toList());
+
+                // Add dependentType declaration stmt
+                String scopeName;
+                if (expr.getScope().isPresent()) {
+                    scopeName = expr.getScope().get().toString();
+                    argNames.add(scopeName);
+                }
+
+                StringBuilder sb = new StringBuilder();
+                List<ExpressionStmt> depExprList = findArgDeclarationStmts(argNames, variableDeclarations);
+
+                if (depExprList.isEmpty()) {
+                    sb.append(stmt);
+                } else {
+                    sb.append(
+                            depExprList.stream().map(Node::toString).collect(Collectors.joining("\n"))
+                    ).append("\n").append(stmt);
+                }
+
+//                Set<String> invocations = objectConstructionCode.get(dependentType);
+                TreeSet<String> invocations = objectConstructionCode.computeIfAbsent(typeName, k -> new TreeSet<>(new LengthComparator()));
+                invocations.add(sb.toString());
+                objectConstructionCode.put(typeName, invocations);
+            }
+        } catch (Exception e) {
+                logger.warn("Cannot resolve method node: " + node);
+        }
+    }
+
+    /**
+     * 找到表达式节点对应那一行的语句
+     */
+    private static ExpressionStmt findExpressionStmt(Expression expr) {
+        return expr.findAncestor(ExpressionStmt.class).orElse(null);
+    }
+
+    /**
+     * 递归地找到参数的声明语句并添加到OCC中
+     */
+    private List<ExpressionStmt> findArgDeclarationStmts(List<String> typeNames, Map<String, VariableDeclarationExpr> variableDeclarations) {
+        LinkedHashSet<ExpressionStmt> set = new LinkedHashSet<>();
+        typeNames.forEach(typeName -> {
+                if (variableDeclarations.containsKey(typeName)) {
+                    VariableDeclarationExpr vd = variableDeclarations.get(typeName);
+                    List<MethodCallExpr> temp = vd.findAll(MethodCallExpr.class);
+                    if (!temp.isEmpty()) {
+                        List<String> depNames = temp.get(0).getArguments().stream().map(Node::toString).collect(Collectors.toList());
+                        set.addAll(findArgDeclarationStmts(depNames, variableDeclarations));
+                    }
+                    ExpressionStmt stmt = findExpressionStmt(vd);
+                    if (stmt != null) {
+                        set.add(stmt);
+                    }
+                }
+        });
+        return new ArrayList<>(set);
+    }
+}
+
+class LengthComparator implements Comparator{
+    @Override
+    public int compare(Object obj1, Object obj2) { //按长度排序
+        String s1 = (String) obj1;
+        String s2 = (String) obj2;
+        int temp = s1.length() - s2.length();
+        return temp;
+    }
 }

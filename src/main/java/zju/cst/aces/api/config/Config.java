@@ -30,10 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -92,7 +89,8 @@ public class Config {
     public AtomicInteger sharedInteger = new AtomicInteger(0);
     public AtomicInteger jobCount = new AtomicInteger(0);
     public AtomicInteger completedJobCount = new AtomicInteger(0);
-    public static Map<String, Map<String, String>> classMapping;
+    public static Map<String, Map<String, String>> classMapping = new HashMap<>();
+    public static Map<String, TreeSet<String>> objectConstructionCode = new HashMap<>();
     public Validator validator;
     public String pluginSign;
 
