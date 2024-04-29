@@ -11,6 +11,7 @@ import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.nodeTypes.NodeWithArguments;
+import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName;
 import com.github.javaparser.ast.nodeTypes.NodeWithTypeArguments;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
@@ -159,7 +160,7 @@ public class ClassParser {
         mi.setBoolean(isBoolean(node));
         mi.setAbstract(node.isAbstract());
         if (node instanceof MethodDeclaration) {
-            findObjectConstructionCode(node.asMethodDeclaration());
+            findObjectConstructionCode(cu, node.asMethodDeclaration());
         }
         return mi;
     }
@@ -660,11 +661,14 @@ public class ClassParser {
      * 2. 调用函数（MethodCallExpr）创建并返回了一个对象(md.getReturnType().isReferenceType()). (todo: 这种情况难以保证准确，是否保留？)
      * @param node
      */
-    public void findObjectConstructionCode(MethodDeclaration node) {
+    public void findObjectConstructionCode(CompilationUnit cu, MethodDeclaration node) {
+        String methodBrief = getBriefMethod(cu, node);
+
         List<ObjectCreationExpr> objCreationStmts = node.findAll(ObjectCreationExpr.class);
         List<MethodCallExpr> methodCalls = node.findAll(MethodCallExpr.class);
 
         List<VariableDeclarationExpr> varDecls = node.findAll(VariableDeclarationExpr.class);
+        List<String> paramDecls = node.getParameters().stream().map(NodeWithSimpleName::getNameAsString).collect(Collectors.toList());
 
         Map<String, VariableDeclarationExpr> variableDeclarations = new HashMap<>();
         for (VariableDeclarationExpr varDecl : varDecls) {
@@ -697,6 +701,14 @@ public class ClassParser {
                     ).append("\n").append(stmt);
                 }
 
+                for (String argName : argNames) {
+                    if (paramDecls.contains(argName)) {
+                        sb.insert(0, methodBrief.substring(0, methodBrief.length() - 1) + "\n");
+                        sb.append("\n}");
+                        break;
+                    }
+                }
+
                 TreeSet<String> invocations = objectConstructionCode.computeIfAbsent(typeName, k -> new TreeSet<>(new LengthComparator()));
                 invocations.add(sb.toString());
                 objectConstructionCode.put(typeName, invocations);
@@ -713,11 +725,6 @@ public class ClassParser {
                 ResolvedReferenceType returnType = md.getReturnType().asReferenceType();
                 String typeName = returnType.getQualifiedName();
 
-                ExpressionStmt stmt = findExpressionStmt(expr);
-                if (stmt == null) {
-                    continue;
-                }
-
                 NodeList<Expression> argumentExprs = expr.getArguments();
                 List<String> argNames = argumentExprs.stream().map(Node::toString).collect(Collectors.toList());
 
@@ -731,12 +738,22 @@ public class ClassParser {
                 StringBuilder sb = new StringBuilder();
                 List<ExpressionStmt> depExprList = findArgDeclarationStmts(argNames, variableDeclarations);
 
+                String stmt = createExpressionStmt(typeName, expr);
+
                 if (depExprList.isEmpty()) {
                     sb.append(stmt);
                 } else {
                     sb.append(
                             depExprList.stream().map(Node::toString).collect(Collectors.joining("\n"))
                     ).append("\n").append(stmt);
+                }
+
+                for (String argName : argNames) {
+                    if (paramDecls.contains(argName)) {
+                        sb.insert(0, methodBrief.substring(0, methodBrief.length() - 1) + "\n");
+                        sb.append("\n}");
+                        break;
+                    }
                 }
 
 //                Set<String> invocations = objectConstructionCode.get(dependentType);
@@ -754,6 +771,16 @@ public class ClassParser {
      */
     private static ExpressionStmt findExpressionStmt(Expression expr) {
         return expr.findAncestor(ExpressionStmt.class).orElse(null);
+    }
+
+    /**
+     * 找到方法对应的调用节点。
+     */
+    private static String createExpressionStmt(String typeName, MethodCallExpr expr) {
+        if (typeName.contains(".")) {
+            typeName = typeName.substring(typeName.lastIndexOf(".") + 1);
+        }
+        return typeName + " " + typeName.toLowerCase() + " = " + expr + ";";
     }
 
     /**

@@ -113,24 +113,27 @@ public class Phase {
             }
 
             List<ChatMessage> prompt;
-            Obfuscator obfuscator = new Obfuscator(config);
+            String code;
             if (config.isEnableObfuscate()) {
+                Obfuscator obfuscator = new Obfuscator(config);
                 PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
                 obfuscator.obfuscatePromptInfo(obfuscatedPromptInfo);
                 prompt = promptGenerator.generateMessages(obfuscatedPromptInfo);
+                code = generateTest(prompt, record);
+                if (!record.isHasCode()) {
+                    promptInfo.setUnitTest("");
+                    return;
+                }
+                code = obfuscator.deobfuscateJava(code);
             } else {
                 prompt = promptGenerator.generateMessages(promptInfo);
+                code = generateTest(prompt, record);
+                if (!record.isHasCode()) {
+                    promptInfo.setUnitTest("");
+                    return;
+                }
             }
 
-            String code = generateTest(prompt, record);
-            if (!record.isHasCode()) {
-                promptInfo.setUnitTest("");
-                return;
-            }
-
-            if (config.isEnableObfuscate()) {
-                code = obfuscator.deobfuscateJava(code);
-            }
             if (CodeExtractor.isTestMethod(code)) {
                 TestSkeleton skeleton = new TestSkeleton(promptInfo); // test skeleton to wrap a test method
                 code = skeleton.build(code);
