@@ -645,7 +645,7 @@ public class ClassParser {
     public void addClassMapping(ClassInfo classInfo) {
         Map<String, String> map = new LinkedHashMap<>();
         map.put("className", classInfo.className);
-        map.put("packageDeclaration", classInfo.packageDeclaration);
+        map.put("packageName", classInfo.packageName);
         map.put("modifier", classInfo.modifier);
         map.put("extend", classInfo.extend);
         map.put("implement", classInfo.implement);
@@ -658,7 +658,7 @@ public class ClassParser {
     /**
      * 获取对象创建示例代码，从两种语句中获取:
      * 1. 直接new了一个对象(ObjectCreationExpr).
-     * 2. 调用函数（MethodCallExpr）创建并返回了一个对象(md.getReturnType().isReferenceType()). (todo: 这种情况难以保证准确，是否保留？)
+     * 2. 调用函数（MethodCallExpr）创建并返回了一个对象(md.getReturnType().isReferenceType()).
      * @param node
      */
     public void findObjectConstructionCode(CompilationUnit cu, MethodDeclaration node) {

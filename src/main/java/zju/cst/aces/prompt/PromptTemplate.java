@@ -99,7 +99,6 @@ public class PromptTemplate {
     }
 
     public void buildDataModel(Config config, PromptInfo promptInfo) throws IOException {
-        ExampleUsage exampleUsage = new ExampleUsage(config.getExamplePath(), promptInfo.className);
         Map<String, String> cdep_temp = new HashMap<>();
         Map<String, String> mdep_temp = new HashMap<>();
 
@@ -122,7 +121,10 @@ public class PromptTemplate {
             this.dataModel.put("dep_m_sigs_ano_com",getDepBriefWithAno(promptInfo.getClassInfo(),promptInfo.getMethodInfo()));
         }
         // String
-        this.dataModel.put("example_usage", exampleUsage.getShortestUsage(promptInfo.getMethodInfo().methodSignature));
+        if (config.getExamplePath() != null) {
+            ExampleUsage exampleUsage = new ExampleUsage(config.getExamplePath(), promptInfo.className);
+            this.dataModel.put("example_usage", exampleUsage.getShortestUsage(promptInfo.getMethodInfo().methodSignature));
+        }
         this.dataModel.put("project_full_code", getFullProjectCode(promptInfo.getClassName(), config));
         this.dataModel.put("method_name", promptInfo.getMethodName());
         this.dataModel.put("full_class_name",promptInfo.getFullClassName());
@@ -130,7 +132,7 @@ public class PromptTemplate {
         this.dataModel.put("method_body", promptInfo.getMethodInfo().sourceCode);
         this.dataModel.put("class_name", promptInfo.getClassName());
         this.dataModel.put("class_sig", promptInfo.getClassInfo().classSignature);
-        this.dataModel.put("package", promptInfo.getClassInfo().packageDeclaration);
+        this.dataModel.put("package", promptInfo.getClassInfo().packageName);
         this.dataModel.put("class_body", promptInfo.getClassInfo().classDeclarationCode);
         this.dataModel.put("file_content", promptInfo.getClassInfo().compilationUnitCode);
         this.dataModel.put("imports", AbstractRunner.joinLines(promptInfo.getClassInfo().imports));
@@ -530,7 +532,7 @@ public class PromptTemplate {
             if (depClassInfo == null) {
                 continue;
             }
-            depPackages.put(depClassName, depClassInfo.packageDeclaration);
+            depPackages.put(depClassName, depClassInfo.packageName);
         }
 
         for (Map.Entry<String, Set<String>> entry : methodInfo.dependentMethods.entrySet()) {
@@ -547,7 +549,7 @@ public class PromptTemplate {
             if (depClassInfo == null) {
                 continue;
             }
-            depPackages.put(depClassName, depClassInfo.packageDeclaration);
+            depPackages.put(depClassName, depClassInfo.packageName);
         }
         return depPackages;
     }

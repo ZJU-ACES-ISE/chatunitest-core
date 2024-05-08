@@ -145,7 +145,7 @@ public abstract class AbstractRunner {
         String methods = filterAndJoinLines(classInfo.methodsBrief, methodInfo.brief);
         String imports = joinLines(classInfo.imports);
 
-        String information = classInfo.packageDeclaration
+        String information = classInfo.packageName
                 + "\n" + imports
                 + "\n" + classInfo.classSignature
                 + " {\n";
@@ -217,7 +217,7 @@ public abstract class AbstractRunner {
         String fields = joinLines(classInfo.fields);
         String imports = joinLines(classInfo.imports);
 
-        String information = classInfo.packageDeclaration
+        String information = classInfo.packageName
                 + "\n" + imports
                 + "\n" + classInfo.classSignature
                 + " {\n";
@@ -315,7 +315,7 @@ public abstract class AbstractRunner {
         String classSig = depClassInfo.classSignature;
         String fields = joinLines(depClassInfo.fields);
 
-        String basicInfo = depClassInfo.packageDeclaration + "\n" + joinLines(depClassInfo.imports) + "\n"
+        String basicInfo = depClassInfo.packageName + "\n" + joinLines(depClassInfo.imports) + "\n"
                 + classSig + " {\n" + fields + "\n";
         if (depClassInfo.hasConstructor) {
             String constructors = "";
@@ -409,7 +409,7 @@ public abstract class AbstractRunner {
             map.put("methodName", sig.split("\\(")[0]);
             map.put("signature", sig);
             map.put("className", classInfo.className);
-            map.put("packageDeclaration", classInfo.packageDeclaration);
+            map.put("packageName", classInfo.packageName);
             methodMapping.put("method" + index, map);
         });
         try (OutputStreamWriter writer = new OutputStreamWriter(
@@ -437,7 +437,7 @@ public abstract class AbstractRunner {
             map.put("fullName", fullTestName);
             map.put("path", promptInfo.getTestPath().toString());
             map.put("className", promptInfo.className);
-            map.put("packageDeclaration", promptInfo.classInfo.packageDeclaration);
+            map.put("packageName", promptInfo.classInfo.packageName);
             map.put("methodName", promptInfo.methodName);
             map.put("methodSig", promptInfo.methodSignature);
             attemptMapping.put("attempt" + i, map);
