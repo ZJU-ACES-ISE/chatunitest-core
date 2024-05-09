@@ -25,6 +25,7 @@ import zju.cst.aces.api.Logger;
 import zju.cst.aces.api.Project;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
+import zju.cst.aces.dto.OCM;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -47,11 +48,11 @@ public class ClassParser {
     Gson GSON;
     AtomicInteger sharedInteger;
     Map<String, Map<String, String>> classMapping;
-    Map<String, TreeSet<String>> objectConstructionCode;
+    OCM ocm;
 
     public ClassParser(JavaParser javaParser, Project project, Path path,
                        Logger logger, Gson gson, AtomicInteger sharedInteger,
-                       Map<String, Map<String, String>> classMapping, Map<String, TreeSet<String>> objectConstructionCode) {
+                       Map<String, Map<String, String>> classMapping, OCM ocm) {
         this.parser = javaParser;
         this.classOutputPath = path;
         this.project = project;
@@ -59,7 +60,7 @@ public class ClassParser {
         this.GSON = gson;
         this.sharedInteger = sharedInteger;
         this.classMapping = classMapping;
-        this.objectConstructionCode = objectConstructionCode;
+        this.ocm = ocm;
     }
 
     public int extractClass(String classPath) throws FileNotFoundException {
@@ -677,8 +678,11 @@ public class ClassParser {
             });
         }
 
-        try {
-            for (ObjectCreationExpr expr : objCreationStmts) {
+        for (ObjectCreationExpr expr : objCreationStmts) {
+            try {
+                if (!expr.getType().isReferenceType()) {
+                    continue;
+                }
                 ResolvedReferenceTypeDeclaration objType = expr.resolve().declaringType();
                 String typeName = objType.getQualifiedName();
 
@@ -708,13 +712,15 @@ public class ClassParser {
                         break;
                     }
                 }
+                ocm.add(typeName, classInfo.className, node.getNameAsString(), expr.getBegin().get().line, sb.toString());
 
-                TreeSet<String> invocations = objectConstructionCode.computeIfAbsent(typeName, k -> new TreeSet<>(new LengthComparator()));
-                invocations.add(sb.toString());
-                objectConstructionCode.put(typeName, invocations);
+            } catch (Exception e) {
+                logger.warn("Cannot resolve expression : " + expr + "\n" + e.getMessage());
             }
+        }
 
-            for (MethodCallExpr expr : methodCalls) {
+        for (MethodCallExpr expr : methodCalls) {
+            try {
                 ResolvedMethodDeclaration md = expr.resolve();
 
                 // save return type
@@ -755,14 +761,11 @@ public class ClassParser {
                         break;
                     }
                 }
+                ocm.add(typeName, classInfo.className, node.getNameAsString(), expr.getBegin().get().line, sb.toString());
 
-//                Set<String> invocations = objectConstructionCode.get(dependentType);
-                TreeSet<String> invocations = objectConstructionCode.computeIfAbsent(typeName, k -> new TreeSet<>(new LengthComparator()));
-                invocations.add(sb.toString());
-                objectConstructionCode.put(typeName, invocations);
+            } catch (Exception e) {
+                logger.warn("Cannot resolve expression : " + expr + "\n" + e.getMessage());
             }
-        } catch (Exception e) {
-                logger.warn("Cannot resolve method node: " + node);
         }
     }
 
@@ -806,12 +809,11 @@ public class ClassParser {
     }
 }
 
-class LengthComparator implements Comparator{
+class LengthComparator implements Comparator {
     @Override
     public int compare(Object obj1, Object obj2) { //按长度排序
         String s1 = (String) obj1;
         String s2 = (String) obj2;
-        int temp = s1.length() - s2.length();
-        return temp;
+        return s1.length() - s2.length();
     }
 }

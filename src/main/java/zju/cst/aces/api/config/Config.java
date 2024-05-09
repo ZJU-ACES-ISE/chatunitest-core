@@ -18,6 +18,7 @@ import zju.cst.aces.api.Validator;
 import zju.cst.aces.api.impl.LoggerImpl;
 import zju.cst.aces.api.Logger;
 import zju.cst.aces.api.impl.ValidatorImpl;
+import zju.cst.aces.dto.OCM;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.prompt.PromptTemplate;
 
@@ -91,6 +92,7 @@ public class Config {
     public AtomicInteger completedJobCount = new AtomicInteger(0);
     public static Map<String, Map<String, String>> classMapping = new HashMap<>();
     public static Map<String, TreeSet<String>> objectConstructionCode = new HashMap<>();
+    public static OCM ocm = new OCM();
     public Validator validator;
     public String pluginSign;
 

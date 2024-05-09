@@ -48,7 +48,7 @@ public class ProjectParser {
                 String packagePath = classPath.substring(srcFolderPath.toString().length() + 1);
                 Path output = outputPath.resolve(packagePath).getParent();
                 ClassParser classParser = new ClassParser(parser, config.getProject(), output,
-                        config.getLogger(),  config.getGSON(), config.sharedInteger, config.classMapping, config.objectConstructionCode);
+                        config.getLogger(),  config.getGSON(), config.sharedInteger, config.classMapping, config.ocm);
                 int classNum = classParser.extractClass(classPath);
 
                 if (classNum == 0) {
@@ -141,7 +141,7 @@ public class ProjectParser {
 
     public void exportOCC() {
         Path savePath = config.tmpOutput.resolve("objectConstructionCode.json");
-        exportJson(savePath, config.objectConstructionCode);
+        exportJson(savePath, config.ocm);
     }
 
     public static void setLanguageLevel(ParserConfiguration configuration) {
