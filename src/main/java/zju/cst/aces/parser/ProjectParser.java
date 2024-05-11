@@ -141,7 +141,7 @@ public class ProjectParser {
 
     public void exportOCC() {
         Path savePath = config.tmpOutput.resolve("objectConstructionCode.json");
-        exportJson(savePath, config.ocm);
+        exportJson(savePath, config.ocm.getOCM());
     }
 
     public static void setLanguageLevel(ParserConfiguration configuration) {

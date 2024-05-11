@@ -21,6 +21,10 @@ public class OCM {
         ocm.put(typeName, invocations);
     }
 
+    public Map<String, TreeSet<OCC>> getOCM() {
+        return this.ocm;
+    }
+
     static class OCC {
         String className;
         String methodName;
