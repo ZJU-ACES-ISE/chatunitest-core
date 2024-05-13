@@ -10,9 +10,7 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.nodeTypes.NodeWithArguments;
 import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName;
-import com.github.javaparser.ast.nodeTypes.NodeWithTypeArguments;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
@@ -21,6 +19,8 @@ import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclar
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.google.gson.Gson;
 import org.jetbrains.annotations.NotNull;
+import slicing.graphs.CallGraph;
+import slicing.graphs.sdg.SDG;
 import zju.cst.aces.api.Logger;
 import zju.cst.aces.api.Project;
 import zju.cst.aces.dto.ClassInfo;
@@ -72,8 +72,26 @@ public class ClassParser {
             try {
                 classInfo = getInfoByClass(cu, classDeclaration);
                 exportClassInfo(classInfo, classDeclaration);
-                extractMethods(cu, classDeclaration);
                 extractConstructors(cu, classDeclaration);
+                extractMethods(cu, classDeclaration);
+
+                addClassMapping(classInfo);
+                methodCount += classDeclaration.getMethods().size();
+            } catch (Exception e) {
+                logger.error("In ClassParser.extractClass Exception: when parse class " + classDeclaration.getNameAsString() + " :\n" + e);
+            }
+        }
+        return classes.size();
+    }
+
+    public int extractClass(CompilationUnit cu) {
+        List<ClassOrInterfaceDeclaration> classes = cu.findAll(ClassOrInterfaceDeclaration.class);
+        for (ClassOrInterfaceDeclaration classDeclaration : classes) {
+            try {
+                classInfo = getInfoByClass(cu, classDeclaration);
+                exportClassInfo(classInfo, classDeclaration);
+                extractConstructors(cu, classDeclaration);
+                extractMethods(cu, classDeclaration);
 
                 addClassMapping(classInfo);
                 methodCount += classDeclaration.getMethods().size();
@@ -160,9 +178,10 @@ public class ClassParser {
         mi.setPublic(isPublic(node));
         mi.setBoolean(isBoolean(node));
         mi.setAbstract(node.isAbstract());
-        if (node instanceof MethodDeclaration) {
-            findObjectConstructionCode(cu, node.asMethodDeclaration());
-        }
+        findObjectConstructionCode(cu, node);
+//        if (node instanceof MethodDeclaration) {
+//            findObjectConstructionCode(cu, node.asMethodDeclaration());
+//        }
         return mi;
     }
 
@@ -662,14 +681,20 @@ public class ClassParser {
      * 2. 调用函数（MethodCallExpr）创建并返回了一个对象(md.getReturnType().isReferenceType()).
      * @param node
      */
-    public void findObjectConstructionCode(CompilationUnit cu, MethodDeclaration node) {
+    public void findObjectConstructionCode(CompilationUnit cu, CallableDeclaration node) {
+        var p = findCallerByCallGraph(cu, node);
         String methodBrief = getBriefMethod(cu, node);
 
         List<ObjectCreationExpr> objCreationStmts = node.findAll(ObjectCreationExpr.class);
         List<MethodCallExpr> methodCalls = node.findAll(MethodCallExpr.class);
 
         List<VariableDeclarationExpr> varDecls = node.findAll(VariableDeclarationExpr.class);
-        List<String> paramDecls = node.getParameters().stream().map(NodeWithSimpleName::getNameAsString).collect(Collectors.toList());
+        List<String> paramDecls = null;
+        if (node instanceof MethodDeclaration) {
+            paramDecls = node.asMethodDeclaration().getParameters().stream().map(NodeWithSimpleName::getNameAsString).collect(Collectors.toList());
+        } else if (node instanceof ConstructorDeclaration) {
+            paramDecls = node.asConstructorDeclaration().getParameters().stream().map(NodeWithSimpleName::getNameAsString).collect(Collectors.toList());
+        }
 
         Map<String, VariableDeclarationExpr> variableDeclarations = new HashMap<>();
         for (VariableDeclarationExpr varDecl : varDecls) {
@@ -700,6 +725,21 @@ public class ClassParser {
                 if (depExprList.isEmpty()) {
                     sb.append(stmt);
                 } else {
+                    var paramsFromCaller = findCallerByCallGraph(cu, node);
+                    if (paramsFromCaller != null) {
+                        for (CallableDeclaration<?> caller : paramsFromCaller) {
+                            if (caller instanceof MethodDeclaration) {
+                                MethodDeclaration callerMethod = (MethodDeclaration) caller;
+                                List<String> callerParams = callerMethod.getParameters().stream().map(NodeWithSimpleName::getNameAsString).collect(Collectors.toList());
+                                for (String argName : argNames) {
+                                    if (callerParams.contains(argName)) {
+                                        sb.append(methodBrief.substring(0, methodBrief.length() - 1) + "\n");
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                     sb.append(
                             depExprList.stream().map(Node::toString).collect(Collectors.joining("\n"))
                     ).append("\n").append(stmt);
@@ -767,6 +807,23 @@ public class ClassParser {
                 logger.warn("Cannot resolve expression : " + expr + "\n" + e.getMessage());
             }
         }
+    }
+
+    private Set<CallableDeclaration<?>> findCallerByCallGraph(CompilationUnit cu, CallableDeclaration node) {
+        NodeList<CompilationUnit> cus = new NodeList<>();
+        cus.add(cu);
+        SDG sdg = new SDG();
+        sdg.build(cus);
+        CallGraph cg = sdg.getCallGraph();
+        CallGraph.Vertex v = new CallGraph.Vertex(node);
+        if (cg.containsVertex(v)) {
+            if (node instanceof MethodDeclaration) {
+                return cg.getCallTargets(node.asMethodDeclaration()).collect(Collectors.toSet());
+            } else if (node instanceof ConstructorDeclaration) {
+                return cg.getCallTargets(node.asConstructorDeclaration()).collect(Collectors.toSet());
+            }
+        }
+        return null;
     }
 
     /**

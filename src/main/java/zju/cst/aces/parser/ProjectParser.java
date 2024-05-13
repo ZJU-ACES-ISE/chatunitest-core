@@ -1,9 +1,20 @@
 package zju.cst.aces.parser;
 
 import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParseResult;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ParserConfiguration.LanguageLevel;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.CallableDeclaration;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
+import slicing.graphs.CallGraph;
+import slicing.graphs.CallGraph.Vertex;
+import slicing.graphs.CallGraph.Edge;
+import slicing.graphs.ClassGraph;
+import slicing.graphs.sdg.SDG;
 import zju.cst.aces.api.Project;
 import zju.cst.aces.api.config.Config;
 
@@ -32,6 +43,7 @@ public class ProjectParser {
         this.config = config;
         this.outputPath = config.getParseOutput();
         this.parser = config.getParser();
+        ClassGraph.setSymbolResolver(parser.getParserConfiguration().getSymbolResolver().orElseThrow());
     }
 
     /**
@@ -43,18 +55,35 @@ public class ProjectParser {
             config.getLogger().warn("No java file found in " + srcFolderPath);
             return;
         }
+        NodeList<CompilationUnit> cus = new NodeList<>();
         for (String classPath : classPaths) {
+            File file = new File(classPath);
             try {
-                String packagePath = classPath.substring(srcFolderPath.toString().length() + 1);
-                Path output = outputPath.resolve(packagePath).getParent();
+                ParseResult<CompilationUnit> parseResult = parser.parse(file);
+                CompilationUnit cu = parseResult.getResult().orElseThrow();
+                cus.add(cu);
+            } catch (Exception e) {
+                throw new RuntimeException("In ProjectParser.parse: " + e);
+            }
+        }
+        SDG sdg = createSDG(cus);
+
+        for (var cu : cus) {
+            try {
+                Path output = outputPath;
+                String packageName = "";
+                if (cu.getPackageDeclaration().isPresent()) {
+                    packageName = cu.getPackageDeclaration().get().getNameAsString();
+                    output = outputPath.resolve(packageName.replace(".", File.separator));
+                }
                 ClassParser classParser = new ClassParser(parser, config.getProject(), output,
                         config.getLogger(),  config.getGSON(), config.sharedInteger, config.classMapping, config.ocm);
-                int classNum = classParser.extractClass(classPath);
+                int classNum = classParser.extractClass(cu);
 
                 if (classNum == 0) {
                     continue;
                 }
-                addClassMap(outputPath, packagePath);
+                addClassMap(cu);
                 classCount += classNum;
                 methodCount += classParser.methodCount;
             } catch (Exception e) {
@@ -67,30 +96,35 @@ public class ProjectParser {
         config.getLogger().info("\nParsed classes: " + classCount + "\nParsed methods: " + methodCount);
     }
 
-    public void addClassMap(Path outputPath, String packagePath) {
-        if (Paths.get(packagePath).getParent() == null) {
-            return;
-        }
-        Path path = outputPath.resolve(packagePath).getParent();
-        String packageDeclaration = path.toString().substring(outputPath.toString().length() + 1).replace(File.separator, ".");
-        // list the directories in the path
-        File[] files = path.toFile().listFiles();
-        if (files == null) {
-            return;
-        }
-        for (File file : files) {
-            if (file.isDirectory()) {
-                String className = file.getName();
-                String fullClassName = packageDeclaration + "." + className;
-                if (classNameMap.containsKey(className)) {
-                    classNameMap.get(className).add(fullClassName);
-                } else {
-                    Set<String> fullClassNames = new HashSet<>();
-                    fullClassNames.add(fullClassName);
-                    classNameMap.put(className, fullClassNames);
-                }
+    private SDG createSDG(NodeList<CompilationUnit> cus) {
+        SDG sdg = new SDG();
+        sdg.build(cus);
+        return sdg;
+    }
+
+    private List<CallableDeclaration> getCallerByCallGraph(CallableDeclaration node, CallGraph callGraph) {
+        Vertex ver = new Vertex(node);
+        callGraph.edgesOf(ver).forEach(edge -> {
+            if (edge.getTarget().equals(node)) {
+                System.out.println("find caller: " + edge.getSource());
             }
-        }
+        });
+        return null;
+    }
+
+    public void addClassMap(CompilationUnit cu) {
+        cu.findAll(ClassOrInterfaceDeclaration.class).forEach(classNode -> {
+            String className = classNode.getNameAsString();
+            String fullClassName = cu.getPackageDeclaration().isPresent() ?
+                    cu.getPackageDeclaration().get().getNameAsString() + "." + className : className;
+            if (classNameMap.containsKey(className)) {
+                classNameMap.get(className).add(fullClassName);
+            } else {
+                Set<String> fullClassNames = new HashSet<>();
+                fullClassNames.add(fullClassName);
+                classNameMap.put(className, fullClassNames);
+            }
+        });
     }
 
     public static void exportJson(Path path, Object obj) {
