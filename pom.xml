@@ -185,11 +185,6 @@
             <artifactId>jgrapht-core</artifactId>
             <version>1.5.2</version> <!-- Make sure to use the correct version -->
         </dependency>
-        <dependency>
-            <groupId>org.soot-oss</groupId>
-            <artifactId>sootup.callgraph</artifactId>
-            <version>1.2.0</version>
-        </dependency>
     </dependencies>
 
     <profiles>

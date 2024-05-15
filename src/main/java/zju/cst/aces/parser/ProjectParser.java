@@ -5,18 +5,21 @@ import com.github.javaparser.ParseResult;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ParserConfiguration.LanguageLevel;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.CallableDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.expr.Expression;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
 import slicing.graphs.CallGraph;
-import slicing.graphs.CallGraph.Vertex;
 import slicing.graphs.CallGraph.Edge;
+import slicing.graphs.CallGraph.Vertex;
 import slicing.graphs.ClassGraph;
+import slicing.graphs.jsysdg.JSysDG;
 import slicing.graphs.sdg.SDG;
+import slicing.slicing.ClassFileLineCriterion;
 import zju.cst.aces.api.Project;
 import zju.cst.aces.api.config.Config;
+import zju.cst.aces.dto.MethodExampleMap;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -66,7 +69,7 @@ public class ProjectParser {
                 throw new RuntimeException("In ProjectParser.parse: " + e);
             }
         }
-        SDG sdg = createSDG(cus);
+        createMethodExampleMap(cus);
 
         for (var cu : cus) {
             try {
@@ -97,19 +100,55 @@ public class ProjectParser {
     }
 
     private SDG createSDG(NodeList<CompilationUnit> cus) {
-        SDG sdg = new SDG();
+        SDG sdg = new JSysDG();
         sdg.build(cus);
         return sdg;
     }
 
-    private List<CallableDeclaration> getCallerByCallGraph(CallableDeclaration node, CallGraph callGraph) {
+    private void createMethodExampleMap(NodeList<CompilationUnit> cus) {
+        MethodExampleMap methodExampleMap = new MethodExampleMap();
+        SDG sdg = createSDG(cus);
+
+        cus.forEach(cu -> {
+            cu.findAll(CallableDeclaration.class).forEach(callable -> {
+                Set<Edge<?>> edges = findEdgeByCallGraph(callable, sdg.getCallGraph());
+//                List<CallableDeclaration<?>> callers = findCallerByCallGraph(callable, sdg.getCallGraph());
+                if (!edges.isEmpty()) {
+                    edges.forEach(edge -> {
+                        if (edge.getTarget().equals(callable)) {
+                            var callsite = (Expression) edge.getCall();
+                            var caller = edge.getSource();
+                            System.out.println("find caller: " + caller.getNameAsString());
+                            ClassOrInterfaceDeclaration classDecl = findClassByCallable(caller);
+                            var sc = new ClassFileLineCriterion(classDecl.getFullyQualifiedName().get(), 51, "role");
+                            sdg.slice(sc);
+                            methodExampleMap.add(callable.getNameAsString(), classDecl.resolve().getQualifiedName(), caller.getNameAsString(), callsite.getBegin().get().line, caller.toString());
+                        }
+                    });
+                }
+            });
+        });
+    }
+
+    private ClassOrInterfaceDeclaration findClassByCallable(CallableDeclaration<?> node) {
+        return node.findAncestor(ClassOrInterfaceDeclaration.class).orElseThrow();
+    }
+
+    private Set<Edge<?>> findEdgeByCallGraph(CallableDeclaration node, CallGraph callGraph) {
+        Vertex ver = new Vertex(node);
+        return callGraph.edgesOf(ver);
+    }
+
+    private List<CallableDeclaration<?>> findCallerByCallGraph(CallableDeclaration node, CallGraph callGraph) {
+        List<CallableDeclaration<?>> callerList = new ArrayList<>();
         Vertex ver = new Vertex(node);
         callGraph.edgesOf(ver).forEach(edge -> {
             if (edge.getTarget().equals(node)) {
                 System.out.println("find caller: " + edge.getSource());
+                callerList.add(edge.getSource());
             }
         });
-        return null;
+        return callerList;
     }
 
     public void addClassMap(CompilationUnit cu) {

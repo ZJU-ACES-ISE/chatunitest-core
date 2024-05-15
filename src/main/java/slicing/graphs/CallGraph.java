@@ -341,11 +341,11 @@ public class CallGraph extends DirectedPseudograph<CallGraph.Vertex, CallGraph.E
         }
 
         public CallableDeclaration<?> getSource() {
-            return (CallableDeclaration<?>) getSource();
+            return ((Vertex) super.getSource()).getDeclaration();
         }
 
         public CallableDeclaration<?> getTarget() {
-            return (CallableDeclaration<?>) getTarget();
+            return ((Vertex) super.getTarget()).getDeclaration();
         }
 
         @Override
