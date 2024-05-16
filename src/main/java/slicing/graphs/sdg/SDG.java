@@ -129,7 +129,7 @@ public class SDG extends Graph implements Sliceable, Buildable<NodeList<Compilat
             // See creation strategy at http://kaz2.dsic.upv.es:3000/Fzg46cQvT1GzHQG9hFnP1g#Using-data-flow-in-the-SDG
             // This ordering cannot be altered, as each step requires elements from the previous one.
             createClassGraph(nodeList); // 0
-            buildCFGs(nodeList);        // 1 Control Flow graph
+            buildCFGs(nodeList);        // 1
             createCallGraph(nodeList);  // 2
             dataFlowAnalysis();         // 3
             buildAndCopyPDGs();         // 4
@@ -175,7 +175,6 @@ public class SDG extends Graph implements Sliceable, Buildable<NodeList<Compilat
         protected void createCallGraph(NodeList<CompilationUnit> nodeList) {
             callGraph = new CallGraph(cfgMap, ClassGraph.getInstance());
             callGraph.build(nodeList);
-
         }
 
         /** Create class graph from the list of compilation units. */

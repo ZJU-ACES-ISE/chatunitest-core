@@ -4,6 +4,7 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ParserConfiguration.LanguageLevel;
+import com.github.javaparser.Position;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.CallableDeclaration;
@@ -13,10 +14,10 @@ import org.apache.maven.shared.dependency.graph.DependencyNode;
 import slicing.graphs.CallGraph;
 import slicing.graphs.CallGraph.Edge;
 import slicing.graphs.CallGraph.Vertex;
-import slicing.graphs.ClassGraph;
 import slicing.graphs.jsysdg.JSysDG;
 import slicing.graphs.sdg.SDG;
-import slicing.slicing.ClassFileLineCriterion;
+import slicing.slicing.MultiVariableCriterion;
+import slicing.slicing.Slice;
 import zju.cst.aces.api.Project;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.MethodExampleMap;
@@ -30,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ProjectParser {
 
@@ -46,7 +48,6 @@ public class ProjectParser {
         this.config = config;
         this.outputPath = config.getParseOutput();
         this.parser = config.getParser();
-        ClassGraph.setSymbolResolver(parser.getParserConfiguration().getSymbolResolver().orElseThrow());
     }
 
     /**
@@ -112,17 +113,38 @@ public class ProjectParser {
         cus.forEach(cu -> {
             cu.findAll(CallableDeclaration.class).forEach(callable -> {
                 Set<Edge<?>> edges = findEdgeByCallGraph(callable, sdg.getCallGraph());
-//                List<CallableDeclaration<?>> callers = findCallerByCallGraph(callable, sdg.getCallGraph());
                 if (!edges.isEmpty()) {
                     edges.forEach(edge -> {
                         if (edge.getTarget().equals(callable)) {
-                            var callsite = (Expression) edge.getCall();
+                            var callSite = (Expression) edge.getCall();
+                            int callSiteLine = callSite.getBegin().orElse(new Position(0, 0)).line;
+                            NodeList<Expression> arguments;
+                            if (callSite.isMethodCallExpr()) {
+                                arguments = callSite.asMethodCallExpr().getArguments();
+                            } else if (callSite.isObjectCreationExpr()) {
+                                arguments = callSite.asObjectCreationExpr().getArguments();
+                            } else {
+                                throw new RuntimeException("Unsupported call site type: " + callSite.getClass().getSimpleName());
+                            }
+
                             var caller = edge.getSource();
-                            System.out.println("find caller: " + caller.getNameAsString());
-                            ClassOrInterfaceDeclaration classDecl = findClassByCallable(caller);
-                            var sc = new ClassFileLineCriterion(classDecl.getFullyQualifiedName().get(), 51, "role");
-                            sdg.slice(sc);
-                            methodExampleMap.add(callable.getNameAsString(), classDecl.resolve().getQualifiedName(), caller.getNameAsString(), callsite.getBegin().get().line, caller.toString());
+                            ClassOrInterfaceDeclaration callerClassDecl = findClassByCallable(caller);
+
+                            if (arguments.isEmpty()) {
+                                methodExampleMap.add(callable.getNameAsString(),
+                                        callerClassDecl.resolve().getQualifiedName(),
+                                        caller.getNameAsString(),
+                                        callSiteLine,
+                                        callSite.toString());
+                            } else {
+                                var sc = new MultiVariableCriterion(callerClassDecl.getFullyQualifiedName().get(), callSiteLine, arguments.stream().map(Expression::toString).collect(Collectors.toList()));
+                                Slice slice = sdg.slice(sc);
+                                methodExampleMap.add(callable.getNameAsString(),
+                                        callerClassDecl.resolve().getQualifiedName(),
+                                        caller.getNameAsString(),
+                                        callSiteLine,
+                                        slice.toAst().getFirst().orElseThrow().toString());
+                            }
                         }
                     });
                 }

@@ -8,6 +8,7 @@ import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.resolution.Resolvable;
 import com.github.javaparser.resolution.UnsolvedSymbolException;
+import com.github.javaparser.resolution.declarations.AssociableToAST;
 import com.github.javaparser.resolution.declarations.ResolvedMethodLikeDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedValueDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
@@ -405,23 +406,19 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         // ++a -> USAGE (get value), DEFINITION (add 1), USAGE (get new value)
         // a++ -> USAGE (get value), DEFINITION (add 1)
         // any other UnaryExpr (~, !, -) -> USAGE
-//        switch (n.getOperator()) {
-//            case PREFIX_DECREMENT, PREFIX_INCREMENT -> {
-//                n.getExpression().accept(this, action);
-//                visitAsDefinition(n.getExpression(), null, action);
-//            }
-//        }
-//        n.getExpression().accept(this, action);
-//        switch (n.getOperator()) {
-//            case POSTFIX_INCREMENT, POSTFIX_DECREMENT -> visitAsDefinition(n.getExpression(), null, action);
-//        }
-        if (n.getOperator() == UnaryExpr.Operator.POSTFIX_DECREMENT || n.getOperator() == UnaryExpr.Operator.POSTFIX_INCREMENT) {
-            n.getExpression().accept(this, action);
-            visitAsDefinition(n.getExpression(), null, action);
+        switch (n.getOperator()) {
+            case PREFIX_DECREMENT:
+            case PREFIX_INCREMENT:
+                n.getExpression().accept(this, action);
+                visitAsDefinition(n.getExpression(), null, action);
+                break;
         }
         n.getExpression().accept(this, action);
-        if (n.getOperator() == UnaryExpr.Operator.PREFIX_DECREMENT || n.getOperator() == UnaryExpr.Operator.PREFIX_INCREMENT) {
-            visitAsDefinition(n.getExpression(), null, action);
+        switch (n.getOperator()) {
+            case POSTFIX_INCREMENT:
+            case POSTFIX_DECREMENT:
+                visitAsDefinition(n.getExpression(), null, action);
+                break;
         }
     }
 
@@ -483,14 +480,13 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
 
     @Override
     public void visit(Parameter n, Action arg) {
-        String[] nName = new String[]{ n.getNameAsString() };
-        try{
+        try {
+            String[] nName = new String[]{ n.getNameAsString() };
             VariableAction vaDec = acceptAction(PARAMETER, nName, DECLARATION);
             vaDec.setStaticType(n.getType().resolve());
             VariableAction vaDef = acceptActionNullDefinition(PARAMETER, nName);
             vaDef.setStaticType(n.getType().resolve());
-        }catch (IllegalArgumentException e){
-
+        } catch (IllegalArgumentException e) {
 
         }
     }
@@ -560,7 +556,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
                         va.setStaticType(ASTUtils.resolvedTypeOfCurrentClass((MethodCallExpr) call));
                     });
             // Generate -scope-in- action, so that InterproceduralUsageFinder does not need to do so.
-            VariableAction.Definition def = new VariableAction.Definition(DeclarationType.SYNTHETIC, "-scope-in-", graphNode);
+            VariableAction.Definition def = new VariableAction.Definition(VariableAction.DeclarationType.SYNTHETIC, "-scope-in-", graphNode);
             VariableAction.Movable movDef = new VariableAction.Movable(def, scopeIn);
             graphNode.addVariableAction(movDef);
             realNodeStack.pop();
@@ -574,7 +570,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
             realNodeStack.push(actualIn);
             argument.accept(this, action);
             // Generate -arg-in- action, so that InterproceduralUsageFinder does not need to do so.
-            VariableAction.Definition def = new VariableAction.Definition(DeclarationType.SYNTHETIC, "-arg-in-", graphNode);
+            VariableAction.Definition def = new VariableAction.Definition(VariableAction.DeclarationType.SYNTHETIC, "-arg-in-", graphNode);
             VariableAction.Movable movDef = new VariableAction.Movable(def, actualIn);
             graphNode.addVariableAction(movDef);
             realNodeStack.pop();
@@ -609,11 +605,10 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
 
     protected Optional<ObjectTree> getFieldsForReturn(Resolvable<? extends ResolvedMethodLikeDeclaration> call) {
         ResolvedMethodLikeDeclaration resolved = call.resolve();
-        if (resolved != null) {
-            Optional<Node> n = resolved.toAst();
-            if (n.isPresent() && n.get() instanceof CallableDeclaration) {
+        if (resolved instanceof AssociableToAST) {
+            Optional<? extends Node> n = ((AssociableToAST<? extends Node>) resolved).toAst();
+            if (n.isPresent() && n.get() instanceof CallableDeclaration)
                 return ClassGraph.getInstance().generateObjectTreeForReturnOf((CallableDeclaration<?>) n.get());
-            }
         }
         return Optional.empty();
     }

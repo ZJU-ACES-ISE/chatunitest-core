@@ -28,8 +28,8 @@ public class JSysDG extends ESSDG {
     }
 
     @Override
-    protected Builder createBuilder() {
-        return new Builder();
+    protected JSysDG.Builder createBuilder() {
+        return new JSysDG.Builder();
     }
 
     /** Populates an ESSDG, using ESPDG and ESCFG as default graphs.

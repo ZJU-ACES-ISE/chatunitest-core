@@ -12,8 +12,8 @@ import com.github.javaparser.resolution.declarations.ResolvedConstructorDeclarat
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedMethodLikeDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
-import com.github.javaparser.resolution.model.typesystem.ReferenceTypeImpl;
 import com.github.javaparser.resolution.types.ResolvedType;
+import com.github.javaparser.symbolsolver.model.typesystem.ReferenceTypeImpl;
 import slicing.nodes.GraphNode;
 
 import java.util.*;
@@ -136,14 +136,10 @@ public class ASTUtils {
     }
 
     public static Optional<? extends CallableDeclaration<?>> getResolvedAST(ResolvedMethodLikeDeclaration resolvedDeclaration) {
-        if (resolvedDeclaration instanceof ResolvedMethodDeclaration) {
-            Optional<Node> astNode = resolvedDeclaration.toAst();
-            return astNode.map(node -> (CallableDeclaration<?>) node);
-        }
-        if (resolvedDeclaration instanceof ResolvedConstructorDeclaration) {
-            Optional<Node> astNode = resolvedDeclaration.toAst();
-            return astNode.map(node -> (CallableDeclaration<?>) node);
-        }
+        if (resolvedDeclaration instanceof ResolvedMethodDeclaration)
+            return ((ResolvedMethodDeclaration) resolvedDeclaration).toAst();
+        if (resolvedDeclaration instanceof ResolvedConstructorDeclaration)
+            return ((ResolvedConstructorDeclaration) resolvedDeclaration).toAst();
         throw new IllegalStateException("AST node of invalid type");
     }
 
@@ -192,14 +188,14 @@ public class ASTUtils {
 
     /** Converts a type declaration into just a type. */
     public static ResolvedType resolvedTypeDeclarationToResolvedType(ResolvedReferenceTypeDeclaration decl) {
-        return new ReferenceTypeImpl(decl);
+        return new ReferenceTypeImpl(decl, StaticTypeSolver.getTypeSolver());
     }
 
     /**
      * Whether a cast of reference type is a downcast; which means
      * that the type of the cast is strictly more specific than the expression's static type.
      * This method should only be called with cast expressions of reference type (no primitives).
-     * Otherwise: it will fail.
+     * Otherwise it will fail.
      * <br/>
      * Examples:
      * <ul>

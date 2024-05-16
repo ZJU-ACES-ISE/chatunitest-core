@@ -1,5 +1,6 @@
 package slicing.graphs;
 
+import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
@@ -8,7 +9,6 @@ import com.github.javaparser.ast.nodeTypes.NodeWithName;
 import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName;
 import com.github.javaparser.ast.type.TypeParameter;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
-import com.github.javaparser.resolution.SymbolResolver;
 import com.github.javaparser.resolution.UnsolvedSymbolException;
 import com.github.javaparser.resolution.declarations.ResolvedClassDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
@@ -27,37 +27,25 @@ import static slicing.nodes.ObjectTree.ROOT_NODE;
 
 public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassGraph.ClassArc> implements Buildable<NodeList<CompilationUnit>> {
     private static ClassGraph instance = null;
-    private static SymbolResolver symbolResolver = null;
 
-    /**
-     * Generates and returns a new class graph. This destroys the reference to the previous instance.
-     */
+    /** Generates and returns a new class graph. This destroys the reference to the previous instance. */
     public static ClassGraph getNewInstance() {
         instance = null;
         return getInstance();
     }
 
     public static ClassGraph getInstance() {
-        if (instance == null) instance = new ClassGraph();
+        if (instance == null)
+            instance = new ClassGraph();
         return instance;
     }
 
-    public static void setSymbolResolver(SymbolResolver symbolResolver) {
-        ClassGraph.symbolResolver = symbolResolver;
-    }
-
-    /**
-     * A map from the FQ class name to its corresponding vertex. Use {@code mapKey(...)} to locate the key.
-     */
-    private final Map<String, Vertex<? extends TypeDeclaration<?>>> classDeclarationMap = new HashMap<>();
-    /**
-     * A map from the field name to its corresponding vertex. Use {@code mapKey(...)} to locate the key.
-     */
-    private final Map<String, Vertex<FieldDeclaration>> fieldDeclarationMap = new HashMap<>();
-    /**
-     * A map from the method's signature to its corresponding vertex. Use {@code mapKey(...)} to locate the key.
-     */
-    private final Map<String, Vertex<CallableDeclaration<?>>> methodDeclarationMap = new HashMap<>();
+    /** A map from the FQ class name to its corresponding vertex. Use {@code mapKey(...)} to locate the key. */
+    private final Map<String, ClassGraph.Vertex<? extends TypeDeclaration<?>>> classDeclarationMap = new HashMap<>();
+    /** A map from the field name to its corresponding vertex. Use {@code mapKey(...)} to locate the key. */
+    private final Map<String, ClassGraph.Vertex<FieldDeclaration>> fieldDeclarationMap = new HashMap<>();
+    /** A map from the method's signature to its corresponding vertex. Use {@code mapKey(...)} to locate the key. */
+    private final Map<String, ClassGraph.Vertex<CallableDeclaration<?>>> methodDeclarationMap = new HashMap<>();
 
     private boolean built = false;
 
@@ -65,59 +53,59 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
         super(null, null, false);
     }
 
-    public Collection<Vertex<? extends TypeDeclaration<?>>> typeVertices() {
+    public Collection<ClassGraph.Vertex<? extends TypeDeclaration<?>>> typeVertices() {
         return classDeclarationMap.values();
     }
 
-    /**
-     * Locates the vertex that represents a given class or interface declaration.
-     * If the vertex is not contained in the graph, {@code null} will be returned.
-     */
+    /** Locates the vertex that represents a given class or interface declaration.
+     *  If the vertex is not contained in the graph, {@code null} will be returned. */
     protected Vertex<? extends TypeDeclaration<?>> findClassVertex(TypeDeclaration<?> declaration) {
         return classDeclarationMap.get(mapKey(declaration));
     }
 
-    /**
-     * Whether this graph contains the given type as a vertex.
-     */
+    /** Whether this graph contains the given type as a vertex. */
     public boolean containsType(ResolvedType type) {
         return type.isReferenceType() && classDeclarationMap.containsKey(mapKey(type.asReferenceType()));
     }
 
-    /**
-     * Set of method declarations that override the given argument.
-     */
+    /** Set of method declarations that override the given argument. */
     public Set<MethodDeclaration> overriddenSetOf(MethodDeclaration method) {
-        return subclassesStreamOf(findClassVertex(method.findAncestor(TypeDeclaration.class).orElseThrow())).flatMap(vertex -> outgoingEdgesOf(vertex).stream().filter(ClassArc.Member.class::isInstance).map(ClassGraph.this::getEdgeTarget).filter(v -> v.declaration.isMethodDeclaration()).filter(v -> v.declaration.asMethodDeclaration().getSignature().equals(method.getSignature())).map(v -> v.declaration.asMethodDeclaration())).collect(Collectors.toSet());
+        return subclassesStreamOf(findClassVertex(method.findAncestor(TypeDeclaration.class).orElseThrow()))
+                .flatMap(vertex -> outgoingEdgesOf(vertex).stream()
+                        .filter(ClassArc.Member.class::isInstance)
+                        .map(ClassGraph.this::getEdgeTarget)
+                        .filter(v -> v.declaration.isMethodDeclaration())
+                        .filter(v -> v.declaration.asMethodDeclaration().getSignature().equals(method.getSignature()))
+                        .map(v -> v.declaration.asMethodDeclaration()))
+                .collect(Collectors.toSet());
     }
 
-    /**
-     * Locates a field declaration within a given type, given its name.
-     */
+    /** Locates a field declaration within a given type, given its name. */
     public Optional<FieldDeclaration> findClassField(ResolvedType resolvedType, String fieldName) {
-        return Optional.ofNullable(classDeclarationMap.get(mapKey(resolvedType.asReferenceType()))).flatMap(v -> findClassField(v, fieldName));
+        return Optional.ofNullable(classDeclarationMap.get(mapKey(resolvedType.asReferenceType())))
+                .flatMap(v -> findClassField(v, fieldName));
     }
 
-    /**
-     * @see #findClassField(ResolvedType, String)
-     */
+    /** @see #findClassField(ResolvedType,String) */
     @SuppressWarnings("unchecked")
     public Optional<FieldDeclaration> findClassField(Vertex<? extends TypeDeclaration<?>> vertex, String fieldName) {
         var field = vertex.getDeclaration().getFieldByName(fieldName);
-        if (field.isPresent()) return field;
-        return incomingEdgesOf(vertex).stream().filter(ClassArc.Extends.class::isInstance).map(this::getEdgeSource).map(v -> (Vertex<? extends TypeDeclaration<?>>) v).findAny().flatMap(parent -> findClassField(parent, fieldName));
+        if (field.isPresent())
+            return field;
+        return incomingEdgesOf(vertex).stream()
+                .filter(ClassArc.Extends.class::isInstance)
+                .map(this::getEdgeSource)
+                .map(v -> (Vertex<? extends TypeDeclaration<?>>) v)
+                .findAny()
+                .flatMap(parent -> findClassField(parent, fieldName));
     }
 
-    /**
-     * Returns all child classes of the given class, including itself.
-     */
+    /** Returns all child classes of the given class, including itself. */
     public Set<? extends TypeDeclaration<?>> subclassesOf(TypeDeclaration<?> clazz) {
         return subclassesOf(findClassVertex(clazz));
     }
 
-    /**
-     * Returns all child classes of the given class, including itself.
-     */
+    /** Returns all child classes of the given class, including itself. */
     public Set<? extends TypeDeclaration<?>> subclassesOf(ResolvedClassDeclaration clazz) {
         return subclassesOf(classDeclarationMap.get(mapKey(clazz)));
     }
@@ -126,64 +114,77 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
         return subclassesOf(classDeclarationMap.get(mapKey(type)));
     }
 
-    /**
-     * @see #subclassesOf(TypeDeclaration)
-     */
+    /** @see #subclassesOf(TypeDeclaration) */
     protected Set<? extends TypeDeclaration<?>> subclassesOf(Vertex<? extends TypeDeclaration<?>> v) {
-        if (v.getDeclaration() instanceof EnumDeclaration) return Set.of(v.getDeclaration());
-        return subclassesStreamOf(v).map(Vertex::getDeclaration).map(ClassOrInterfaceDeclaration.class::cast).collect(Collectors.toSet());
+        if (v.getDeclaration() instanceof EnumDeclaration)
+            return Set.of(v.getDeclaration());
+        return subclassesStreamOf(v)
+                .map(Vertex::getDeclaration)
+                .map(ClassOrInterfaceDeclaration.class::cast)
+                .collect(Collectors.toSet());
     }
 
     @SuppressWarnings("unchecked")
     protected Stream<Vertex<? extends TypeDeclaration<?>>> subclassesStreamOf(Vertex<? extends TypeDeclaration<?>> classVertex) {
-        return Stream.concat(Stream.of(classVertex), outgoingEdgesOf(classVertex).stream().filter(ClassArc.Extends.class::isInstance).map(this::getEdgeTarget).map(v -> (Vertex<? extends TypeDeclaration<?>>) v).flatMap(this::subclassesStreamOf));
+        return Stream.concat(Stream.of(classVertex), outgoingEdgesOf(classVertex).stream()
+                .filter(ClassArc.Extends.class::isInstance)
+                .map(this::getEdgeTarget)
+                .map(v -> (Vertex<? extends TypeDeclaration<?>>) v)
+                .flatMap(this::subclassesStreamOf));
     }
 
     // TODO: this method ignores default method implementations in interfaces, as can be overridden.
-
-    /**
-     * Looks up a method in the graph, going up the class inheritance tree to locate a
-     * matching method. If no match can be found, throws an {@link IllegalArgumentException}.
-     */
+    /** Looks up a method in the graph, going up the class inheritance tree to locate a
+     *  matching method. If no match can be found, throws an {@link IllegalArgumentException}. */
     public MethodDeclaration findMethodByTypeAndSignature(TypeDeclaration<?> type, CallableDeclaration<?> declaration) {
         Vertex<CallableDeclaration<?>> v = methodDeclarationMap.get(mapKey(declaration, type));
-        if (v != null && v.declaration.isMethodDeclaration()) return v.declaration.asMethodDeclaration();
+        if (v != null && v.declaration.isMethodDeclaration())
+            return v.declaration.asMethodDeclaration();
         if (type.isClassOrInterfaceDeclaration()) {
             Optional<ClassOrInterfaceDeclaration> parentType = parentOf(type.asClassOrInterfaceDeclaration());
-            if (parentType.isPresent()) return findMethodByTypeAndSignature(parentType.get(), declaration);
+            if (parentType.isPresent())
+                return findMethodByTypeAndSignature(parentType.get(), declaration);
         }
         throw new IllegalArgumentException("Cannot find the given declaration: " + declaration);
     }
 
-    /**
-     * Find the parent class or interface of a given class.
-     */
+    /** Find the parent class or interface of a given class. */
     public Optional<ClassOrInterfaceDeclaration> parentOf(ClassOrInterfaceDeclaration declaration) {
-        return incomingEdgesOf(findClassVertex(declaration)).stream().filter(ClassArc.Extends.class::isInstance).map(this::getEdgeSource).map(Vertex::getDeclaration).filter(BodyDeclaration::isClassOrInterfaceDeclaration).map(BodyDeclaration::asClassOrInterfaceDeclaration).findFirst();
+        return incomingEdgesOf(findClassVertex(declaration)).stream()
+                .filter(ClassArc.Extends.class::isInstance)
+                .map(this::getEdgeSource)
+                .map(Vertex::getDeclaration)
+                .filter(BodyDeclaration::isClassOrInterfaceDeclaration)
+                .map(BodyDeclaration::asClassOrInterfaceDeclaration)
+                .findFirst();
     }
 
     public Optional<? extends TypeDeclaration<?>> parentOf(TypeDeclaration<?> declaration) {
-        return incomingEdgesOf(findClassVertex(declaration)).stream().filter(ClassArc.Extends.class::isInstance).map(this::getEdgeSource).map(Vertex::getDeclaration).filter(BodyDeclaration::isTypeDeclaration).map(bd -> (TypeDeclaration<?>) bd).findFirst();
+        return incomingEdgesOf(findClassVertex(declaration)).stream()
+                .filter(ClassArc.Extends.class::isInstance)
+                .map(this::getEdgeSource)
+                .map(Vertex::getDeclaration)
+                .filter(BodyDeclaration::isTypeDeclaration)
+                .map(bd -> (TypeDeclaration<?>) bd)
+                .findFirst();
     }
 
     public Optional<ObjectTree> generateObjectTreeForReturnOf(CallableDeclaration<?> callableDeclaration) {
         if (callableDeclaration.isMethodDeclaration()) {
             MethodDeclaration method = callableDeclaration.asMethodDeclaration();
-            if (method.getType().isClassOrInterfaceType()) try {
-                // TODO: improve. Sometimes, the cu doesn't have the symbol solver. We readd that here.
-                method.getType().findCompilationUnit().ifPresentOrElse(cu -> {
-                    if (!cu.containsData(Node.SYMBOL_RESOLVER_KEY))
-                        cu.setData(Node.SYMBOL_RESOLVER_KEY, symbolResolver);
-                }, () -> {
-                    throw new IllegalStateException("The node is not inserted in a CompilationUnit");
-                });
-                ResolvedType resolvedType = method.getType().asClassOrInterfaceType().resolve();
-                ResolvedReferenceType methodType = resolvedType.asReferenceType();
-                return Optional.of(generateObjectTreeFor(methodType));
-            } catch (UnsolvedSymbolException e) {
+            if (method.getType().isClassOrInterfaceType())
+                try {
+                    // TODO: improve. Sometimes, the cu doesn't have the symbol solver. We readd that here.
+                    method.getType().findCompilationUnit().ifPresentOrElse(cu -> {
+                        if (!cu.containsData(Node.SYMBOL_RESOLVER_KEY))
+                            cu.setData(Node.SYMBOL_RESOLVER_KEY, StaticJavaParser.getConfiguration().getSymbolResolver().orElseThrow(() -> new IllegalStateException("Symbol resolution not configured: to configure consider setting a SymbolResolver in the ParserConfiguration")));
+                    }, () -> { throw new IllegalStateException("The node is not inserted in a CompilationUnit"); });
+                    return Optional.of(generateObjectTreeFor(method.getType().asClassOrInterfaceType().resolve()));
+                } catch (UnsolvedSymbolException e) {
+                    return Optional.empty();
+                }
+            else
                 return Optional.empty();
-            }
-            else return Optional.empty();
         } else if (callableDeclaration.isConstructorDeclaration()) {
             return Optional.of(generateObjectTreeFor(callableDeclaration.findAncestor(TypeDeclaration.class).orElseThrow()));
         } else {
@@ -194,7 +195,8 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
     public Optional<ObjectTree> generateObjectTreeForType(ResolvedType type) {
         if (type.isReferenceType()) {
             Vertex<? extends TypeDeclaration<?>> v = classDeclarationMap.get(mapKey(type.asReferenceType()));
-            if (v != null) return Optional.of(generateObjectTreeFor(v));
+            if (v != null)
+                return Optional.of(generateObjectTreeFor(v));
         }
         return Optional.empty();
     }
@@ -208,12 +210,14 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
     }
 
     protected ObjectTree generateObjectTreeFor(Vertex<? extends TypeDeclaration<?>> classVertex) {
-        if (classVertex == null) return new ObjectTree();
+        if (classVertex == null)
+            return new ObjectTree();
         return generatePolyObjectTreeFor(classVertex, new ObjectTree(), ROOT_NODE, 0);
     }
 
     protected ObjectTree generatePolyObjectTreeFor(Vertex<? extends TypeDeclaration<?>> classVertex, ObjectTree tree, String[] level, int depth) {
-        if (depth >= StaticConfig.K_LIMIT) return tree;
+        if (depth >= StaticConfig.K_LIMIT)
+            return tree;
         Set<? extends TypeDeclaration<?>> types = subclassesOf(classVertex);
         if (types.isEmpty()) {
             generateObjectTreeFor(classVertex, tree, level, depth);
@@ -239,29 +243,31 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
             System.arraycopy(level, 0, newLevel, 0, level.length);
             newLevel[level.length] = entry.getKey();
             tree.addField(newLevel);
-            if (entry.getValue() != null) generatePolyObjectTreeFor(entry.getValue(), tree, newLevel, depth);
+            if (entry.getValue() != null)
+                generatePolyObjectTreeFor(entry.getValue(), tree, newLevel, depth);
         }
     }
 
     protected Map<String, Vertex<? extends TypeDeclaration<?>>> findAllFieldsOf(Vertex<? extends TypeDeclaration<?>> classVertex) {
         TypeDeclaration<?> type = classVertex.getDeclaration();
-        assert !type.isClassOrInterfaceDeclaration() || !type.asClassOrInterfaceDeclaration().isInterface();
+        assert !type.isClassOrInterfaceDeclaration() ||
+                !type.asClassOrInterfaceDeclaration().isInterface();
         Map<String, Vertex<? extends TypeDeclaration<?>>> fieldMap = new HashMap<>();
         while (type != null) {
             for (FieldDeclaration field : type.getFields()) {
                 for (VariableDeclarator var : field.getVariables()) {
-                    if (fieldMap.containsKey(var.getNameAsString())) continue;
+                    if (fieldMap.containsKey(var.getNameAsString()))
+                        continue;
                     Vertex<? extends TypeDeclaration<?>> v = null;
                     if (var.getType().isClassOrInterfaceType()) {
                         boolean isTypeParameter = false;
                         for (TypeParameter typeParameter : type.asClassOrInterfaceDeclaration().getTypeParameters())
                             if (typeParameter.getNameAsString().equals(var.getType().asClassOrInterfaceType().getNameAsString()))
                                 isTypeParameter = true;
-                        if (!isTypeParameter) try {
-                            ResolvedReferenceType resolved = var.getType().asClassOrInterfaceType().resolve().asReferenceType();
-                            v = classDeclarationMap.get(mapKey(resolved));
-                        } catch (UnsolvedSymbolException ignored) {
-                        }
+                        if (!isTypeParameter)
+                            try {
+                                v = classDeclarationMap.get(mapKey(var.getType().asClassOrInterfaceType().resolve()));
+                            } catch (UnsolvedSymbolException ignored) {}
                     }
                     fieldMap.put(var.getNameAsString(), v);
                 }
@@ -277,7 +283,8 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
 
     @Override
     public void build(NodeList<CompilationUnit> arg) {
-        if (isBuilt()) return;
+        if (isBuilt())
+            return;
         buildVertices(arg);
         buildEdges(arg);
         built = true;
@@ -308,10 +315,8 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
         return clazz.getFullyQualifiedName().orElseThrow() + "." + declaration;
     }
 
-    /**
-     * Find the class declarations, the field declaration, and method and constructor declarations (vertices)
-     * in the given list of compilation units.
-     */
+    /** Find the class declarations, the field declaration, and method and constructor declarations (vertices)
+     * in the given list of compilation units. */
     protected void buildVertices(NodeList<CompilationUnit> arg) {
         arg.accept(new VoidVisitorAdapter<Void>() {
             private final Deque<TypeDeclaration<?>> typeStack = new LinkedList<>();
@@ -320,7 +325,6 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
 //              2) Private classes inside other classes?
 //              3) Static declaration blocks not considered
 
-            // During visiting the AST nodes, the result is stored in the corresponding map
             @Override
             public void visit(ClassOrInterfaceDeclaration n, Void arg) {
                 typeStack.push(n);
@@ -357,38 +361,30 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
         }, null);
     }
 
-    /**
-     * Add a type declaration vertex to the class graph, to represent classes and enums.
-     */
+    /** Add a type declaration vertex to the class graph, to represent classes and enums. */
     protected void addTypeDeclaration(TypeDeclaration<?> n) {
-        Vertex<TypeDeclaration<?>> v = new Vertex<>(n);
+        ClassGraph.Vertex<TypeDeclaration<?>> v = new ClassGraph.Vertex<>(n);
         classDeclarationMap.put(mapKey(n), v);
         addVertex(v);
     }
 
-    /**
-     * Add a field declaration vertex to the class graph
-     */
-    protected void addFieldDeclaration(FieldDeclaration n, TypeDeclaration<?> c) {
-        Vertex<FieldDeclaration> v = new Vertex<>(n);
+    /** Add a field declaration vertex to the class graph */
+    protected void addFieldDeclaration(FieldDeclaration n, TypeDeclaration<?> c){
+        ClassGraph.Vertex<FieldDeclaration> v = new ClassGraph.Vertex<>(n);
         fieldDeclarationMap.put(mapKey(n, c), v);
         addVertex(v);
     }
 
-    /**
-     * Add a method/constructor declaration vertex to the class graph
-     */
-    protected void addCallableDeclaration(CallableDeclaration<?> n, TypeDeclaration<?> c) {
+    /** Add a method/constructor declaration vertex to the class graph */
+    protected void addCallableDeclaration(CallableDeclaration<?> n, TypeDeclaration<?> c){
         assert n instanceof ConstructorDeclaration || n instanceof MethodDeclaration;
-        Vertex<CallableDeclaration<?>> v = new Vertex<>(n);
+        ClassGraph.Vertex<CallableDeclaration<?>> v = new ClassGraph.Vertex<>(n);
         methodDeclarationMap.put(mapKey(n, c), v);
         addVertex(v);
     }
 
-    /**
-     * Find the class declarations, field declarations, and method declarations and build the corresponding
-     * member/extends/implements relationships in the given list of compilation units.
-     */
+    /** Find the class declarations, field declarations, and method declarations and build the corresponding
+     * member/extends/implements relationships in the given list of compilation units. */
     protected void buildEdges(NodeList<CompilationUnit> arg) {
         arg.accept(new VoidVisitorAdapter<Void>() {
             private final Deque<TypeDeclaration<?>> typeStack = new LinkedList<>();
@@ -443,19 +439,19 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
             return; // nothing to do, it is final and cannot extend nor implement user-defined types
         ClassOrInterfaceDeclaration c = (ClassOrInterfaceDeclaration) v.declaration;
         c.getExtendedTypes().forEach(p -> {
-            Vertex<?> source = classDeclarationMap.get(mapKey(p.resolve().asReferenceType()));
-            if (source != null && containsVertex(v)) addEdge(source, v, new ClassArc.Extends());
+            Vertex<?> source = classDeclarationMap.get(mapKey(p.resolve()));
+            if (source != null && containsVertex(v))
+                addEdge(source, v, new ClassArc.Extends());
         });
         c.getImplementedTypes().forEach(p -> {
-            Vertex<?> source = classDeclarationMap.get(mapKey(p.resolve().asReferenceType()));
-            if (source != null && containsVertex(v)) addEdge(source, v, new ClassArc.Implements());
+            Vertex<?> source = classDeclarationMap.get(mapKey(p.resolve()));
+            if (source != null && containsVertex(v))
+                addEdge(source, v, new ClassArc.Implements());
         });
     }
 
-    /**
-     * A vertex containing the declaration it represents. It only exists because
-     * JGraphT relies heavily on equals comparison, which may not be correct in declarations.
-     */
+    /** A vertex containing the declaration it represents. It only exists because
+     *  JGraphT relies heavily on equals comparison, which may not be correct in declarations. */
     public static class Vertex<T extends BodyDeclaration<?>> {
         // First ancestor common class in the JavaParser hierarchy for
         // ClassOrInterfaceDeclaration, FieldDeclaration and CallableDeclaration
@@ -465,9 +461,7 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
             this.declaration = declaration;
         }
 
-        /**
-         * The declaration represented by this node.
-         */
+        /** The declaration represented by this node. */
         public T getDeclaration() {
             return declaration;
         }
@@ -478,13 +472,15 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
                 return Objects.hash(((NodeWithName<?>) declaration).getNameAsString());
             if (declaration instanceof NodeWithSimpleName<?>)
                 return Objects.hash(((NodeWithSimpleName<?>) declaration).getNameAsString());
-            if (declaration instanceof FieldDeclaration) return Objects.hash(String.valueOf(declaration));
+            if (declaration instanceof FieldDeclaration)
+                return Objects.hash(String.valueOf(declaration));
             throw new IllegalStateException("Invalid vertex in graph");
         }
 
         @Override
         public boolean equals(Object obj) {
-            if (obj == this) return true;
+            if (obj == this)
+                return true;
             return obj instanceof CallGraph.Vertex && ASTUtils.equalsWithRangeInCU(((CallGraph.Vertex) obj).declaration, declaration);
         }
 
@@ -495,23 +491,12 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
     }
 
     public static class ClassArc extends Arc {
-        /**
-         * An arc that connects a class with another one that inherits from it.
-         */
-        protected static class Extends extends ClassArc {
-        }
-
-        /**
-         * An arc that connects an interface to a class that implements it.
-         */
-        protected static class Implements extends ClassArc {
-        }
-
-        /**
-         * An arc that connects a class with a field or method contained in it.
-         */
-        protected static class Member extends ClassArc {
-        }
+        /** An arc that connects a class with another one that inherits from it. */
+        protected static class Extends extends ClassArc {}
+        /** An arc that connects an interface to a class that implements it. */
+        protected static class Implements extends ClassArc {}
+        /** An arc that connects a class with a field or method contained in it. */
+        protected static class Member extends ClassArc {}
     }
 }
 

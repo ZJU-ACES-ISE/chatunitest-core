@@ -84,6 +84,8 @@ public class Slice {
                 clone.setStorage(entry.getKey().getStorage().get().getPath(),
                         entry.getKey().getStorage().get().getEncoding());
             clone.accept(sliceVisitor, entry.getValue());
+            clone.removePackageDeclaration();
+            clone.getImports().clear();
             cus.add(clone);
         }
         return cus;

@@ -546,7 +546,8 @@ public class ClassParser {
     private static String getParamTypeInSig(ResolvedMethodDeclaration md) {
         String sig = md.getName() + "(";
         for (int i = 0; i < md.getNumberOfParams(); i++) {
-            String paramType = md.getParam(i).getType().erasure().describe();
+//            String paramType = md.getParam(i).getType().erasure().describe();
+            String paramType = md.getParam(i).getType().describe();
             if (paramType.contains(".")) {
                 paramType = paramType.substring(paramType.lastIndexOf(".") + 1);
             }
