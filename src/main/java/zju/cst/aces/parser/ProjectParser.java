@@ -70,7 +70,7 @@ public class ProjectParser {
                 throw new RuntimeException("In ProjectParser.parse: " + e);
             }
         }
-        createMethodExampleMap(cus);
+        MethodExampleMap methodExampleMap = createMethodExampleMap(cus);
 
         for (var cu : cus) {
             try {
@@ -96,6 +96,7 @@ public class ProjectParser {
         }
         exportClassMapping();
         exportOCC();
+        exportMethodExampleMap(methodExampleMap);
         exportJson(config.getClassNameMapPath(), classNameMap);
         config.getLogger().info("\nParsed classes: " + classCount + "\nParsed methods: " + methodCount);
     }
@@ -106,7 +107,7 @@ public class ProjectParser {
         return sdg;
     }
 
-    private void createMethodExampleMap(NodeList<CompilationUnit> cus) {
+    private MethodExampleMap createMethodExampleMap(NodeList<CompilationUnit> cus) {
         MethodExampleMap methodExampleMap = new MethodExampleMap();
         SDG sdg = createSDG(cus);
 
@@ -118,38 +119,67 @@ public class ProjectParser {
                         if (edge.getTarget().equals(callable)) {
                             var callSite = (Expression) edge.getCall();
                             int callSiteLine = callSite.getBegin().orElse(new Position(0, 0)).line;
-                            NodeList<Expression> arguments;
+                            NodeList<Expression> arguments = new NodeList<>();
                             if (callSite.isMethodCallExpr()) {
-                                arguments = callSite.asMethodCallExpr().getArguments();
+                                arguments.addAll(callSite.asMethodCallExpr().getArguments());
+                                if (callSite.hasScope()) {
+                                    arguments.add(callSite.asMethodCallExpr().getScope().get());
+                                }
                             } else if (callSite.isObjectCreationExpr()) {
-                                arguments = callSite.asObjectCreationExpr().getArguments();
+                                arguments.addAll(callSite.asObjectCreationExpr().getArguments());
+                                if (callSite.hasScope()) {
+                                    arguments.add(callSite.asObjectCreationExpr().getScope().get());
+                                }
                             } else {
                                 throw new RuntimeException("Unsupported call site type: " + callSite.getClass().getSimpleName());
                             }
 
-                            var caller = edge.getSource();
+                            CallableDeclaration<?> caller = edge.getSource();
                             ClassOrInterfaceDeclaration callerClassDecl = findClassByCallable(caller);
 
                             if (arguments.isEmpty()) {
-                                methodExampleMap.add(callable.getNameAsString(),
+                                methodExampleMap.add(getQualifiedSignatureByCallable(callable),
                                         callerClassDecl.resolve().getQualifiedName(),
-                                        caller.getNameAsString(),
+                                        getSignatureByCallable(caller),
                                         callSiteLine,
                                         callSite.toString());
                             } else {
                                 var sc = new MultiVariableCriterion(callerClassDecl.getFullyQualifiedName().get(), callSiteLine, arguments.stream().map(Expression::toString).collect(Collectors.toList()));
                                 Slice slice = sdg.slice(sc);
-                                methodExampleMap.add(callable.getNameAsString(),
-                                        callerClassDecl.resolve().getQualifiedName(),
-                                        caller.getNameAsString(),
-                                        callSiteLine,
-                                        slice.toAst().getFirst().orElseThrow().toString());
+                                if (!slice.toAst().isEmpty()) {
+                                    methodExampleMap.add(getQualifiedSignatureByCallable(callable),
+                                            callerClassDecl.resolve().getQualifiedName(),
+                                            getSignatureByCallable(caller),
+                                            callSiteLine,
+                                            slice.toAst().getFirst().orElseThrow().toString());
+                                }
                             }
                         }
                     });
                 }
             });
         });
+        return methodExampleMap;
+    }
+
+    private String getSignatureByCallable(CallableDeclaration<?> callable) {
+        if (callable.isMethodDeclaration()) {
+            return callable.asMethodDeclaration().resolve().getSignature();
+        } else if (callable.isConstructorDeclaration()) {
+            return callable.asConstructorDeclaration().resolve().getSignature();
+        } else {
+            throw new RuntimeException("Unsupported callable type: " + callable.getClass().getSimpleName());
+        }
+    }
+
+    private String getQualifiedSignatureByCallable(CallableDeclaration<?> callable) {
+        if (callable.isMethodDeclaration()) {
+            return callable.asMethodDeclaration().resolve().getQualifiedSignature();
+        } else if (callable.isConstructorDeclaration()) {
+            return callable.asConstructorDeclaration().resolve().getQualifiedSignature();
+        } else {
+            throw new RuntimeException("Unsupported callable type: " + callable.getClass().getSimpleName());
+        }
     }
 
     private ClassOrInterfaceDeclaration findClassByCallable(CallableDeclaration<?> node) {
@@ -237,6 +267,11 @@ public class ProjectParser {
     public void exportOCC() {
         Path savePath = config.tmpOutput.resolve("objectConstructionCode.json");
         exportJson(savePath, config.ocm.getOCM());
+    }
+
+    public void exportMethodExampleMap(MethodExampleMap methodExampleMap) {
+        Path savePath = config.tmpOutput.resolve("methodExampleCode.json");
+        exportJson(savePath, methodExampleMap);
     }
 
     public static void setLanguageLevel(ParserConfiguration configuration) {

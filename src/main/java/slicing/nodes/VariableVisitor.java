@@ -13,7 +13,6 @@ import com.github.javaparser.resolution.declarations.ResolvedMethodLikeDeclarati
 import com.github.javaparser.resolution.declarations.ResolvedValueDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.github.javaparser.resolution.types.ResolvedType;
-import com.github.javaparser.symbolsolver.javaparsermodel.declarations.JavaParserMethodDeclaration;
 import slicing.graphs.ClassGraph;
 import slicing.graphs.ExpressionObjectTreeFinder;
 import slicing.graphs.GraphNodeContentVisitor;
@@ -545,7 +544,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
             VariableAction va = acceptAction(FIELD, new String[]{ "this" }, DECLARATION);
             va.setStaticType(ASTUtils.resolvedTypeOfCurrentClass((ExplicitConstructorInvocationStmt) call));
         }
-        if (call instanceof MethodCallExpr && !((JavaParserMethodDeclaration) call.resolve()).isStatic()) {
+        if (call instanceof MethodCallExpr && !decl.isStatic()) {
             ActualIONode scopeIn = ActualIONode.createActualIn(call, "this", ((MethodCallExpr) call).getScope().orElse(null));
             graphNode.addSyntheticNode(scopeIn);
             realNodeStack.push(scopeIn);

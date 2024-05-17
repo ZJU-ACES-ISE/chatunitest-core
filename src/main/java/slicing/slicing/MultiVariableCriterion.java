@@ -85,6 +85,8 @@ public class MultiVariableCriterion implements SlicingCriterion {
                   return Stream.of(variableAction.getObjectTree().getMemberNode());
                 else
                   return Stream.of(variableAction.getGraphNode());
+              } else if (variable.contains("\""))  {
+                return Stream.empty();
               } else if (variable.contains(".") && variableAction.getName().equals(ObjectTree.removeFields(variable))) {
                 if (variableAction.hasPolyTreeMember(variable))
                   return variableAction.getObjectTree().getNodesForPoly(variable).stream();

@@ -14,6 +14,7 @@ import com.github.javaparser.resolution.declarations.ResolvedMethodLikeDeclarati
 import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
 import com.github.javaparser.resolution.types.ResolvedType;
 import com.github.javaparser.symbolsolver.model.typesystem.ReferenceTypeImpl;
+import slicing.graphs.ClassGraph;
 import slicing.nodes.GraphNode;
 
 import java.util.*;
@@ -137,9 +138,17 @@ public class ASTUtils {
 
     public static Optional<? extends CallableDeclaration<?>> getResolvedAST(ResolvedMethodLikeDeclaration resolvedDeclaration) {
         if (resolvedDeclaration instanceof ResolvedMethodDeclaration)
-            return ((ResolvedMethodDeclaration) resolvedDeclaration).toAst();
+            if (((ResolvedMethodDeclaration) resolvedDeclaration).toAst().isEmpty()) {
+                return Optional.ofNullable(ClassGraph.getInstance().getMethodDeclarationBySig(processSignature(resolvedDeclaration.getQualifiedSignature())));
+            } else {
+                return ((ResolvedMethodDeclaration) resolvedDeclaration).toAst();
+            }
         if (resolvedDeclaration instanceof ResolvedConstructorDeclaration)
-            return ((ResolvedConstructorDeclaration) resolvedDeclaration).toAst();
+            if (((ResolvedConstructorDeclaration) resolvedDeclaration).toAst().isEmpty()) {
+                return Optional.ofNullable(ClassGraph.getInstance().getMethodDeclarationBySig(processSignature(resolvedDeclaration.getQualifiedSignature())));
+            } else {
+                return ((ResolvedConstructorDeclaration) resolvedDeclaration).toAst();
+            }
         throw new IllegalStateException("AST node of invalid type");
     }
 
@@ -245,5 +254,33 @@ public class ASTUtils {
 
     public static ResolvedType resolvedTypeOfCurrentClass(Node n) {
         return resolvedTypeDeclarationToResolvedType(n.findAncestor(TypeDeclaration.class).orElseThrow().resolve());
+    }
+    public static String processSignature(String signature) {
+        // 找到参数列表的开始和结束位置
+        int start = signature.indexOf('(');
+        int end = signature.indexOf(')');
+
+        // 提取参数列表
+        String params = signature.substring(start + 1, end);
+        // 分割参数
+        String[] paramTypes = params.split(",");
+
+        // 处理每个参数，去除包名
+        for (int i = 0; i < paramTypes.length; i++) {
+            String param = paramTypes[i].trim();
+            if (param.contains(".")) {
+                // 找到最后一个点的位置
+                int lastDot = param.lastIndexOf('.');
+                // 去除包名
+                paramTypes[i] = param.substring(lastDot + 1);
+            }
+        }
+
+        // 重新组合参数列表
+        String newParams = String.join(", ", paramTypes);
+
+        // 组合最终的签名
+        String newSignature = signature.substring(0, start + 1) + newParams + signature.substring(end);
+        return newSignature;
     }
 }

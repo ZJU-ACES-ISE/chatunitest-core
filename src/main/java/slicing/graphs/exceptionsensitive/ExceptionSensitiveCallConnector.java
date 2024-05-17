@@ -29,8 +29,8 @@ public class ExceptionSensitiveCallConnector extends CallConnector {
     protected void connectCall(CallNode callNode, CallGraph callGraph) {
         var callExpr = callNode.getCallASTNode();
         // We can pick any call, because the signatures must match
-        if (callGraph.getCallTargets(callExpr).findFirst().orElseThrow().getThrownExceptions().size() > 0)
-            handleExceptionReturnArcs(callExpr, callGraph);
+//        if (callGraph.getCallTargets(callExpr).findFirst().orElseThrow().getThrownExceptions().size() > 0)
+//            handleExceptionReturnArcs(callExpr, callGraph);
         super.connectCall(callNode, callGraph);
     }
 

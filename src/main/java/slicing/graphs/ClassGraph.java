@@ -53,6 +53,11 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
         super(null, null, false);
     }
 
+    public CallableDeclaration<?> getMethodDeclarationBySig(String sig) {
+        ClassGraph.Vertex<CallableDeclaration<?>> decl = methodDeclarationMap.get(sig);
+        return decl == null ? null : decl.getDeclaration();
+    }
+
     public Collection<ClassGraph.Vertex<? extends TypeDeclaration<?>>> typeVertices() {
         return classDeclarationMap.values();
     }

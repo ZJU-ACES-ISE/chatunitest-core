@@ -19,7 +19,6 @@ import slicing.nodes.GraphNode;
 import slicing.utils.ASTUtils;
 import slicing.utils.NodeHashSet;
 import slicing.utils.NodeNotFoundException;
-import zju.cst.aces.graph.Edge;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -182,13 +181,27 @@ public class CallGraph extends DirectedPseudograph<CallGraph.Vertex, CallGraph.E
             // =============== Method calls ===============
             @Override
             public void visit(MethodCallExpr n, Void arg) {
-                n.resolve().toAst().ifPresent(decl -> createPolyEdges(decl, n));
+                if (n.resolve().toAst().isEmpty()) {
+                    CallableDeclaration<?> decl = classGraph.getMethodDeclarationBySig(ASTUtils.processSignature(n.resolve().getQualifiedSignature()));
+                    if (decl != null) {
+                        createPolyEdges(decl.asMethodDeclaration(), n);
+                    }
+                } else {
+                    n.resolve().toAst().ifPresent(decl -> createPolyEdges(decl, n));
+                }
                 super.visit(n, arg);
             }
 
             @Override
             public void visit(ObjectCreationExpr n, Void arg) {
-                n.resolve().toAst().ifPresent(decl -> createNormalEdge(decl, n));
+                if (n.resolve().toAst().isEmpty()) {
+                    CallableDeclaration<?> decl = classGraph.getMethodDeclarationBySig(ASTUtils.processSignature(n.resolve().getQualifiedSignature()));
+                    if (decl != null) {
+                        createNormalEdge(decl, n);
+                    }
+                } else {
+                    n.resolve().toAst().ifPresent(decl -> createNormalEdge(decl, n));
+                }
                 super.visit(n, arg);
             }
 
