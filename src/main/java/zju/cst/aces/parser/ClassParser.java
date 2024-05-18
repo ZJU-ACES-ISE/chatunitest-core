@@ -110,16 +110,20 @@ public class ClassParser {
     private void extractMethods(CompilationUnit cu, ClassOrInterfaceDeclaration classDeclaration) throws IOException {
         List<MethodDeclaration> methods = classDeclaration.getMethods();
         for (MethodDeclaration m : methods) {
-            MethodInfo info = getInfoByMethod(cu, classDeclaration, m);
-            exportMethodInfo(info, classDeclaration, m);
+            if (m.hasRange()) {
+                MethodInfo info = getInfoByMethod(cu, classDeclaration, m);
+                exportMethodInfo(info, classDeclaration, m);
+            }
         }
     }
 
     private void extractConstructors(CompilationUnit cu, ClassOrInterfaceDeclaration classDeclaration) throws IOException {
         List<ConstructorDeclaration> constructors = classDeclaration.getConstructors();
         for (ConstructorDeclaration c : constructors) {
-            MethodInfo info = getInfoByMethod(cu, classDeclaration, c);
-            exportConstructorInfo(info, classDeclaration, c);
+            if (c.hasRange()) {
+                MethodInfo info = getInfoByMethod(cu, classDeclaration, c);
+                exportConstructorInfo(info, classDeclaration, c);
+            }
         }
     }
 
@@ -178,7 +182,7 @@ public class ClassParser {
         mi.setPublic(isPublic(node));
         mi.setBoolean(isBoolean(node));
         mi.setAbstract(node.isAbstract());
-        findObjectConstructionCode(cu, node);
+//        findObjectConstructionCode(cu, node);
 //        if (node instanceof MethodDeclaration) {
 //            findObjectConstructionCode(cu, node.asMethodDeclaration());
 //        }
@@ -327,7 +331,9 @@ public class ClassParser {
         List<ConstructorDeclaration> constructors = node.getConstructors();
         List<String> cSigs = new ArrayList<>();
         for (ConstructorDeclaration c : constructors) {
-            cSigs.add(getBriefMethod(cu, c));
+            if (c.hasRange()) {
+                cSigs.add(getBriefMethod(cu, c));
+            }
         }
         return cSigs;
     }
@@ -339,10 +345,10 @@ public class ClassParser {
     private List<String> getBriefMethods(CompilationUnit cu, ClassOrInterfaceDeclaration node) {
         List<String> mSigs = new ArrayList<>();
         node.getMethods().forEach(m -> {
-            mSigs.add(getBriefMethod(cu, m));
+            if (m.hasRange()) mSigs.add(getBriefMethod(cu, m));
         });
         node.getConstructors().forEach(c -> {
-            mSigs.add(getBriefMethod(cu, c));
+            if (c.hasRange()) mSigs.add(getBriefMethod(cu, c));
         });
         return mSigs;
     }
@@ -377,6 +383,9 @@ public class ClassParser {
      * Get class signature
      */
     public static String getClassSignature(CompilationUnit cu, ClassOrInterfaceDeclaration node) {
+        if (!node.hasRange()) {
+            return node.getNameAsString();
+        }
         return getSourceCodeByPosition(getTokenString(cu), node.getBegin().orElseThrow(), node.getName().getEnd().orElseThrow());
     }
 

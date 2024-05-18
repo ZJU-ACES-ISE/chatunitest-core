@@ -10,6 +10,7 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.CallableDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
 import slicing.graphs.CallGraph;
 import slicing.graphs.CallGraph.Edge;
@@ -95,7 +96,7 @@ public class ProjectParser {
             }
         }
         exportClassMapping();
-        exportOCC();
+//        exportOCC();
         exportMethodExampleMap(methodExampleMap);
         exportJson(config.getClassNameMapPath(), classNameMap);
         config.getLogger().info("\nParsed classes: " + classCount + "\nParsed methods: " + methodCount);
@@ -138,11 +139,15 @@ public class ProjectParser {
                             ClassOrInterfaceDeclaration callerClassDecl = findClassByCallable(caller);
 
                             if (arguments.isEmpty()) {
+                                String callSiteExpr = callSite.toString();
+                                if (callSite.findAncestor(ExpressionStmt.class).isPresent()) {
+                                    callSiteExpr = callSite.findAncestor(ExpressionStmt.class).get().toString();
+                                }
                                 methodExampleMap.add(getQualifiedSignatureByCallable(callable),
                                         callerClassDecl.resolve().getQualifiedName(),
                                         getSignatureByCallable(caller),
                                         callSiteLine,
-                                        callSite.toString());
+                                        callSiteExpr);
                             } else {
                                 var sc = new MultiVariableCriterion(callerClassDecl.getFullyQualifiedName().get(), callSiteLine, arguments.stream().map(Expression::toString).collect(Collectors.toList()));
                                 Slice slice = sdg.slice(sc);
@@ -271,7 +276,7 @@ public class ProjectParser {
 
     public void exportMethodExampleMap(MethodExampleMap methodExampleMap) {
         Path savePath = config.tmpOutput.resolve("methodExampleCode.json");
-        exportJson(savePath, methodExampleMap);
+        exportJson(savePath, methodExampleMap.getMEM());
     }
 
     public static void setLanguageLevel(ParserConfiguration configuration) {

@@ -1,7 +1,5 @@
 package zju.cst.aces.dto;
 
-import org.checkerframework.checker.units.qual.C;
-
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +21,7 @@ public class MethodExampleMap {
         mem.put(typeName, invocations);
     }
 
-    public Map<String, TreeSet<MEC>> getOCM() {
+    public Map<String, TreeSet<MEC>> getMEM() {
         return this.mem;
     }
 
