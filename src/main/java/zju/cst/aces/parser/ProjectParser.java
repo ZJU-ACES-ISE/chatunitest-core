@@ -32,7 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProjectParser {
 
@@ -109,34 +109,31 @@ public class ProjectParser {
     }
 
     private MethodExampleMap createMethodExampleMap(NodeList<CompilationUnit> cus) {
+        config.getLogger().info("Starting to create method example map...");
         MethodExampleMap methodExampleMap = new MethodExampleMap();
         SDG sdg = createSDG(cus);
 
+        AtomicInteger cuIndex = new AtomicInteger();
+        AtomicInteger methodIndex = new AtomicInteger();
+        int totalMethods = slicing.graphs.ClassGraph.getInstance().getMethodDeclarationMap().size();
         cus.forEach(cu -> {
             cu.findAll(CallableDeclaration.class).forEach(callable -> {
                 Set<Edge<?>> edges = findEdgeByCallGraph(callable, sdg.getCallGraph());
                 if (!edges.isEmpty()) {
+                    config.getLogger().info("Processing method: [ " + callable.getNameAsString() + " ]" + " total: " + methodIndex.getAndIncrement() + " / " + totalMethods);
                     edges.forEach(edge -> {
+                        config.getLogger().info("Processing edge: " + edge.getSource().getNameAsString() + " -> " + edge.getTarget().getNameAsString());
                         if (edge.getTarget().equals(callable)) {
-                            var callSite = (Expression) edge.getCall();
-                            int callSiteLine = callSite.getBegin().orElse(new Position(0, 0)).line;
-                            NodeList<Expression> arguments = new NodeList<>();
-                            if (callSite.isMethodCallExpr()) {
-                                arguments.addAll(callSite.asMethodCallExpr().getArguments());
-                                if (callSite.hasScope()) {
-                                    arguments.add(callSite.asMethodCallExpr().getScope().get());
-                                }
-                            } else if (callSite.isObjectCreationExpr()) {
-                                arguments.addAll(callSite.asObjectCreationExpr().getArguments());
-                                if (callSite.hasScope()) {
-                                    arguments.add(callSite.asObjectCreationExpr().getScope().get());
-                                }
-                            } else {
-                                throw new RuntimeException("Unsupported call site type: " + callSite.getClass().getSimpleName());
+                            if (! (edge.getCall() instanceof Expression)) {
+                                return;
                             }
+                            Expression callSite = (Expression) edge.getCall();
+                            int callSiteLine = callSite.getBegin().orElse(new Position(0, 0)).line;
+                            List<String> arguments = createStringArgumets(callSite);
 
                             CallableDeclaration<?> caller = edge.getSource();
-                            ClassOrInterfaceDeclaration callerClassDecl = findClassByCallable(caller);
+                            CompilationUnit callerCompilationUnit = findClassByCallable(caller);
+                            String callerClassFullName = callerCompilationUnit.getType(0).getFullyQualifiedName().get();
 
                             if (arguments.isEmpty()) {
                                 String callSiteExpr = callSite.toString();
@@ -144,16 +141,17 @@ public class ProjectParser {
                                     callSiteExpr = callSite.findAncestor(ExpressionStmt.class).get().toString();
                                 }
                                 methodExampleMap.add(getQualifiedSignatureByCallable(callable),
-                                        callerClassDecl.resolve().getQualifiedName(),
+                                        callerClassFullName,
                                         getSignatureByCallable(caller),
                                         callSiteLine,
                                         callSiteExpr);
                             } else {
-                                var sc = new MultiVariableCriterion(callerClassDecl.getFullyQualifiedName().get(), callSiteLine, arguments.stream().map(Expression::toString).collect(Collectors.toList()));
+                                var sc = new MultiVariableCriterion(callerClassFullName, callSiteLine, arguments);
+                                config.getLogger().info("Slicing method: " + getSignatureByCallable(callable) + " at callsite: < " + callSite + " >");
                                 Slice slice = sdg.slice(sc);
                                 if (!slice.toAst().isEmpty()) {
                                     methodExampleMap.add(getQualifiedSignatureByCallable(callable),
-                                            callerClassDecl.resolve().getQualifiedName(),
+                                            callerClassFullName,
                                             getSignatureByCallable(caller),
                                             callSiteLine,
                                             slice.toAst().getFirst().orElseThrow().toString());
@@ -165,6 +163,36 @@ public class ProjectParser {
             });
         });
         return methodExampleMap;
+    }
+
+    private List<String> createStringArgumets(Expression callSite) {
+        Set<String> arguments = new HashSet<>();
+        if (callSite.isNameExpr()) {
+            arguments.add(callSite.asNameExpr().getNameAsString());
+        } else if (callSite.isMethodCallExpr()) {
+            callSite.asMethodCallExpr().getArguments().forEach(arg -> {
+                if (arg.isNameExpr())
+                    arguments.add(arg.asNameExpr().getNameAsString());
+                if (arg.isMethodCallExpr() || arg.isObjectCreationExpr())
+                    arguments.addAll(createStringArgumets(arg));
+            });
+            if (callSite.hasScope()) {
+                arguments.addAll(createStringArgumets(callSite.asMethodCallExpr().getScope().get()));
+            }
+        } else if (callSite.isObjectCreationExpr()) {
+            callSite.asObjectCreationExpr().getArguments().forEach(arg -> {
+                if (arg.isNameExpr())
+                    arguments.add(arg.asNameExpr().getNameAsString());
+                if (arg.isMethodCallExpr() || arg.isObjectCreationExpr())
+                    arguments.addAll(createStringArgumets(arg));
+            });
+            if (callSite.hasScope()) {
+                arguments.addAll(createStringArgumets(callSite.asObjectCreationExpr().getScope().get()));
+            }
+        } else {
+            throw new RuntimeException("Unsupported call site type: " + callSite.getClass().getSimpleName());
+        }
+        return new ArrayList<>(arguments);
     }
 
     private String getSignatureByCallable(CallableDeclaration<?> callable) {
@@ -187,8 +215,8 @@ public class ProjectParser {
         }
     }
 
-    private ClassOrInterfaceDeclaration findClassByCallable(CallableDeclaration<?> node) {
-        return node.findAncestor(ClassOrInterfaceDeclaration.class).orElseThrow();
+    private CompilationUnit findClassByCallable(CallableDeclaration<?> node) {
+        return node.findAncestor(CompilationUnit.class).orElseThrow();
     }
 
     private Set<Edge<?>> findEdgeByCallGraph(CallableDeclaration node, CallGraph callGraph) {

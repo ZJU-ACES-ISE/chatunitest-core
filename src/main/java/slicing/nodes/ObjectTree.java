@@ -7,6 +7,7 @@ import slicing.nodes.oo.PolyMemberNode;
 import slicing.utils.Utils;
 
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -575,10 +576,23 @@ public class ObjectTree implements Cloneable {
      * @throws IllegalArgumentException When there are no fields to remove.
      */
     public static String removeFields(String fieldWithRoot) {
-        Matcher matcher = FIELD_SPLIT.matcher(fieldWithRoot);
-        if (matcher.matches() && matcher.group("root") != null)
-            return matcher.group("root");
-        throw new IllegalArgumentException("Field should be of the form <obj>.<field>, <Type>.this.<field>, where <obj> may not contain dots.");
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<String> future = executor.submit(() -> {
+            Matcher matcher = FIELD_SPLIT.matcher(fieldWithRoot);
+            if (matcher.matches() && matcher.group("root") != null) {
+                return matcher.group("root");
+            }
+            throw new IllegalArgumentException("Field should be of the form <obj>.<field>, <Type>.this.<field>, where <obj> may not contain dots.");
+        });
+        try {
+            return future.get(1, TimeUnit.SECONDS); // 设置2秒的超时时间
+        } catch (TimeoutException e) {
+            return "";
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            executor.shutdown();
+        }
     }
 
     public static String[] removeFields(String[] fields) {

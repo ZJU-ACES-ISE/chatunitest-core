@@ -13,6 +13,7 @@ import com.github.javaparser.resolution.UnsolvedSymbolException;
 import com.github.javaparser.resolution.declarations.ResolvedClassDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.github.javaparser.resolution.types.ResolvedType;
+import lombok.Getter;
 import org.jgrapht.graph.DirectedPseudograph;
 import slicing.arcs.Arc;
 import slicing.nodes.ObjectTree;
@@ -45,6 +46,7 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
     /** A map from the field name to its corresponding vertex. Use {@code mapKey(...)} to locate the key. */
     private final Map<String, ClassGraph.Vertex<FieldDeclaration>> fieldDeclarationMap = new HashMap<>();
     /** A map from the method's signature to its corresponding vertex. Use {@code mapKey(...)} to locate the key. */
+    @Getter
     private final Map<String, ClassGraph.Vertex<CallableDeclaration<?>>> methodDeclarationMap = new HashMap<>();
 
     private boolean built = false;
@@ -185,7 +187,7 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
                             cu.setData(Node.SYMBOL_RESOLVER_KEY, StaticJavaParser.getConfiguration().getSymbolResolver().orElseThrow(() -> new IllegalStateException("Symbol resolution not configured: to configure consider setting a SymbolResolver in the ParserConfiguration")));
                     }, () -> { throw new IllegalStateException("The node is not inserted in a CompilationUnit"); });
                     return Optional.of(generateObjectTreeFor(method.getType().asClassOrInterfaceType().resolve()));
-                } catch (UnsolvedSymbolException e) {
+                } catch (UnsolvedSymbolException | UnsupportedOperationException e) {
                     return Optional.empty();
                 }
             else

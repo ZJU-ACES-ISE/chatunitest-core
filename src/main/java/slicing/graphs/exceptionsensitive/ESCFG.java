@@ -17,7 +17,6 @@ import slicing.graphs.cfg.CFGBuilder;
 import slicing.nodes.GraphNode;
 import slicing.nodes.exceptionsensitive.*;
 import slicing.nodes.io.MethodExitNode;
-import slicing.utils.Logger;
 
 import java.util.*;
 
@@ -189,15 +188,11 @@ public class ESCFG extends ACFG {
 
         @Override
         public void visit(TryStmt n, Void arg) {
-            if (n.getFinallyBlock().isPresent())
-                Logger.log("ES-CFG Builder", "try statement with unsupported finally block");
             stmtStack.push(n);
             tryStack.push(n);
             tryNonExecHangingStack.push(new HashSet<>());
             if (n.getResources().isNonEmpty())
                 throw new IllegalStateException("try-with-resources is not supported");
-            if (n.getFinallyBlock().isPresent())
-                throw new IllegalStateException("try-finally is not supported");
             GraphNode<TryStmt> node = connectTo(n, "try");
             n.getTryBlock().accept(this, arg);
             List<GraphNode<?>> hanging = new LinkedList<>(hangingNodes);
@@ -211,8 +206,20 @@ public class ESCFG extends ACFG {
             }
             hangingNodes.addAll(hanging);
             nonExecHangingNodes.addAll(nonExecHanging);
-            nonExecHangingNodes.add(node);
-            nonExecHangingNodes.addAll(tryNonExecHangingStack.pop());
+            if (n.getFinallyBlock().isPresent()) {
+                // 添加try节点到非执行挂起节点
+                nonExecHangingNodes.add(node);
+                nonExecHangingNodes.addAll(tryNonExecHangingStack.pop());
+
+                // 访问finally块
+                n.getFinallyBlock().get().accept(this, arg);
+
+                // 将finally块之后的挂起节点添加到主挂起节点列表
+                hangingNodes.addAll(nonExecHangingNodes);
+            } else {
+                nonExecHangingNodes.add(node);
+                nonExecHangingNodes.addAll(tryNonExecHangingStack.pop());
+            }
             tryStack.pop();
             stmtStack.pop();
         }
