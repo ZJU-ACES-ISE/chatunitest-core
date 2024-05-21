@@ -152,11 +152,14 @@ public class ProjectParser {
                                 config.getLogger().info("Slicing method: " + getSignatureByCallable(callable) + " at callsite: < " + callSite + " >");
                                 Slice slice = sdg.slice(sc);
                                 if (!slice.toAst().isEmpty()) {
-                                    methodExampleMap.add(getQualifiedSignatureByCallable(callable),
-                                            callerClassFullName,
-                                            getSignatureByCallable(caller),
-                                            callSiteLine,
-                                            slice.toAst().getFirst().orElseThrow().toString());
+                                    String code = findCodeBySlice(slice, callerCompilationUnit.getType(0).getNameAsString());
+                                    if (code != null) {
+                                        methodExampleMap.add(getQualifiedSignatureByCallable(callable),
+                                                callerClassFullName,
+                                                getSignatureByCallable(caller),
+                                                callSiteLine,
+                                                code);
+                                    }
                                 }
                             }
                         }
@@ -166,6 +169,16 @@ public class ProjectParser {
         });
         return methodExampleMap;
     }
+
+    private String findCodeBySlice(Slice slice, String callerClassFullName) {
+        for (CompilationUnit cu : slice.toAst()) {
+            if (cu.getType(0).getNameAsString().equals(callerClassFullName)) {
+                return cu.toString();
+            }
+        }
+        return null;
+    }
+
 
     private List<String> createStringArgumets(Expression callSite) {
         Set<String> arguments = new HashSet<>();
