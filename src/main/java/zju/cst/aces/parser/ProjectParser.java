@@ -167,8 +167,8 @@ public class ProjectParser {
 
     private List<String> createStringArgumets(Expression callSite) {
         Set<String> arguments = new HashSet<>();
-        if (callSite.isNameExpr()) {
-            arguments.add(callSite.asNameExpr().getNameAsString());
+        if (callSite.isNameExpr() || callSite.isThisExpr()) {
+            arguments.add(callSite.toString());
         } else if (callSite.isMethodCallExpr()) {
             callSite.asMethodCallExpr().getArguments().forEach(arg -> {
                 if (arg.isNameExpr())
@@ -188,6 +188,11 @@ public class ProjectParser {
             });
             if (callSite.hasScope()) {
                 arguments.addAll(createStringArgumets(callSite.asObjectCreationExpr().getScope().get()));
+            }
+        } else if (callSite.isFieldAccessExpr())  {
+            arguments.addAll(createStringArgumets(callSite.asFieldAccessExpr().getNameAsExpression()));
+            if (callSite.hasScope()) {
+                arguments.addAll(createStringArgumets(callSite.asFieldAccessExpr().getScope()));
             }
         } else {
             throw new RuntimeException("Unsupported call site type: " + callSite.getClass().getSimpleName());
