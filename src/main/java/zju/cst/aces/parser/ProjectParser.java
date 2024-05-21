@@ -9,6 +9,8 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.CallableDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.ConstructorDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
@@ -212,9 +214,13 @@ public class ProjectParser {
 
     private String getQualifiedSignatureByCallable(CallableDeclaration<?> callable) {
         if (callable.isMethodDeclaration()) {
-            return callable.asMethodDeclaration().resolve().getQualifiedSignature();
+            MethodDeclaration md = callable.asMethodDeclaration();
+            return md.resolve().getQualifiedSignature()
+                    .replace(md.resolve().getSignature(), md.getSignature().asString());
         } else if (callable.isConstructorDeclaration()) {
-            return callable.asConstructorDeclaration().resolve().getQualifiedSignature();
+            ConstructorDeclaration cd = callable.asConstructorDeclaration();
+            return cd.resolve().getQualifiedSignature()
+                    .replace(cd.resolve().getSignature(), cd.getSignature().asString());
         } else {
             throw new RuntimeException("Unsupported callable type: " + callable.getClass().getSimpleName());
         }
