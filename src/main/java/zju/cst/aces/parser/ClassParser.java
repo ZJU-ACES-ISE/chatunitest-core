@@ -306,6 +306,7 @@ public class ClassParser {
         List<MethodDeclaration> methods = node.getMethods();
         int i = 0;
         for (; i < methods.size(); i++) {
+            if (!methods.get(i).hasRange()) continue;
             try {
                 mSigs.put(methods.get(i).getSignature().asString(), String.valueOf(i));
             } catch (Exception e) {
@@ -314,6 +315,7 @@ public class ClassParser {
         }
         List<ConstructorDeclaration> constructors = node.getConstructors();
         for (; i < methods.size() + constructors.size(); i++) {
+            if (!constructors.get(i - methods.size()).hasRange()) continue;
             mSigs.put(constructors.get(i - methods.size()).getSignature().asString(), String.valueOf(i));
         }
         return mSigs;
@@ -322,6 +324,7 @@ public class ClassParser {
     private List<String> getConstructorSignatures(ClassOrInterfaceDeclaration node) {
         List<String> cSigs = new ArrayList<>();
         node.getConstructors().forEach(c -> {
+            if (!c.hasRange()) return;
             cSigs.add(c.getSignature().asString());
         });
         return cSigs;
