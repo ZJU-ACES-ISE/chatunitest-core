@@ -498,13 +498,18 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
 
     @Override
     public void visit(ObjectCreationExpr n, Action arg) {
-        if (visitCall(n, arg))
-            super.visit(n, arg);
+        try {
+            if (visitCall(n, arg))
+                super.visit(n, arg);
+        } catch (Exception e) {}
     }
 
     @Override
     public void visit(ExplicitConstructorInvocationStmt n, Action arg) {
-        boolean visitCall = visitCall(n, arg);
+        boolean visitCall = false;
+        try {
+            visitCall = visitCall(n, arg);
+        } catch (Exception e) {}
         if (visitCall) {
             VariableAction va = acceptAction(FIELD, new String[]{ "this" }, DECLARATION);
             va.setStaticType(ASTUtils.resolvedTypeOfCurrentClass(n));
@@ -527,8 +532,10 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
 
     @Override
     public void visit(MethodCallExpr n, Action arg) {
-        if (visitCall(n, arg))
-            super.visit(n, arg);
+        try {
+            if (visitCall(n, arg))
+                super.visit(n, arg);
+        } catch (Exception e) {}
     }
 
     /** Tries to resolve and add the corresponding call markers. */

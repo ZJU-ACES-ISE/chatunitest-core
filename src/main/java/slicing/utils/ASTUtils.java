@@ -153,7 +153,11 @@ public class ASTUtils {
     }
 
     public static boolean shouldVisitArgumentsForMethodCalls(Resolvable<? extends ResolvedMethodLikeDeclaration> call) {
-        return getResolvedAST(call.resolve()).isEmpty();
+        try {
+            return getResolvedAST(call.resolve()).isEmpty();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public static boolean shouldVisitArgumentsForMethodCalls(Resolvable<? extends ResolvedMethodLikeDeclaration> call, GraphNode<?> graphNode) {

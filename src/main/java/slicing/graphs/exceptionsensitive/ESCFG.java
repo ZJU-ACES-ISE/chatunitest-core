@@ -274,9 +274,15 @@ public class ESCFG extends ACFG {
         /** Process a call that may throw exceptions. Generates normal and return nodes, and
          * registers the appropriate exception source. */
         protected void visitCallForExceptions(Resolvable<? extends ResolvedMethodLikeDeclaration> call) {
-            ResolvedMethodLikeDeclaration resolved = call.resolve();
-            if (resolved.getNumberOfSpecifiedExceptions() == 0)
+            ResolvedMethodLikeDeclaration resolved = null;
+            try {
+                resolved = call.resolve();
+                if (resolved.getNumberOfSpecifiedExceptions() == 0)
+                    return;
+            } catch (Exception e) {
+                // If the method is not resolved, we can't know if it throws exceptions.
                 return;
+            }
 
             Set<ReturnNode> returnNodes = new HashSet<>();
 

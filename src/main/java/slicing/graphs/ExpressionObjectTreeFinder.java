@@ -270,7 +270,7 @@ public class ExpressionObjectTreeFinder {
                         lastUseOut = variableAction;
                     }
                 }
-                throw new IllegalStateException("Could not find USE(-output-) corresponding to call " + call);
+//                throw new IllegalStateException("Could not find USE(-output-) corresponding to call " + call);
             }
 
             @Override
