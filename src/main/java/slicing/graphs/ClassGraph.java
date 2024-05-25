@@ -268,13 +268,15 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
                     Vertex<? extends TypeDeclaration<?>> v = null;
                     if (var.getType().isClassOrInterfaceType()) {
                         boolean isTypeParameter = false;
-                        for (TypeParameter typeParameter : type.asClassOrInterfaceDeclaration().getTypeParameters())
-                            if (typeParameter.getNameAsString().equals(var.getType().asClassOrInterfaceType().getNameAsString()))
-                                isTypeParameter = true;
-                        if (!isTypeParameter)
-                            try {
-                                v = classDeclarationMap.get(mapKey(var.getType().asClassOrInterfaceType().resolve()));
-                            } catch (UnsolvedSymbolException ignored) {}
+                        if (type.isClassOrInterfaceDeclaration()) {
+                            for (TypeParameter typeParameter : type.asClassOrInterfaceDeclaration().getTypeParameters())
+                                if (typeParameter.getNameAsString().equals(var.getType().asClassOrInterfaceType().getNameAsString()))
+                                    isTypeParameter = true;
+                            if (!isTypeParameter)
+                                try {
+                                    v = classDeclarationMap.get(mapKey(var.getType().asClassOrInterfaceType().resolve()));
+                                } catch (UnsolvedSymbolException ignored) {}
+                        }
                     }
                     fieldMap.put(var.getNameAsString(), v);
                 }

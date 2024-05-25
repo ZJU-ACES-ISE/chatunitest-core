@@ -157,7 +157,9 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
             VariableAction va;
             if (realName.length == 1 && realName[0].equals(n.toString())) {
                 va = acceptAction(n, action);
-                va.setStaticType(scope.calculateResolvedType());
+                try {
+                    va.setStaticType(scope.calculateResolvedType());
+                } catch (RuntimeException ignored) {}
             } else {
                 va = acceptAction(DeclarationType.valueOf(n), realName, action);
                 va.setStaticType(ASTUtils.resolvedTypeOfCurrentClass(n));
@@ -172,7 +174,9 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
 
     protected VariableAction acceptAction(Expression n, Action action) {
         VariableAction va = acceptAction(DeclarationType.valueOf(n), getRealName(n), action, false);
-        va.setStaticType(n.calculateResolvedType());
+        try {
+            va.setStaticType(n.calculateResolvedType());
+        } catch (RuntimeException ignored) {}
         va.addExpression(n);
         return va;
     }
@@ -183,7 +187,9 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
 
     protected VariableAction acceptAction(Expression n, String[] realName, Action action) {
         VariableAction va = acceptAction(DeclarationType.valueOf(n), realName, action, false);
-        va.setStaticType(n.calculateResolvedType());
+        try {
+            va.setStaticType(n.calculateResolvedType());
+        } catch (RuntimeException ignored) {}
         va.addExpression(n);
         return va;
     }
@@ -258,7 +264,9 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         if (n.getExpression().isPresent()) {
             definitionStack.push(n.getExpression().get());
             VariableAction va = acceptAction(SYNTHETIC, new String[]{ VARIABLE_NAME_OUTPUT }, DEFINITION);
-            va.setStaticType(n.getExpression().get().calculateResolvedType());
+            try {
+                va.setStaticType(n.getExpression().get().calculateResolvedType());
+            } catch (RuntimeException ignored) {}
             definitionStack.pop();
             va.asDefinition().setTotallyDefinedMember(ROOT_NODE);
         }
@@ -269,10 +277,12 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         super.visit(n, arg);
         definitionStack.push(n.getExpression());
         VariableAction va = acceptAction(SYNTHETIC, new String[]{ ACTIVE_EXCEPTION_VARIABLE }, DEFINITION);
-        ResolvedReferenceType type = n.getExpression().calculateResolvedType().asReferenceType();
-        va.setStaticType(type);
-        definitionStack.pop();
-        va.getObjectTree().addAll(ClassGraph.getInstance().generateObjectTreeFor(type));
+        try {
+            ResolvedReferenceType type = n.getExpression().calculateResolvedType().asReferenceType();
+            va.setStaticType(type);
+            definitionStack.pop();
+            va.getObjectTree().addAll(ClassGraph.getInstance().generateObjectTreeFor(type));
+        } catch (RuntimeException ignored) {}
         new ExpressionObjectTreeFinder(graphNode).locateAndMarkTransferenceToRoot(n.getExpression(), -1);
     }
 
@@ -501,7 +511,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         try {
             if (visitCall(n, arg))
                 super.visit(n, arg);
-        } catch (Exception e) {}
+        } catch (RuntimeException e) {}
     }
 
     @Override
@@ -509,7 +519,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         boolean visitCall = false;
         try {
             visitCall = visitCall(n, arg);
-        } catch (Exception e) {}
+        } catch (RuntimeException e) {}
         if (visitCall) {
             VariableAction va = acceptAction(FIELD, new String[]{ "this" }, DECLARATION);
             va.setStaticType(ASTUtils.resolvedTypeOfCurrentClass(n));
@@ -535,7 +545,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         try {
             if (visitCall(n, arg))
                 super.visit(n, arg);
-        } catch (Exception e) {}
+        } catch (RuntimeException e) {}
     }
 
     /** Tries to resolve and add the corresponding call markers. */

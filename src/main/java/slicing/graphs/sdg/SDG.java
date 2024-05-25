@@ -144,6 +144,7 @@ public class SDG extends Graph implements Sliceable, Buildable<NodeList<Compilat
                 public void visit(MethodDeclaration n, Void arg) {
                     boolean isInInterface = n.findAncestor(ClassOrInterfaceDeclaration.class)
                             .map(ClassOrInterfaceDeclaration::isInterface).orElse(false);
+                    isInInterface = isInInterface && !n.isStatic();
                     if (n.isAbstract() || isInInterface)
                         return; // Allow abstract methods
                     CFG cfg = createCFG();
@@ -156,6 +157,7 @@ public class SDG extends Graph implements Sliceable, Buildable<NodeList<Compilat
                 public void visit(ConstructorDeclaration n, Void arg) {
                     boolean isInInterface = n.findAncestor(ClassOrInterfaceDeclaration.class)
                             .map(ClassOrInterfaceDeclaration::isInterface).orElse(false);
+                    isInInterface = isInInterface && !n.isStatic();
                     if (n.isAbstract() || isInInterface)
                         return; // Allow abstract methods
                     CFG cfg = createCFG();

@@ -181,33 +181,39 @@ public class CallGraph extends DirectedPseudograph<CallGraph.Vertex, CallGraph.E
             // =============== Method calls ===============
             @Override
             public void visit(MethodCallExpr n, Void arg) {
-                if (n.resolve().toAst().isEmpty()) {
-                    CallableDeclaration<?> decl = classGraph.getMethodDeclarationBySig(ASTUtils.processSignature(n.resolve().getQualifiedSignature()));
-                    if (decl != null) {
-                        createPolyEdges(decl.asMethodDeclaration(), n);
+                try {
+                    if (n.resolve().toAst().isEmpty()) {
+                        CallableDeclaration<?> decl = classGraph.getMethodDeclarationBySig(ASTUtils.processSignature(n.resolve().getQualifiedSignature()));
+                        if (decl != null) {
+                            createPolyEdges(decl.asMethodDeclaration(), n);
+                        }
+                    } else {
+                        n.resolve().toAst().ifPresent(decl -> createPolyEdges(decl, n));
                     }
-                } else {
-                    n.resolve().toAst().ifPresent(decl -> createPolyEdges(decl, n));
-                }
+                } catch (RuntimeException ignored) {}
                 super.visit(n, arg);
             }
 
             @Override
             public void visit(ObjectCreationExpr n, Void arg) {
-                if (n.resolve().toAst().isEmpty()) {
-                    CallableDeclaration<?> decl = classGraph.getMethodDeclarationBySig(ASTUtils.processSignature(n.resolve().getQualifiedSignature()));
-                    if (decl != null) {
-                        createNormalEdge(decl, n);
+                try {
+                    if (n.resolve().toAst().isEmpty()) {
+                        CallableDeclaration<?> decl = classGraph.getMethodDeclarationBySig(ASTUtils.processSignature(n.resolve().getQualifiedSignature()));
+                        if (decl != null) {
+                            createNormalEdge(decl, n);
+                        }
+                    } else {
+                        n.resolve().toAst().ifPresent(decl -> createNormalEdge(decl, n));
                     }
-                } else {
-                    n.resolve().toAst().ifPresent(decl -> createNormalEdge(decl, n));
-                }
+                } catch (RuntimeException ignored) {}
                 super.visit(n, arg);
             }
 
             @Override
             public void visit(ExplicitConstructorInvocationStmt n, Void arg) {
-                n.resolve().toAst().ifPresent(decl -> createNormalEdge(decl, n));
+                try {
+                    n.resolve().toAst().ifPresent(decl -> createNormalEdge(decl, n));
+                } catch (RuntimeException ignored) {}
                 super.visit(n, arg);
             }
 

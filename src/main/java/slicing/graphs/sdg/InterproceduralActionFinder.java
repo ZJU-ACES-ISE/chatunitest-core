@@ -123,7 +123,9 @@ public abstract class InterproceduralActionFinder<A extends VariableAction> exte
                         vertex.getDeclaration().asMethodDeclaration().getBody().isEmpty()))
             return new HashSet<>();
         CFG cfg = cfgMap.get(vertex.getDeclaration());
-        assert cfg != null;
+        if (cfg == null) {
+            return new HashSet<>();
+        }
         Stream<VariableAction> actionStream =  cfg.vertexSet().stream()
                 // Ignore root node, it is literally the entrypoint for interprocedural actions.
                 .filter(n -> n != cfg.getRootNode())
