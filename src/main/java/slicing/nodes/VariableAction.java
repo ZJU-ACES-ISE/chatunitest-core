@@ -40,6 +40,8 @@ public abstract class VariableAction {
                 return STATIC_FIELD;
             if (resolved.isField() && resolved.asField().isStatic())
                 return STATIC_FIELD;
+            if (resolved.isEnumConstant())
+                return STATIC_FIELD;
             if (resolved instanceof JavaParserEnumConstantDeclaration)
                 return STATIC_FIELD;
             if (resolved.isField())

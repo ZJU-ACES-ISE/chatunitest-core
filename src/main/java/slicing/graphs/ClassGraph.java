@@ -251,7 +251,11 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
             newLevel[level.length] = entry.getKey();
             tree.addField(newLevel);
             if (entry.getValue() != null)
-                generatePolyObjectTreeFor(entry.getValue(), tree, newLevel, depth);
+                if (entry.getValue().equals(classVertex)) {
+                    generatePolyObjectTreeFor(entry.getValue(), tree, newLevel, StaticConfig.K_LIMIT);
+                } else {
+                    generatePolyObjectTreeFor(entry.getValue(), tree, newLevel, depth);
+                }
         }
     }
 
@@ -278,7 +282,9 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
                                 } catch (UnsolvedSymbolException ignored) {}
                         }
                     }
-                    fieldMap.put(var.getNameAsString(), v);
+                    if (v != null) {
+                        fieldMap.put(var.getNameAsString(), v);
+                    }
                 }
             }
             if (type.isClassOrInterfaceDeclaration()) {

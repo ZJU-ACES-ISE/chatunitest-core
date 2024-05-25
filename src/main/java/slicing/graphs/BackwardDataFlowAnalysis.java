@@ -36,11 +36,13 @@ public abstract class BackwardDataFlowAnalysis<V, E, D> {
             for (V vertex : workList) {
                 Set<V> mayAffectVertex = graph.outgoingEdgesOf(vertex).stream()
                         .map(graph::getEdgeTarget).collect(Collectors.toCollection(ASTUtils::newIdentityHashSet));
-                D newValue = compute(vertex, mayAffectVertex);
-                if (!dataMatch(vertexDataMap.get(vertex), newValue)) {
-                    vertexDataMap.put(vertex, newValue);
-                    graph.incomingEdgesOf(vertex).stream().map(graph::getEdgeSource).forEach(newWorkList::add);
-                }
+                try {
+                    D newValue = compute(vertex, mayAffectVertex);
+                    if (!dataMatch(vertexDataMap.get(vertex), newValue)) {
+                        vertexDataMap.put(vertex, newValue);
+                        graph.incomingEdgesOf(vertex).stream().map(graph::getEdgeSource).forEach(newWorkList::add);
+                    }
+                } catch (Exception ignored) {}
             }
             workList = newWorkList;
         }

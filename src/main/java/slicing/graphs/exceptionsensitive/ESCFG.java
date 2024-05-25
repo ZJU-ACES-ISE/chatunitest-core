@@ -181,9 +181,11 @@ public class ESCFG extends ACFG {
                         return true;
                     })
                     .findFirst()
-                    .ifPresentOrElse(
-                            n -> addNonExecutableControlFlowArc(node, n),
-                            () -> {throw new IllegalStateException("A common post-dominator cannot be found for a normal exit!");});
+                    .ifPresent(
+                            n -> addNonExecutableControlFlowArc(node, n));
+//                    .ifPresentOrElse(
+//                            n -> addNonExecutableControlFlowArc(node, n),
+//                            () -> {throw new IllegalStateException("A common post-dominator cannot be found for a normal exit!");});
         }
 
         @Override
