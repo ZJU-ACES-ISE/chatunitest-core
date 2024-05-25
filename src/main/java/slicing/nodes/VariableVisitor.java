@@ -7,7 +7,6 @@ import com.github.javaparser.ast.nodeTypes.NodeWithArguments;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.resolution.Resolvable;
-import com.github.javaparser.resolution.UnsolvedSymbolException;
 import com.github.javaparser.resolution.declarations.AssociableToAST;
 import com.github.javaparser.resolution.declarations.ResolvedMethodLikeDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedValueDeclaration;
@@ -159,7 +158,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
                 va = acceptAction(n, action);
                 try {
                     va.setStaticType(scope.calculateResolvedType());
-                } catch (RuntimeException ignored) {}
+                } catch (Exception ignored) {}
             } else {
                 va = acceptAction(DeclarationType.valueOf(n), realName, action);
                 va.setStaticType(ASTUtils.resolvedTypeOfCurrentClass(n));
@@ -176,7 +175,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         VariableAction va = acceptAction(DeclarationType.valueOf(n), getRealName(n), action, false);
         try {
             va.setStaticType(n.calculateResolvedType());
-        } catch (RuntimeException ignored) {}
+        } catch (Exception ignored) {}
         va.addExpression(n);
         return va;
     }
@@ -189,7 +188,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         VariableAction va = acceptAction(DeclarationType.valueOf(n), realName, action, false);
         try {
             va.setStaticType(n.calculateResolvedType());
-        } catch (RuntimeException ignored) {}
+        } catch (Exception ignored) {}
         va.addExpression(n);
         return va;
     }
@@ -266,7 +265,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
             VariableAction va = acceptAction(SYNTHETIC, new String[]{ VARIABLE_NAME_OUTPUT }, DEFINITION);
             try {
                 va.setStaticType(n.getExpression().get().calculateResolvedType());
-            } catch (RuntimeException ignored) {}
+            } catch (Exception ignored) {}
             definitionStack.pop();
             va.asDefinition().setTotallyDefinedMember(ROOT_NODE);
         }
@@ -282,7 +281,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
             va.setStaticType(type);
             definitionStack.pop();
             va.getObjectTree().addAll(ClassGraph.getInstance().generateObjectTreeFor(type));
-        } catch (RuntimeException ignored) {}
+        } catch (Exception ignored) {}
         new ExpressionObjectTreeFinder(graphNode).locateAndMarkTransferenceToRoot(n.getExpression(), -1);
     }
 
@@ -291,10 +290,14 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         n.getIterable().accept(this, USE);
         for (VariableDeclarator variable : n.getVariable().getVariables()) {
             VariableAction vaDec = acceptAction(LOCAL_VARIABLE, new String[]{ variable.getNameAsString() }, DECLARATION);
-            vaDec.setStaticType(variable.getType().resolve());
+            try {
+                vaDec.setStaticType(variable.getType().resolve());
+            } catch (Exception ignored) {}
             // ForEach initializes to each value of the iterable, but that expression is not available.
             VariableAction vaDef = acceptActionNullDefinition(LOCAL_VARIABLE, new String[]{ variable.getNameAsString() });
-            vaDef.setStaticType(variable.getType().resolve());
+            try {
+                vaDef.setStaticType(variable.getType().resolve());
+            } catch (Exception ignored) {}
         }
     }
 
@@ -436,14 +439,20 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         for (VariableDeclarator v : n.getVariables()) {
             String[] vName = new String[]{ v.getNameAsString() };
             VariableAction vaDec = acceptAction(LOCAL_VARIABLE, vName, DECLARATION);
-            vaDec.setStaticType(v.getType().resolve());
+            try {
+                vaDec.setStaticType(v.getType().resolve());
+            } catch (Exception ignored) {
+                System.out.println("e");
+            }
             vaDec.addExpression(n);
             v.getInitializer().ifPresent(init -> {
                 init.accept(this, action);
                 definitionStack.push(init);
                 VariableAction vaDef = acceptAction(LOCAL_VARIABLE, vName, DEFINITION);
                 vaDef.addExpression(n);
-                vaDef.setStaticType(v.getType().resolve());
+                try {
+                    vaDef.setStaticType(v.getType().resolve());
+                } catch (Exception ignored) {}
                 definitionStack.pop();
                 if (v.getType().isClassOrInterfaceType())
                     vaDef.asDefinition().setTotallyDefinedMember(vName);
@@ -475,9 +484,11 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
     public void visit(VariableDeclarator n, Action arg) {
         if (n.getInitializer().isPresent()) {
             String realName = n.getNameAsString();
-            if (n.resolve().isField() && !n.resolve().asField().isStatic())
-                realName = "this." + realName;
-            new ExpressionObjectTreeFinder(graphNode).handleVariableDeclarator(n, realName);
+            try {
+                if (n.resolve().isField() && !n.resolve().asField().isStatic())
+                    realName = "this." + realName;
+                new ExpressionObjectTreeFinder(graphNode).handleVariableDeclarator(n, realName);
+            } catch (Exception ignored) {}
         }
     }
 
@@ -489,15 +500,15 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
 
     @Override
     public void visit(Parameter n, Action arg) {
+        String[] nName = new String[]{ n.getNameAsString() };
         try {
-            String[] nName = new String[]{ n.getNameAsString() };
             VariableAction vaDec = acceptAction(PARAMETER, nName, DECLARATION);
             vaDec.setStaticType(n.getType().resolve());
+        } catch (Exception ignored) {}
+        try {
             VariableAction vaDef = acceptActionNullDefinition(PARAMETER, nName);
             vaDef.setStaticType(n.getType().resolve());
-        } catch (IllegalArgumentException e) {
-
-        }
+        } catch (Exception ignored) {}
     }
 
     // =======================================================================
@@ -511,7 +522,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         try {
             if (visitCall(n, arg))
                 super.visit(n, arg);
-        } catch (RuntimeException e) {}
+        } catch (Exception e) {}
     }
 
     @Override
@@ -519,7 +530,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         boolean visitCall = false;
         try {
             visitCall = visitCall(n, arg);
-        } catch (RuntimeException e) {}
+        } catch (Exception e) {}
         if (visitCall) {
             VariableAction va = acceptAction(FIELD, new String[]{ "this" }, DECLARATION);
             va.setStaticType(ASTUtils.resolvedTypeOfCurrentClass(n));
@@ -545,7 +556,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         try {
             if (visitCall(n, arg))
                 super.visit(n, arg);
-        } catch (RuntimeException e) {}
+        } catch (Exception e) {}
     }
 
     /** Tries to resolve and add the corresponding call markers. */
@@ -641,7 +652,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
             try {
                 String prefix = getNamePrefix(n.asNameExpr());
                 return prefix == null ? new String[] { n.toString() } : new String[] { prefix, n.toString() };
-            } catch (UnsolvedSymbolException ignored) {}
+            } catch (Exception ignored) {}
         } else if (n.isSuperExpr() || n.isThisExpr()) {
             return new String[] { "this" };
         } else if (n.isFieldAccessExpr()) { // this.a.b
