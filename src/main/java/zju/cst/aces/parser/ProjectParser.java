@@ -13,6 +13,8 @@ import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
+import com.github.javaparser.resolution.UnsolvedSymbolException;
+import com.github.javaparser.resolution.types.ResolvedType;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
 import slicing.graphs.CallGraph;
 import slicing.graphs.CallGraph.Edge;
@@ -182,13 +184,10 @@ public class ProjectParser {
 
     private List<String> createStringArgumets(Expression callSite) {
         Set<String> arguments = new HashSet<>();
-        if (callSite.isNameExpr() || callSite.isThisExpr()) {
+        if (!isPrimitiveOrString(callSite) && (callSite.isNameExpr() || callSite.isThisExpr())) {
             arguments.add(callSite.toString());
         } else if (callSite.isMethodCallExpr()) {
             callSite.asMethodCallExpr().getArguments().forEach(arg -> {
-                if (arg.isNameExpr())
-                    arguments.add(arg.asNameExpr().getNameAsString());
-                if (arg.isMethodCallExpr() || arg.isObjectCreationExpr())
                     arguments.addAll(createStringArgumets(arg));
             });
             if (callSite.hasScope()) {
@@ -196,9 +195,6 @@ public class ProjectParser {
             }
         } else if (callSite.isObjectCreationExpr()) {
             callSite.asObjectCreationExpr().getArguments().forEach(arg -> {
-                if (arg.isNameExpr())
-                    arguments.add(arg.asNameExpr().getNameAsString());
-                if (arg.isMethodCallExpr() || arg.isObjectCreationExpr())
                     arguments.addAll(createStringArgumets(arg));
             });
             if (callSite.hasScope()) {
@@ -209,10 +205,28 @@ public class ProjectParser {
             if (callSite.hasScope()) {
                 arguments.addAll(createStringArgumets(callSite.asFieldAccessExpr().getScope()));
             }
-        } else {
-            throw new RuntimeException("Unsupported call site type: " + callSite.getClass().getSimpleName());
         }
+//        else {
+//            throw new RuntimeException("Unsupported call site type: " + callSite.getClass().getSimpleName());
+//        }
         return new ArrayList<>(arguments);
+    }
+
+    private boolean isPrimitiveOrString(Expression expr) {
+        if (expr.isNameExpr()) {
+            try {
+                ResolvedType type = expr.asNameExpr().resolve().getType();
+                if (type.isPrimitive()) {
+                    return true;
+                }
+                if (type.isReferenceType() && type.asReferenceType().getQualifiedName().equals("java.lang.String")) {
+                    return true;
+                }
+            } catch (UnsolvedSymbolException | IllegalStateException e) {
+                return true; // ignore unsolved symbol
+            }
+        }
+        return false;
     }
 
     private String getSignatureByCallable(CallableDeclaration<?> callable) {
