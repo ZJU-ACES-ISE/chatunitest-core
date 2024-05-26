@@ -190,11 +190,11 @@ public class ESCFG extends ACFG {
 
         @Override
         public void visit(TryStmt n, Void arg) {
+            if (n.getResources().isNonEmpty())
+                throw new IllegalStateException("try-with-resources is not supported");
             stmtStack.push(n);
             tryStack.push(n);
             tryNonExecHangingStack.push(new HashSet<>());
-            if (n.getResources().isNonEmpty())
-                throw new IllegalStateException("try-with-resources is not supported");
             GraphNode<TryStmt> node = connectTo(n, "try");
             n.getTryBlock().accept(this, arg);
             List<GraphNode<?>> hanging = new LinkedList<>(hangingNodes);

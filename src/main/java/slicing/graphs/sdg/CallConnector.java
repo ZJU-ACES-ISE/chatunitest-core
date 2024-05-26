@@ -28,7 +28,11 @@ public class CallConnector {
         sdg.vertexSet().stream()
                 .filter(CallNode.class::isInstance)
                 .map(CallNode.class::cast)
-                .forEach(node -> connectCall(node, callGraph));
+                .forEach(node -> {
+                    try {
+                        connectCall(node, callGraph);
+                    } catch (Exception ignored) {ignored.printStackTrace();}
+                }); // Ignore nodes without a declaration
     }
 
     /** Connects a given call to all possible matching declarations. */

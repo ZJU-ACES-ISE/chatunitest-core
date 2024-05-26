@@ -6,6 +6,7 @@ import com.github.javaparser.ast.body.CallableDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import lombok.Getter;
 import slicing.arcs.pdg.ControlDependencyArc;
@@ -145,6 +146,9 @@ public class SDG extends Graph implements Sliceable, Buildable<NodeList<Compilat
                     boolean isInInterface = n.findAncestor(ClassOrInterfaceDeclaration.class)
                             .map(ClassOrInterfaceDeclaration::isInterface).orElse(false);
                     isInInterface = isInInterface && !n.isStatic();
+                    if (containTryWithResources(n)) {
+                        return;
+                    }
                     if (n.isAbstract() || isInInterface)
                         return; // Allow abstract methods
                     CFG cfg = createCFG();
@@ -166,6 +170,15 @@ public class SDG extends Graph implements Sliceable, Buildable<NodeList<Compilat
                     super.visit(n, arg);
                 }
             }, null);
+        }
+
+        private boolean containTryWithResources(CallableDeclaration<?> n) {
+            for (TryStmt tryStmt : n.findAll(TryStmt.class)) {
+                if (tryStmt.getResources().isNonEmpty()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /** Given a single empty CFG and a declaration, build the CFG. */
@@ -195,11 +208,15 @@ public class SDG extends Graph implements Sliceable, Buildable<NodeList<Compilat
         protected void buildAndCopyPDGs() {
             for (CFG cfg : cfgMap.values()) {
                 // 4.1, 4.2, 4.3
-                PDG pdg = createPDG(cfg);
-                pdg.build(cfg.getDeclaration());
-                // 4.4
-                pdg.vertexSet().forEach(SDG.this::addVertex);
-                pdg.edgeSet().forEach(arc -> addEdge(pdg.getEdgeSource(arc), pdg.getEdgeTarget(arc), arc));
+                try {
+                    PDG pdg = createPDG(cfg);
+                    pdg.build(cfg.getDeclaration());
+                    // 4.4
+                    pdg.vertexSet().forEach(SDG.this::addVertex);
+                    pdg.edgeSet().forEach(arc -> addEdge(pdg.getEdgeSource(arc), pdg.getEdgeTarget(arc), arc));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
 
