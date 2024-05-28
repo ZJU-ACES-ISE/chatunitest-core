@@ -4,6 +4,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.nodeTypes.SwitchNode;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.Type;
@@ -25,12 +26,12 @@ public class ASTUtils {
         throw new UnsupportedOperationException("This is a static, utility class");
     }
 
-    public static boolean switchHasDefaultCase(SwitchStmt stmt) {
-        return switchGetDefaultCase(stmt) != null;
+    public static boolean switchHasDefaultCase(SwitchNode switchNode) {
+        return switchGetDefaultCase(switchNode) != null;
     }
 
-    public static SwitchEntry switchGetDefaultCase(SwitchStmt stmt) {
-        for (SwitchEntry entry : stmt.getEntries())
+    public static SwitchEntry switchGetDefaultCase(SwitchNode switchNode) {
+        for (SwitchEntry entry : switchNode.getEntries())
             if (entry.getLabels().isEmpty())
                 return entry;
         return null;

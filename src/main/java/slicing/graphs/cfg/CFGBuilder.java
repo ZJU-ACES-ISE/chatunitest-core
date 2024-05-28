@@ -4,10 +4,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.CallableDeclaration;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.expr.BooleanLiteralExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.ObjectCreationExpr;
-import com.github.javaparser.ast.expr.SimpleName;
+import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.visitor.VoidVisitor;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
@@ -301,6 +298,30 @@ public class CFGBuilder extends VoidVisitorAdapter<Void> {
         // 		3. If the last entry doesn't break, to the last statement (present already)
         // If the last case is a default case, remove the selector node from the list of nodes (see 2)
         if (ASTUtils.switchHasDefaultCase(switchStmt))
+            hangingNodes.remove(cond);
+        List<GraphNode<SwitchEntry>> entries = switchEntriesStack.pop();
+        // End block and break section
+        hangingNodes.addAll(breakStack.pop());
+    }
+
+    @Override
+    public void visit(SwitchExpr switchExpr, Void arg) {
+        // Link previous statement to the switch's selector
+        switchEntriesStack.push(new LinkedList<>());
+        breakStack.push(new LinkedList<>());
+        GraphNode<?> cond = connectTo(switchExpr, String.format("switch (%s)", switchExpr.getSelector()));
+        switchExpr.getSelector().accept(this, arg);
+        // expr --> each case (fallthrough by default, so case --> case too)
+        for (SwitchEntry entry : switchExpr.getEntries()) {
+            entry.accept(this, arg); // expr && prev case --> case --> next case
+            hangingNodes.add(cond); // expr --> next case
+        }
+        // The next statement will be linked to:
+        //		1. All break statements that broke from the switch (done with break section)
+        // 		2. If the switch doesn't have a default statement, the switch's selector (already present)
+        // 		3. If the last entry doesn't break, to the last statement (present already)
+        // If the last case is a default case, remove the selector node from the list of nodes (see 2)
+        if (ASTUtils.switchHasDefaultCase(switchExpr))
             hangingNodes.remove(cond);
         List<GraphNode<SwitchEntry>> entries = switchEntriesStack.pop();
         // End block and break section
