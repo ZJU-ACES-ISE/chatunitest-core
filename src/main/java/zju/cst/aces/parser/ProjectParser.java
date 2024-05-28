@@ -12,7 +12,6 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.resolution.UnsolvedSymbolException;
 import com.github.javaparser.resolution.types.ResolvedType;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
@@ -139,17 +138,7 @@ public class ProjectParser {
                             CompilationUnit callerCompilationUnit = findClassByCallable(caller);
                             String callerClassFullName = callerCompilationUnit.getType(0).getFullyQualifiedName().get();
 
-                            if (arguments.isEmpty()) {
-                                String callSiteExpr = callSite.toString();
-                                if (callSite.findAncestor(ExpressionStmt.class).isPresent()) {
-                                    callSiteExpr = callSite.findAncestor(ExpressionStmt.class).get().toString();
-                                }
-                                methodExampleMap.add(getQualifiedSignatureByCallable(callable),
-                                        callerClassFullName,
-                                        getSignatureByCallable(caller),
-                                        callSiteLine,
-                                        callSiteExpr);
-                            } else {
+                            if (!arguments.isEmpty()) {
                                 var sc = new MultiVariableCriterion(callerClassFullName, callSiteLine, arguments);
                                 config.getLogger().info("Slicing method: " + getSignatureByCallable(callable) + " at callsite: < " + callSite + " >");
                                 Slice slice = sdg.slice(sc);
