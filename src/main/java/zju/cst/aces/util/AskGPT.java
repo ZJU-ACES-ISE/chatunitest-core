@@ -46,7 +46,7 @@ public class AskGPT {
                 Map<String, Object> extraParams = new HashMap<>();
                 // Add any extra parameters needed here, for example:
                 // extraParams.put("some_param", "some_value");
-
+                // test
                 // Construct the message object
                 Map<String, Object> message = new HashMap<>();
                 message.put("prefix_text", "推荐一部好看的电影");
