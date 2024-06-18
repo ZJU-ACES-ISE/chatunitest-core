@@ -2,10 +2,7 @@ package zju.cst.aces.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import okhttp3.*;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.config.ModelConfig;
 import zju.cst.aces.dto.ChatMessage;
@@ -26,29 +23,59 @@ public class AskGPT {
     }
 
     public ChatResponse askChatGPT(List<ChatMessage> chatMessages) {
-        String apiKey = config.getRandomKey();
+//        String apiKey = config.getRandomKey(); //
+        String hundsunID = ""; //不需要apikey，只需要ID
+        String modelName = "";
+        String hundsunGPTAPI = "";
         int maxTry = 5;
         while (maxTry > 0) {
             Response response = null;
             try {
                 Map<String, Object> payload = new HashMap<>();
 
-//                if (Objects.equals(config.getModel(), "code-llama") || Objects.equals(config.getModel(), "code-llama-13B")) {
-//                    payload.put("max_tokens", 8092);
-//                }
+//                ModelConfig modelConfig = config.getModel().getDefaultConfig();
 
-                ModelConfig modelConfig = config.getModel().getDefaultConfig();
+                // Create the model_params JSON object
+                Map<String, Object> modelParams = new HashMap<>();
+                modelParams.put("temperature", config.getTemperature());
+                modelParams.put("frequency_penalty", config.getFrequencyPenalty());
+                modelParams.put("presence_penalty", config.getPresencePenalty());
+                modelParams.put("max_tokens", config.getMaxResponseTokens());
 
-                payload.put("messages", chatMessages);
-                payload.put("model", modelConfig.getModelName());
-                payload.put("temperature", config.getTemperature());
-                payload.put("frequency_penalty", config.getFrequencyPenalty());
-                payload.put("presence_penalty", config.getPresencePenalty());
-                payload.put("max_tokens", config.getMaxResponseTokens());
+                // Create the extra JSON object if there are additional parameters
+                Map<String, Object> extraParams = new HashMap<>();
+                // Add any extra parameters needed here, for example:
+                // extraParams.put("some_param", "some_value");
+
+                // Construct the message object
+                Map<String, Object> message = new HashMap<>();
+                message.put("prefix_text", "推荐一部好看的电影");
+                message.put("type", "common");
+                String jsonParams = GSON.toJson(modelParams);
+                message.put("model_params", jsonParams);
+                message.put("extra", extraParams);
+
+                payload.put("message", message);
+                payload.put("model", modelName);
+                payload.put("stream", false);
+
                 String jsonPayload = GSON.toJson(payload);
 
                 RequestBody body = RequestBody.create(MEDIA_TYPE, jsonPayload);
-                Request request = new Request.Builder().url(modelConfig.getUrl()).post(body).addHeader("Content-Type", "application/json").addHeader("Authorization", "Bearer " + apiKey).build();
+                HttpUrl url = HttpUrl.parse(hundsunGPTAPI);
+                Request request = new Request.Builder()
+                        .url(url)
+                        .post(body)
+                        .addHeader("Content-Type", "application/json")
+                        .addHeader("user", hundsunID)
+                        .addHeader("User-Agent", "PostmanRuntime/7.39.0")
+                        .addHeader("Accept", "*/*")
+                        .addHeader("Accept-Encoding", "gzip, deflate, br")
+                        .addHeader("Connection", "keep-alive")
+                        .addHeader("Host", url.host())
+                        .addHeader("Content-Length", String.valueOf(body.contentLength()))
+                        .build();
+                // 这里修改请求头，加上user
 
                 response = config.getClient().newCall(request).execute();
                 if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
@@ -58,6 +85,7 @@ public class AskGPT {
                     throw new RuntimeException("In AskGPT.askChatGPT: " + ie);
                 }
                 if (response.body() == null) throw new IOException("Response body is null.");
+                // 这里需要修改
                 ChatResponse chatResponse = GSON.fromJson(response.body().string(), ChatResponse.class);
                 response.close();
                 return chatResponse;
@@ -72,4 +100,5 @@ public class AskGPT {
         config.getLogger().debug("AskGPT: Failed to get response\n");
         return null;
     }
+
 }
