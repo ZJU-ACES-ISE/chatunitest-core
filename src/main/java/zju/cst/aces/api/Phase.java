@@ -35,7 +35,7 @@ public class Phase {
             Parser parser = new Parser(new ProjectParser(config), config.getProject(), config.getParseOutput(), config.getLogger());
             process(parser);
         }
-
+        //  目前就是使用Parser类进行预处理
         public void process(PreProcess preProcessor) {
             preProcessor.process();
         }

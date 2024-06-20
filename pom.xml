@@ -33,6 +33,58 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>com.sun.xml.bind.mvn</groupId>
+            <artifactId>jaxb-bundles</artifactId>
+            <version>2.3.9</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind.mvn</groupId>
+            <artifactId>jaxb-runtime-parent</artifactId>
+            <version>2.4.0-b180830.0438</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.soap</groupId>
+            <artifactId>jakarta.xml.soap-api</artifactId>
+            <version>1.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jvnet.mimepull</groupId>
+            <artifactId>mimepull</artifactId>
+            <version>1.9.11</version>
+        </dependency>
+
+        <!-- 适配jdk升级到9及以上，移除了 javax.xml.bind (JAXB) 的问题; javax需要从外部引入 -->
+        <!--JAXB (JSR 222) java.xml.bind，JAXBUtil相关 模块的接口 API，如：import javax.xml.bind.annotation.XmlElement; -->
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <version>2.3.9</version>
+        </dependency>
+        <!-- JAXB (JSR 222) Reference Implementation -->
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>2.4.0-b180830.0438</version>
+        </dependency>
+
+
+        <!-- 适配jdk升级到9及以上,java.lang.NoClassDefFoundError : javax/xml/soap/SOAPException-->
+        <!-- create SAAJ meta-factory: Provider com.sun.xml.internal.messaging.saaj.soap.SAAJMetaFactoryImpl not found-->
+        <!-- SoapClient 相关的，如：import javax.xml.soap.SOAPElement;-->
+        <dependency>
+            <groupId>javax.xml.soap</groupId>
+            <artifactId>javax.xml.soap-api</artifactId>
+            <version>1.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.messaging.saaj</groupId>
+            <artifactId>saaj-impl</artifactId>
+            <version>1.5.1</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
             <version>3.9.1</version>
@@ -185,6 +237,8 @@
             <artifactId>jgrapht-core</artifactId>
             <version>1.5.2</version> <!-- Make sure to use the correct version -->
         </dependency>
+
+
     </dependencies>
 
     <profiles>

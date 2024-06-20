@@ -20,6 +20,14 @@ public enum Model {
             .withFrequencyPenalty(0)
             .withPresencePenalty(0)
             .build()),
+    GPT_4_O("gpt-4o", new ModelConfig.Builder()
+            .withModelName("gpt-4o")
+            .withUrl("https://api.openai.com/v1/chat/completions")
+            .withContextLength(100000)
+            .withTemperature(0.5)
+            .withFrequencyPenalty(0)
+            .withPresencePenalty(0)
+            .build()),
     CODE_LLAMA("code-llama", new ModelConfig.Builder()
             .withModelName("code-llama")
             .withUrl(null)
