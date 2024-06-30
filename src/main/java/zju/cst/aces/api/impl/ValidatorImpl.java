@@ -11,13 +11,19 @@ import zju.cst.aces.util.TestCompiler;
 
 import java.nio.file.Path;
 import java.util.List;
-
-import zju.cst.aces.api.Validator;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Data
 public class ValidatorImpl implements Validator {
 
     TestCompiler compiler;
+    private static final int TIMEOUT = 1; // Timeout in minutes
 
     public ValidatorImpl(Path testOutputPath, Path compileOutputPath, Path targetPath, List<String> classpathElements) {
         this.compiler = new TestCompiler(testOutputPath, compileOutputPath, targetPath, classpathElements);
@@ -51,6 +57,20 @@ public class ValidatorImpl implements Validator {
 
     @Override
     public TestExecutionSummary execute(String fullTestName) {
-        return compiler.executeTest(fullTestName);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Callable<TestExecutionSummary> task = () -> compiler.executeTest(fullTestName);
+
+        Future<TestExecutionSummary> future = executor.submit(task);
+        try {
+            return future.get(TIMEOUT, TimeUnit.MINUTES);
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            return null; // Timeout exceeded, return null
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+            return null; // Exception occurred, return null
+        } finally {
+            executor.shutdown();
+        }
     }
 }

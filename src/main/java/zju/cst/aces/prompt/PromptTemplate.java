@@ -3,6 +3,7 @@ package zju.cst.aces.prompt;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -17,7 +18,10 @@ import zju.cst.aces.runner.AbstractRunner;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringWriter;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,7 +63,6 @@ public class PromptTemplate {
         } else {
             configuration.setDirectoryForTemplateLoading(this.promptPath.toFile());
         }
-
         configuration.setDefaultEncoding("utf-8");
         Template template = configuration.getTemplate(templateFileName);
 
@@ -161,6 +164,13 @@ public class PromptTemplate {
             this.dataModel.put("other_method_bodies", null);
         }
 
+        //add target method invocation example in the project
+        Map<String, List<String>> invocationCodeMap = get_method_invocation_code(Paths.get(config.tmpOutput.toString(),
+                "methodExampleCode.json").toString(), promptInfo.getFullClassName(), promptInfo.getMethodSignature());
+        if(invocationCodeMap!=null){
+            this.dataModel.put("method_invocation_codes_innerclass", invocationCodeMap.get("inner_class_code"));
+            this.dataModel.put("method_invocation_codes_outerclass", invocationCodeMap.get("outer_class_code"));
+        }
 
         for (Map.Entry<String, String> entry : promptInfo.getConstructorDeps().entrySet()) {
             cdep_temp.put(entry.getKey(), entry.getValue());
@@ -173,6 +183,65 @@ public class PromptTemplate {
         this.dataModel.put("full_fm", promptInfo.getContext());
     }
 
+    public static void main(String[] args) {
+        //add object creator example in the project
+        List<String> invocation_codes=new ArrayList<>();
+        Path tmpOutput = Paths.get("D:\\tmp\\chatunitest-info\\commons-cli");
+        PromptInfo promptInfo = new PromptInfo();
+        promptInfo.setFullClassName("org.apache.commons.cli.CommandLine");
+        promptInfo.setMethodSignature("addOption(Option)");
+        //遍历方法中的依赖类
+        System.out.println(get_method_invocation_code(Paths.get(tmpOutput.toString(), "methodExampleCode.json").toString(), promptInfo.getFullClassName(), promptInfo.getMethodSignature()));
+    }
+
+    public static Map<String,List<String>> get_method_invocation_code(String staticCreationRecordPath,String fqcn_target_method,String methodName_target_method){
+        if(!Files.exists(Path.of(staticCreationRecordPath))){
+            return null;
+        }
+        List<String> invocation_codes_outerclass=new ArrayList<>();
+        List<String> invocation_codes_targetclass = new ArrayList<>();
+        Map<String, Object> existing_creation_code = (Map<String, Object>) readJsonFile(staticCreationRecordPath);
+        String full_method_name=fqcn_target_method+"."+methodName_target_method;
+        if(existing_creation_code.get(full_method_name)==null){
+            return null;
+        }
+        List<Map<String,Object>> static_code_list=((List<Map<String,Object>>)existing_creation_code.get(full_method_name));
+        for (Map<String, Object> map : static_code_list) {
+            String code = map.get("code").toString();
+            if(map.get("className").equals(fqcn_target_method)){
+                invocation_codes_targetclass.add(code);
+            }
+            else {
+                invocation_codes_outerclass.add(code);
+            }
+        }
+        HashMap<String, List<String>> resultMap = new HashMap<>();
+        resultMap.put("inner_class_code",invocation_codes_targetclass);
+        resultMap.put("outer_class_code",invocation_codes_outerclass);
+        return resultMap;
+    }
+
+    //util for reading constructor.json
+    public static Object readJsonFile(String filepath) {
+        if (filepath == null) {
+            return null;
+        }
+        try {
+            Path path = Paths.get(filepath);
+            if (!Files.exists(path)) {
+                return null;
+            }
+            Reader reader = Files.newBufferedReader(path);
+            Map<String, Object> map = new Gson().fromJson(reader, new TypeToken<Map<String, Object>>() {
+            }.getType());
+            reader.close();
+            return map;
+        } catch (Exception e) {
+            System.err.println("Error reading JSON file: " + filepath);
+            e.printStackTrace();
+            return null;
+        }
+    }
     public Map<String, String> getDepBrief(MethodInfo methodInfo) throws IOException {
         Map<String, String> depBrief = new HashMap<>();
         for (Map.Entry<String, Set<String>> entry : methodInfo.dependentMethods.entrySet()) {

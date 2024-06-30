@@ -185,6 +185,13 @@ public class Counter {
             testMap.put(classInfo.fullClassName, methodList);
         }
 
+        Path tasklistPath = tmpOutputPath.resolve("tasklist.json");
+        if(!Files.exists(tasklistPath)){
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            String json = gson.toJson(testMap);
+            Files.write(tasklistPath, json.getBytes(StandardCharsets.UTF_8));
+        }
+
         return testMap.values().stream().mapToInt(List::size).sum();
     }
 
@@ -214,10 +221,10 @@ public class Counter {
         if (methodInfo == null) {
             return false;
         }
-//        if (methodInfo == null
-//                || methodInfo.isConstructor || methodInfo.isGetSet || methodInfo.isBoolean || !methodInfo.isPublic) {
-//            return false;
-//        }
+        if (methodInfo == null
+                || methodInfo.isConstructor || methodInfo.isGetSet || methodInfo.isBoolean || !methodInfo.isPublic) {
+            return false;
+        }
         return true;
     }
 }

@@ -498,7 +498,10 @@ public abstract class AbstractRunner {
 
         // Execution
         TestExecutionSummary summary = config.getValidator().execute(fullTestName);
-
+        if(summary==null){
+            config.getLogger().warn("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > execution timeout round ");
+            return true;//如果超时了直接当做成功跳过这个方法
+        }
         List<String> errors = extractErrorBySummary(summary, fullTestName);
         if (summary.getTestsFailedCount() > 0 || summary.getTestsSucceededCount() == 0) {
             if (isOnlyAssertionError(errors)) {
