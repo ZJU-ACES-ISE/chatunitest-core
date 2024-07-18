@@ -274,11 +274,11 @@ public class ClassParser {
             for (String classPath : classPaths) {
                 ParseResult<CompilationUnit> parseResult = parser.parse(new File(classPath));
                 CompilationUnit cu = parseResult.getResult().orElseThrow();
-                String packageName=cu.getPackageDeclaration().isEmpty()?"":cu.getPackageDeclaration().get().getNameAsString();
+                String packageName = cu.getPackageDeclaration().isEmpty() ? "" : cu.getPackageDeclaration().get().getNameAsString();
                 List<ClassOrInterfaceDeclaration> classes = cu.findAll(ClassOrInterfaceDeclaration.class);
                 for (ClassOrInterfaceDeclaration classDeclaration : classes) {
                     for (ClassOrInterfaceType extendedType : classDeclaration.getExtendedTypes()) {
-                        if (targetClassName.equals(packageName+"."+extendedType.getNameAsString())) {
+                        if (targetClassName.equals(packageName + "." + extendedType.getNameAsString())) {
                             subClasses.add(classDeclaration.getFullyQualifiedName().orElseThrow().toString());
                         }
                     }
@@ -368,7 +368,11 @@ public class ClassParser {
             if (methodNode.getBody().isPresent()) {
                 sig = getSourceCodeByPosition(getTokenString(cu),
                         methodNode.getBegin().orElseThrow(), methodNode.getBody().get().getBegin().orElseThrow());
-                sig = sig.substring(0, sig.lastIndexOf("{") - 1) + "{}";
+                if (')'==(sig.charAt(sig.lastIndexOf("{") - 1))) {
+                    sig = sig.substring(0, sig.lastIndexOf("{")) + "{}";
+                } else {
+                    sig = sig.substring(0, sig.lastIndexOf("{") - 1) + "{}";
+                }
             } else {
                 sig = getSourceCodeByPosition(getTokenString(cu),
                         methodNode.getBegin().orElseThrow(), methodNode.getEnd().orElseThrow());
@@ -692,6 +696,7 @@ public class ClassParser {
      * 获取对象创建示例代码，从两种语句中获取:
      * 1. 直接new了一个对象(ObjectCreationExpr).
      * 2. 调用函数（MethodCallExpr）创建并返回了一个对象(md.getReturnType().isReferenceType()).
+     *
      * @param node
      */
     public void findObjectConstructionCode(CompilationUnit cu, CallableDeclaration node) {
@@ -862,18 +867,18 @@ public class ClassParser {
     private List<ExpressionStmt> findArgDeclarationStmts(List<String> typeNames, Map<String, VariableDeclarationExpr> variableDeclarations) {
         LinkedHashSet<ExpressionStmt> set = new LinkedHashSet<>();
         typeNames.forEach(typeName -> {
-                if (variableDeclarations.containsKey(typeName)) {
-                    VariableDeclarationExpr vd = variableDeclarations.get(typeName);
-                    List<MethodCallExpr> temp = vd.findAll(MethodCallExpr.class);
-                    if (!temp.isEmpty()) {
-                        List<String> depNames = temp.get(0).getArguments().stream().map(Node::toString).collect(Collectors.toList());
-                        set.addAll(findArgDeclarationStmts(depNames, variableDeclarations));
-                    }
-                    ExpressionStmt stmt = findExpressionStmt(vd);
-                    if (stmt != null) {
-                        set.add(stmt);
-                    }
+            if (variableDeclarations.containsKey(typeName)) {
+                VariableDeclarationExpr vd = variableDeclarations.get(typeName);
+                List<MethodCallExpr> temp = vd.findAll(MethodCallExpr.class);
+                if (!temp.isEmpty()) {
+                    List<String> depNames = temp.get(0).getArguments().stream().map(Node::toString).collect(Collectors.toList());
+                    set.addAll(findArgDeclarationStmts(depNames, variableDeclarations));
                 }
+                ExpressionStmt stmt = findExpressionStmt(vd);
+                if (stmt != null) {
+                    set.add(stmt);
+                }
+            }
         });
         return new ArrayList<>(set);
     }
