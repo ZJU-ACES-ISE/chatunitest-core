@@ -469,6 +469,14 @@ public abstract class AbstractRunner {
         return false;
     }
 
+    /**
+     * Compile and execute the test, if no errors, the test will be exported.
+     * @param config
+     * @param fullTestName
+     * @param promptInfo
+     * @param rounds
+     * @return
+     */
     public static boolean runTest(Config config, String fullTestName, PromptInfo promptInfo, int rounds) {
         String testName = fullTestName.substring(fullTestName.lastIndexOf(".") + 1);
         Path savePath = config.getTestOutput().resolve(fullTestName.replace(".", File.separator) + ".java");

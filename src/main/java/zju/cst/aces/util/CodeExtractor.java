@@ -1,6 +1,5 @@
 package zju.cst.aces.util;
 
-import com.github.javaparser.JavaParser;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
@@ -44,6 +43,11 @@ public class CodeExtractor {
         return extract(text);
     }
 
+    /**
+     * Extract the code in response and auto-repair the syntax errors.
+     * @param text
+     * @return
+     */
     public String extract(String text) {
         String ec = "";
 

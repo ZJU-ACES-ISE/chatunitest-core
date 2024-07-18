@@ -21,6 +21,11 @@ public class PromptGenerator {
         this.promptTemplate = new PromptTemplate(config, config.properties, config.getPromptPath(), config.getMaxPromptTokens());
     }
 
+    /**
+     * Generate messages by promptInfo with no errors (generation - round 0) or errors (repair - round > 0)
+     * @param promptInfo
+     * @return
+     */
     public List<ChatMessage> generateMessages(PromptInfo promptInfo) {
         List<ChatMessage> chatMessages = new ArrayList<>();
         if (promptInfo.errorMsg == null) { // round 0
