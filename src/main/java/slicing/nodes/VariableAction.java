@@ -615,12 +615,13 @@ public abstract class VariableAction {
             // Move to node
             moveOnly();
             // Move data dependencies
-            Set.copyOf(graph.edgesOf(graphNode).stream()
+            new HashSet<>(graph.edgesOf(graphNode).stream()
                     .filter(Arc::isDataDependencyArc)
                     .map(Arc::asDataDependencyArc)
                     .filter(arc -> arc.getSourceVar() == this || arc.getTargetVar() == this)
                     .collect(Collectors.toSet())) // copying to avoid modifying while iterating
                     .forEach(arc -> moveDataDependencyArc(arc, graph, inner));
+
             return inner;
         }
 

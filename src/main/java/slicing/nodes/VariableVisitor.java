@@ -12,6 +12,7 @@ import com.github.javaparser.resolution.declarations.ResolvedMethodLikeDeclarati
 import com.github.javaparser.resolution.declarations.ResolvedValueDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.github.javaparser.resolution.types.ResolvedType;
+import lombok.var;
 import slicing.graphs.ClassGraph;
 import slicing.graphs.ExpressionObjectTreeFinder;
 import slicing.graphs.GraphNodeContentVisitor;
@@ -562,7 +563,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         // If we don't have the AST for the call, we should visit the rest of the call.
         if (ASTUtils.shouldVisitArgumentsForMethodCalls(call, graphNode))
             return true;
-        CallableDeclaration<?> decl = ASTUtils.getResolvedAST(call.resolve()).orElseThrow();
+        CallableDeclaration<?> decl = ASTUtils.getResolvedAST(call.resolve()).orElseThrow(()->new NoSuchElementException("No CallableDeclaration found for the resolved call."));
         // Start
         graphNode.addCallMarker(call, true);
         // Scope
@@ -574,12 +575,15 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
             ActualIONode scopeIn = ActualIONode.createActualIn(call, "this", ((MethodCallExpr) call).getScope().orElse(null));
             graphNode.addSyntheticNode(scopeIn);
             realNodeStack.push(scopeIn);
-            ASTUtils.getResolvableScope(call).ifPresentOrElse(
-                    scope -> scope.accept(this, action),
-                    () -> {
-                        VariableAction va = acceptAction(FIELD, new String[]{ "this" }, action);
-                        va.setStaticType(ASTUtils.resolvedTypeOfCurrentClass((MethodCallExpr) call));
-                    });
+            Optional<Expression> optionalScope = ASTUtils.getResolvableScope(call);
+            if (optionalScope.isPresent()) {
+                Expression scope = optionalScope.get();
+                scope.accept(this, action);
+            } else {
+                VariableAction va = acceptAction(FIELD, new String[] { "this" }, action);
+                va.setStaticType(ASTUtils.resolvedTypeOfCurrentClass((MethodCallExpr) call));
+            }
+
             // Generate -scope-in- action, so that InterproceduralUsageFinder does not need to do so.
             VariableAction.Definition def = new VariableAction.Definition(VariableAction.DeclarationType.SYNTHETIC, "-scope-in-", graphNode);
             VariableAction.Movable movDef = new VariableAction.Movable(def, scopeIn);
@@ -620,7 +624,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         graphNode.addVariableAction(defMov);
         // The container of the call uses -output-, unless the call is wrapped in an ExpressionStmt
         Optional<Node> parentNode = ((Node) call).getParentNode();
-        if (parentNode.isEmpty() || !(parentNode.get() instanceof ExpressionStmt)) {
+        if (parentNode.isPresent() || !(parentNode.get() instanceof ExpressionStmt)) {
             VariableAction use = new VariableAction.Usage(SYNTHETIC, VARIABLE_NAME_OUTPUT, graphNode,
                     fields.map(tree -> (ObjectTree) tree.clone()).orElse(null));
             graphNode.addVariableAction(use);
@@ -722,16 +726,16 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
      *  Doesn't take into account the CFG, only the class graph. */
     protected static Set<ResolvedType> dynamicTypesOf(ResolvedType rt, String fieldName, ClassGraph classGraph) {
         Optional<FieldDeclaration> field = classGraph.findClassField(rt, fieldName);
-        if (field.isEmpty())
+        if (field.isPresent())
             return Collections.emptySet();
         ResolvedType fieldType;
         try {
             fieldType = field.get().getVariable(0).getType().resolve();
         } catch (UnsupportedOperationException e) {
-            return Set.of();
+            return new HashSet<>();
         }
         if (!fieldType.isReferenceType() || !classGraph.containsType(fieldType))
-            return Set.of(fieldType);
+            return Collections.singleton(fieldType);
         return classGraph.subclassesOf(fieldType.asReferenceType()).stream()
                 .map(TypeDeclaration::resolve)
                 .map(ASTUtils::resolvedTypeDeclarationToResolvedType)

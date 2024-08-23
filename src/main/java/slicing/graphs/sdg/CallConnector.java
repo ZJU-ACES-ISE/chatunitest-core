@@ -3,6 +3,7 @@ package slicing.graphs.sdg;
 import com.github.javaparser.ast.body.CallableDeclaration;
 import com.github.javaparser.resolution.Resolvable;
 import com.github.javaparser.resolution.declarations.ResolvedMethodLikeDeclaration;
+import lombok.var;
 import slicing.arcs.sdg.CallArc;
 import slicing.arcs.sdg.ParameterInOutArc;
 import slicing.graphs.CallGraph;

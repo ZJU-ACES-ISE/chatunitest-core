@@ -7,6 +7,7 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import lombok.Data;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 import static zju.cst.aces.runner.AbstractRunner.repairImports;
@@ -33,7 +34,10 @@ public class TestSkeleton {
 
         CompilationUnit cu = StaticJavaParser.parse(skeleton);
         cu.getPackageDeclaration().ifPresent(p -> this.packageName = p.getNameAsString());
-        this.testName = cu.findFirst(ClassOrInterfaceDeclaration.class).orElseThrow().getNameAsString();
+        this.testName = cu.findFirst(ClassOrInterfaceDeclaration.class)
+                .orElseThrow(() -> new NoSuchElementException("No ClassOrInterfaceDeclaration found"))
+                .getNameAsString();
+
         this.fullTestName = packageName + "." + testName;
         this.imports = cu.getImports().stream().map(i -> i.toString().trim()).collect(Collectors.toList());
     }

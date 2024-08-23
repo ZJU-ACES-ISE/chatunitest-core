@@ -53,9 +53,10 @@ public class PPDG extends APDG {
                     .collect(Collectors.toSet());
             edgeSet().stream()
                     .filter(Arc::isUnconditionalControlDependencyArc)
-                    .filter(Predicate.not(apdgArcs::contains))
+                    .filter(arc -> !apdgArcs.contains(arc))  // Use lambda to negate the condition
                     .map(Arc::asControlDependencyArc)
                     .forEach(ControlDependencyArc::setPPDGExclusive);
+
         }
     }
 }

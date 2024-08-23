@@ -5,6 +5,7 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.SuperExpr;
 import com.github.javaparser.ast.expr.ThisExpr;
+import lombok.var;
 import slicing.graphs.CallGraph;
 import slicing.graphs.cfg.CFG;
 import slicing.nodes.GraphNode;
@@ -44,7 +45,7 @@ public class InterproceduralDefinitionFinder extends InterproceduralActionFinder
         GraphNode<?> graphNode = edge.getGraphNode();
         if (def.isParameter()) {
             Optional<Expression> arg = extractArgument(def, edge, false);
-            if (arg.isEmpty())
+            if (arg.isPresent())
                 return;
             ActualIONode actualOut = locateActualOutNode(edge, def.getName())
                     .orElseGet(() -> ActualIONode.createActualOut(edge.getCall(), def.getName(), arg.get()));
@@ -120,6 +121,6 @@ public class InterproceduralDefinitionFinder extends InterproceduralActionFinder
     protected Stream<Definition> mapAndFilterActionStream(Stream<VariableAction> stream, CFG cfg) {
         return stream.filter(VariableAction::isDefinition)
                 .map(VariableAction::asDefinition)
-                .filter(def -> cfg.findDeclarationFor(def).isEmpty());
+                .filter(def -> cfg.findDeclarationFor(def).isPresent());
     }
 }

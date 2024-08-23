@@ -1,6 +1,7 @@
 package slicing.graphs.sdg;
 
 import com.github.javaparser.ast.body.CallableDeclaration;
+import lombok.var;
 import slicing.graphs.BackwardDataFlowAnalysis;
 import slicing.graphs.CallGraph;
 import slicing.nodes.SyntheticNode;

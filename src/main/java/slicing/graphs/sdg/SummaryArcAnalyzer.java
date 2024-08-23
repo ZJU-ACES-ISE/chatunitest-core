@@ -11,6 +11,8 @@ import slicing.nodes.io.FormalIONode;
 import slicing.nodes.io.OutputNode;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -46,7 +48,7 @@ public class SummaryArcAnalyzer extends AbstractSummaryArcAnalyzer<ActualIONode,
         if (formalOut instanceof FormalIONode)
             return findActualOut(edge, (FormalIONode) formalOut);
         if (formalOut instanceof OutputNode)
-            return Set.of(findReturnNode(edge));
+            return Collections.singleton(findReturnNode(edge));
         if (formalOut instanceof ExitNode)
             return getReturnNode(edge, (ExitNode) formalOut);
         throw new IllegalArgumentException("invalid type");
@@ -70,7 +72,7 @@ public class SummaryArcAnalyzer extends AbstractSummaryArcAnalyzer<ActualIONode,
                 .filter(CallNode.Return.class::isInstance)
                 .map(CallNode.Return.class::cast)
                 .filter(n -> n.getAstNode() == edge.getCall())
-                .findAny().orElseThrow();
+                .findAny().orElseThrow(() -> new NoSuchElementException("No matching CallNode.Return found"));
     }
 
     /** Find the exception/normal return node that corresponds to the given exception/normal exit in the given call.

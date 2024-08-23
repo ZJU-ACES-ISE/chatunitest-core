@@ -9,6 +9,7 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import lombok.Getter;
+import lombok.var;
 import slicing.arcs.pdg.ControlDependencyArc;
 import slicing.arcs.pdg.DataDependencyArc;
 import slicing.arcs.sdg.CallArc;

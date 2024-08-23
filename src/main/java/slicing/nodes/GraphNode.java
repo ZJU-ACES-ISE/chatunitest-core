@@ -188,7 +188,7 @@ public class GraphNode<N extends Node> implements Comparable<GraphNode<?>> {
             variableActions.add(action);
         else {
             assert syntheticNodesInMovables.contains(realNode);
-            addActionsForCall(List.of(action), (Resolvable<? extends ResolvedMethodLikeDeclaration>) realNode.getAstNode(), true);
+            addActionsForCall(Collections.singletonList(action), (Resolvable<? extends ResolvedMethodLikeDeclaration>) realNode.getAstNode(), true);
         }
     }
 

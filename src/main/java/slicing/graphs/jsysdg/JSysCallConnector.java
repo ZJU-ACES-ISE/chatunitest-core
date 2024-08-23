@@ -12,6 +12,7 @@ import slicing.nodes.io.OutputNode;
 import slicing.utils.ASTUtils;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * Generates interprocedural arcs between call sites and declarations.
@@ -54,9 +55,12 @@ public class JSysCallConnector extends ExceptionSensitiveCallConnector {
         if (formalNode.getVariableName().equals("-output-")) {
             return ASTUtils.declarationReturnIsObject(formalNode.getAstNode());
         } else {
-            return formalNode.getVariableName().equals("this")
-                    || !formalNode.getAstNode().getParameterByName(formalNode.getVariableName())
-                    .orElseThrow().getType().isPrimitiveType();
+            boolean isPrimitive = formalNode.getAstNode().getParameterByName(formalNode.getVariableName())
+                    .map(parameter -> parameter.getType().isPrimitiveType())
+                    .orElseThrow(() -> new NoSuchElementException("Parameter not found by name: " + formalNode.getVariableName()));
+
+            return formalNode.getVariableName().equals("this") || !isPrimitive;
+
         }
     }
 

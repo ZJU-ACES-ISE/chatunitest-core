@@ -12,6 +12,7 @@ import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.resolution.Resolvable;
 import com.github.javaparser.resolution.declarations.ResolvedMethodLikeDeclaration;
+import lombok.var;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedPseudograph;
 import slicing.graphs.cfg.CFG;
@@ -89,9 +90,16 @@ public class CallGraph extends DirectedPseudograph<CallGraph.Vertex, CallGraph.E
 
     /** Locate the vertex that represents in this graph the given declaration. */
     protected Vertex findVertexByDeclaration(CallableDeclaration<?> declaration) {
-        return vertexSet().stream()
+        Optional<Vertex> matchingVertex = vertexSet().stream()
                 .filter(v -> v.matches(declaration))
-                .findFirst().orElseThrow();
+                .findFirst();
+
+        if (matchingVertex.isPresent()) {
+            return matchingVertex.get();
+        } else {
+            throw new NoSuchElementException("No vertex matching the declaration found");
+        }
+
     }
 
     @Override
@@ -182,7 +190,7 @@ public class CallGraph extends DirectedPseudograph<CallGraph.Vertex, CallGraph.E
             @Override
             public void visit(MethodCallExpr n, Void arg) {
                 try {
-                    if (n.resolve().toAst().isEmpty()) {
+                    if (n.resolve().toAst().isPresent()) {
                         CallableDeclaration<?> decl = classGraph.getMethodDeclarationBySig(ASTUtils.processSignature(n.resolve().getQualifiedSignature()));
                         if (decl != null) {
                             createPolyEdges(decl.asMethodDeclaration(), n);
@@ -197,7 +205,7 @@ public class CallGraph extends DirectedPseudograph<CallGraph.Vertex, CallGraph.E
             @Override
             public void visit(ObjectCreationExpr n, Void arg) {
                 try {
-                    if (n.resolve().toAst().isEmpty()) {
+                    if (n.resolve().toAst().isPresent()) {
                         CallableDeclaration<?> decl = classGraph.getMethodDeclarationBySig(ASTUtils.processSignature(n.resolve().getQualifiedSignature()));
                         if (decl != null) {
                             createNormalEdge(decl, n);
@@ -227,14 +235,14 @@ public class CallGraph extends DirectedPseudograph<CallGraph.Vertex, CallGraph.E
                     Optional<Expression> scope = call.getScope();
                     // Determine the type of the call's scope
                     Set<? extends TypeDeclaration<?>> dynamicTypes;
-                    if (scope.isEmpty()) {
+                    if (scope.isPresent()) {
                         // a) No scope: any class the method is in, or any outer class if the class is not static.
                         // Early exit: it is easier to find the methods that override the
                         // detected call than to account for all cases (implicit inner or outer class)
                         classGraph.overriddenSetOf(decl)
                                 .forEach(methodDecl -> createNormalEdge(methodDecl, call));
                         return;
-                    } else if (scope.get().isThisExpr() && scope.get().asThisExpr().getTypeName().isEmpty()) {
+                    } else if (scope.get().isThisExpr() && scope.get().asThisExpr().getTypeName().isPresent()) {
                         // b) just 'this', the current class and any subclass
                         dynamicTypes = classGraph.subclassesOf(typeStack.peek());
                     } else if (scope.get().isThisExpr()) {
@@ -242,7 +250,7 @@ public class CallGraph extends DirectedPseudograph<CallGraph.Vertex, CallGraph.E
                         dynamicTypes = classGraph.subclassesOf(scope.get().asThisExpr().resolve().asClass());
                     } else if (scope.get().isSuperExpr()) {
                         // d) 'super': start with the parent type and get the first implementation
-                        dynamicTypes = Set.of(classGraph.parentOf(typeStack.peek()).orElseThrow());
+                        dynamicTypes = new HashSet<>(Collections.singleton(classGraph.parentOf(typeStack.peek()).orElseThrow(() -> new NoSuchElementException("No parent found for the type"))));
                     } else {
                         // e) others: compute possible dynamic types of the expression (TODO)
                         dynamicTypes = classGraph.subclassesOf(scope.get().calculateResolvedType().asReferenceType());
@@ -331,8 +339,8 @@ public class CallGraph extends DirectedPseudograph<CallGraph.Vertex, CallGraph.E
                 return true;
             if (!this.declaration.getSignature().toString().equals(declaration.getSignature().toString()))
                 return false;
-            var t1 = this.declaration.findAncestor(NodeWithSimpleName.class).orElse(null);
-            var t2 = declaration.findAncestor(NodeWithSimpleName.class).orElse(null);
+            NodeWithSimpleName t1 = this.declaration.findAncestor(NodeWithSimpleName.class).orElse(null);
+            NodeWithSimpleName t2 = declaration.findAncestor(NodeWithSimpleName.class).orElse(null);
             return t1 != null && t2 != null && t1.getNameAsString().equals(t2.getNameAsString());
         }
     }

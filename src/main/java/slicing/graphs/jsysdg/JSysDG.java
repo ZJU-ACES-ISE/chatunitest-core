@@ -52,7 +52,7 @@ public class JSysDG extends ESSDG {
 
         /** Create implicit constructors, and store them in a set so that they may be built with implicit nodes. */
         protected void insertImplicitConstructors(NodeList<CompilationUnit> nodeList) {
-            nodeList.accept(new ModifierVisitor<>() {
+            nodeList.accept(new ModifierVisitor<Object>() {
                 @Override
                 public Visitable visit(ClassOrInterfaceDeclaration n, Object arg) {
                     if (!n.isInterface() && n.getConstructors().isEmpty())

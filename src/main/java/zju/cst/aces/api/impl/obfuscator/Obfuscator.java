@@ -166,7 +166,7 @@ public class Obfuscator {
         String obfuscatedCode = "";
         try {
             CompilationUnit cu = StaticJavaParser.parse(code);
-            PackageDeclaration pd = cu.getPackageDeclaration().orElseThrow();
+            PackageDeclaration pd = cu.getPackageDeclaration().orElseThrow(()->new NoSuchElementException("No package declaration present in the compilation unit"));
             String packageName = pd.getNameAsString();
             String deobfuscatedPackage = decryptName(packageName);
             pd.setName(deobfuscatedPackage);
@@ -403,7 +403,7 @@ public class Obfuscator {
 
     public SymbolFrame findSymbolFrameByClass(String fullClassName) {
         try {
-            Map<String, SymbolFrame> symbolFrames = GSON.fromJson(Files.readString(config.getSymbolFramePath(), StandardCharsets.UTF_8), new TypeToken<Map<String, SymbolFrame>>(){}.getType());
+            Map<String, SymbolFrame> symbolFrames = GSON.fromJson(new String(Files.readAllBytes(config.getSymbolFramePath()), StandardCharsets.UTF_8), new TypeToken<Map<String, SymbolFrame>>(){}.getType());
             return symbolFrames.get(fullClassName);
         } catch (IOException e) {
             throw new RuntimeException("In Obfuscator.findSymbolFrameByClass: " + e);

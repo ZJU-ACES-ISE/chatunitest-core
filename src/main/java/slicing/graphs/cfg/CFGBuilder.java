@@ -105,7 +105,7 @@ public class CFGBuilder extends VoidVisitorAdapter<Void> {
     /** Copies the contents of all hanging node lists to a stack for later usage. Each time this is called, a matching
      *  call to {@link #restoreHanging()} or {@link #dropHanging()} must occur, so that the stack is balanced */
     protected void saveHanging() {
-        hangingNodesStack.push(List.copyOf(hangingNodes));
+        hangingNodesStack.push(new ArrayList<>(hangingNodes));
     }
 
     /** Restores the last stored hanging node list, without clearing them first.
@@ -363,7 +363,7 @@ public class CFGBuilder extends VoidVisitorAdapter<Void> {
     @Override
     public void visit(ObjectCreationExpr n, Void arg) {
         // Skip anonymous classes
-        if (n.getAnonymousClassBody().isEmpty())
+        if (n.getAnonymousClassBody().isPresent())
             super.visit(n, arg);
     }
 

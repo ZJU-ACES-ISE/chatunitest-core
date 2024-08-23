@@ -341,7 +341,7 @@ public class Config {
         }
 
         public ConfigBuilder url(String url) {
-            if (!this.model.getModelName().contains("gpt-4") && !this.model.getModelName().contains("gpt-3.5") && url.equals("https://api.openai.com/v1/chat/completions")) {
+            if (!this.model.getModelName().contains("gpt-4") && !this.model.getModelName().contains("gpt-3.5") && url.equals("https://api.gptsapi.net/v1/chat/completions")) {
                 throw new RuntimeException("Invalid url for model: " + this.model + ". Please configure the url in plugin configuration.");
             }
             this.url = url;

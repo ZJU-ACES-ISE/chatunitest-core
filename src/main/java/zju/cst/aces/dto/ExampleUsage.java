@@ -27,7 +27,7 @@ public class ExampleUsage {
             return null;
         }
         try {
-            usages = (Map<String, List<String>>) GSON.fromJson(Files.readString(path, StandardCharsets.UTF_8), Map.class).get(name);
+            usages = (Map<String, List<String>>) GSON.fromJson(new String(Files.readAllBytes(path), StandardCharsets.UTF_8), Map.class).get(name);
         } catch (Exception e) {
             throw new RuntimeException("In ExampleUsage.loadUsages: " + e);
         }

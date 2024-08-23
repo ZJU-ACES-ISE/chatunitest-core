@@ -4,6 +4,7 @@ import slicing.arcs.Arc;
 import slicing.graphs.augmented.PSDG;
 import slicing.nodes.GraphNode;
 
+import java.util.Collections;
 import java.util.Set;
 
 public class PseudoPredicateSlicingAlgorithm extends ClassicSlicingAlgorithm {
@@ -15,7 +16,7 @@ public class PseudoPredicateSlicingAlgorithm extends ClassicSlicingAlgorithm {
 
     @Override
     public Slice traverseProcedure(GraphNode<?> slicingCriterion) {
-        this.slicingCriterion = Set.of(slicingCriterion);
+        this.slicingCriterion = Collections.singleton(slicingCriterion);
         return super.traverseProcedure(slicingCriterion);
     }
 

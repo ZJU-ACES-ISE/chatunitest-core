@@ -285,7 +285,7 @@ public abstract class AbstractRunner {
             if (!classInfoPath.toFile().exists()) {
                 return null;
             }
-            return GSON.fromJson(Files.readString(classInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            return GSON.fromJson(new String(Files.readAllBytes(classInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
         } catch (InvalidPathException e) {
             return null;
         }
@@ -303,7 +303,7 @@ public abstract class AbstractRunner {
         if (!depMethodInfoPath.toFile().exists()) {
             return null;
         }
-        return GSON.fromJson(Files.readString(depMethodInfoPath, StandardCharsets.UTF_8), MethodInfo.class);
+        return GSON.fromJson(new String(Files.readAllBytes(depMethodInfoPath), StandardCharsets.UTF_8), MethodInfo.class);
     }
 
     public static String getDepInfo(Config config, String depClassName, Set<String> depMethods) throws IOException {

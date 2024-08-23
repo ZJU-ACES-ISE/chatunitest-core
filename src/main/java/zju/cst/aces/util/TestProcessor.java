@@ -9,6 +9,7 @@ import zju.cst.aces.dto.PromptInfo;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 /**
@@ -56,7 +57,7 @@ public class TestProcessor {
         String result = promptInfo.getUnitTest();
         try {
             ParseResult<CompilationUnit> parseResult = parser.parse(result);
-            CompilationUnit cu = parseResult.getResult().orElseThrow();
+            CompilationUnit cu = parseResult.getResult().orElseThrow(()->new NoSuchElementException("CompilationUnit not present in parse result"));
             List<MethodDeclaration> methods = cu.findAll(MethodDeclaration.class);
             List<Integer> errorLineNum = getErrorLineNum(summary);
             for (MethodDeclaration method : methods) {
@@ -80,7 +81,7 @@ public class TestProcessor {
         String result = promptInfo.getUnitTest();
         try {
             ParseResult<CompilationUnit> parseResult = parser.parse(result);
-            CompilationUnit cu = parseResult.getResult().orElseThrow();
+            CompilationUnit cu = parseResult.getResult().orElseThrow(()->new NoSuchElementException("CompilationUnit not present in parse result"));
             List<MethodDeclaration> methods = cu.findAll(MethodDeclaration.class);
             List<Integer> errorLineNum = getErrorLineNum(summary);
             for (MethodDeclaration method : methods) {
@@ -105,7 +106,7 @@ public class TestProcessor {
         String result = promptInfo.getUnitTest();
         try {
             ParseResult<CompilationUnit> parseResult = parser.parse(result);
-            CompilationUnit cu = parseResult.getResult().orElseThrow();
+            CompilationUnit cu = parseResult.getResult().orElseThrow(()->new NoSuchElementException("CompilationUnit not present in parse result"));
             promptInfo.getCorrectTests().keySet().forEach(className -> {
                 cu.getClassByName(className).ifPresent(classOrInterfaceDeclaration -> {
                     promptInfo.getCorrectTests().get(className).forEach(methodDeclaration -> {

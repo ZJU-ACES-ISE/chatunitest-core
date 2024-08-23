@@ -94,8 +94,18 @@ public class CFG extends GraphWithRootNode<CallableDeclaration<?>> {
         visited.add(currentNode);
 
         Stream<VariableAction> stream = currentNode.getVariableActions().stream();
-        if (var.getGraphNode().equals(currentNode))
-            stream = stream.takeWhile(va -> va != var);
+        if (var.getGraphNode().equals(currentNode)) {
+            boolean[] take = {true}; // Array to use as mutable flag
+            stream = stream.filter(va -> {
+                if (take[0] && va != var) {
+                    return true;
+                } else {
+                    take[0] = false; // Stop taking elements once `var` is encountered
+                    return false;
+                }
+            });
+        }
+
         List<VariableAction> list = stream.filter(var::matches).filter(filter).collect(Collectors.toList());
         if (!list.isEmpty()) {
             for (int i = list.size() - 1; i >= 0; i--) {

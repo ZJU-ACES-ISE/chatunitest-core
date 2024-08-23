@@ -3,6 +3,7 @@ package slicing.graphs.sdg;
 import com.github.javaparser.ast.body.CallableDeclaration;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.resolution.UnsolvedSymbolException;
+import lombok.var;
 import slicing.graphs.BackwardDataFlowAnalysis;
 import slicing.graphs.CallGraph;
 import slicing.graphs.cfg.CFG;
@@ -120,22 +121,23 @@ public abstract class InterproceduralActionFinder<A extends VariableAction> exte
 
         if (vertex.getDeclaration().isAbstract() ||
                 (vertex.getDeclaration().isMethodDeclaration() &&
-                        vertex.getDeclaration().asMethodDeclaration().getBody().isEmpty()))
+                        vertex.getDeclaration().asMethodDeclaration().getBody().isPresent()))
             return new HashSet<>();
         CFG cfg = cfgMap.get(vertex.getDeclaration());
         if (cfg == null) {
             return new HashSet<>();
         }
-        Stream<VariableAction> actionStream =  cfg.vertexSet().stream()
+        Stream<VariableAction> actionStream = cfg.vertexSet().stream()
                 // Ignore root node, it is literally the entrypoint for interprocedural actions.
                 .filter(n -> n != cfg.getRootNode())
                 .flatMap(n -> n.getVariableActions().stream())
                 // We never analyze synthetic variables (all intraprocedural)
-                .filter(Predicate.not(VariableAction::isSynthetic))
+                .filter(v -> !v.isSynthetic())
                 // We skip over non-root variables (for each 'x.a' action we'll find 'x' later)
                 .filter(VariableAction::isRootAction)
                 // We skip local variables, as those can't be interprocedural
-                .filter(Predicate.not(VariableAction::isLocalVariable));
+                .filter(v -> !v.isLocalVariable());
+
         Stream<A> filteredStream = mapAndFilterActionStream(actionStream, cfg);
         Set<A> set = new HashSet<>();
         for (Iterator<A> it = filteredStream.iterator(); it.hasNext(); ) {

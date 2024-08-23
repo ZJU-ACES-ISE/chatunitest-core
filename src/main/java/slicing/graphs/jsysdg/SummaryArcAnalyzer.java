@@ -1,6 +1,7 @@
 package slicing.graphs.jsysdg;
 
 import com.github.javaparser.ast.body.CallableDeclaration;
+import lombok.var;
 import slicing.arcs.Arc;
 import slicing.graphs.CallGraph;
 import slicing.graphs.sdg.AbstractSummaryArcAnalyzer;
@@ -27,7 +28,7 @@ public class SummaryArcAnalyzer extends AbstractSummaryArcAnalyzer<SyntheticNode
     @Override
     protected Set<SyntheticNode<?>> getFormalOutNodes(CallableDeclaration<?> declaration) {
         Set<SyntheticNode<?>> set = super.getFormalOutNodes(declaration);
-        for (var node : Set.copyOf(set)) {
+        for (SyntheticNode<?> node : new HashSet<>(set)) {
             if (node.getVariableActions().isEmpty())
                 continue;
             assert node.getVariableActions().size() == 1;
@@ -37,6 +38,7 @@ public class SummaryArcAnalyzer extends AbstractSummaryArcAnalyzer<SyntheticNode
         }
         return set;
     }
+
 
     @Override
     protected Set<SyntheticNode<?>> computeFormalIn(SyntheticNode<?> formalOut) {

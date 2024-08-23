@@ -5,6 +5,8 @@ import slicing.graphs.pdg.PDG;
 import slicing.graphs.sdg.SDG;
 import slicing.nodes.VariableAction;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
@@ -22,8 +24,10 @@ import java.util.function.BiPredicate;
 public class DataDependencyArc extends Arc {
     /** Valid combinations of variable actions. */
     private static final List<BiPredicate<VariableAction, VariableAction>> VALID_VA_COMBOS =
-            List.of((a, b) -> a.isDefinition() && b.isUsage(), (a, b) -> a.isDeclaration() && b.isDefinition());
-
+            Collections.unmodifiableList(Arrays.asList(
+                    (a, b) -> a.isDefinition() && b.isUsage(),
+                    (a, b) -> a.isDeclaration() && b.isDefinition()
+            ));
     protected final VariableAction sourceVar;
     protected final VariableAction targetVar;
 

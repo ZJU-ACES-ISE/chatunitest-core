@@ -9,6 +9,7 @@ import com.github.javaparser.resolution.Resolvable;
 import com.github.javaparser.resolution.declarations.ResolvedMethodLikeDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.github.javaparser.resolution.types.ResolvedType;
+import lombok.var;
 import slicing.arcs.cfg.ControlFlowArc;
 import slicing.graphs.augmented.ACFG;
 import slicing.graphs.augmented.ACFGBuilder;
@@ -291,7 +292,8 @@ public class ESCFG extends ACFG {
             // Normal return
             NormalReturnNode normalReturn = NormalReturnNode.create(call);
             addVertex(normalReturn);
-            GraphNode<?> stmtNode = findNodeByASTNode(stmtStack.peek()).orElseThrow();
+            GraphNode<?> stmtNode = findNodeByASTNode(stmtStack.peek())
+                    .orElseThrow(() -> new NoSuchElementException("No node found for the given AST node"));
             assert hangingNodes.size() == 1 && hangingNodes.get(0) == stmtNode;
             assert nonExecHangingNodes.isEmpty();
             returnNodes.add(normalReturn);

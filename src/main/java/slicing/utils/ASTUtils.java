@@ -15,6 +15,7 @@ import com.github.javaparser.resolution.declarations.ResolvedMethodLikeDeclarati
 import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
 import com.github.javaparser.resolution.types.ResolvedType;
 import com.github.javaparser.symbolsolver.model.typesystem.ReferenceTypeImpl;
+import lombok.var;
 import slicing.graphs.ClassGraph;
 import slicing.nodes.GraphNode;
 
@@ -139,13 +140,13 @@ public class ASTUtils {
 
     public static Optional<? extends CallableDeclaration<?>> getResolvedAST(ResolvedMethodLikeDeclaration resolvedDeclaration) {
         if (resolvedDeclaration instanceof ResolvedMethodDeclaration)
-            if (((ResolvedMethodDeclaration) resolvedDeclaration).toAst().isEmpty()) {
+            if (((ResolvedMethodDeclaration) resolvedDeclaration).toAst().isPresent()) {
                 return Optional.ofNullable(ClassGraph.getInstance().getMethodDeclarationBySig(processSignature(resolvedDeclaration.getQualifiedSignature())));
             } else {
                 return ((ResolvedMethodDeclaration) resolvedDeclaration).toAst();
             }
         if (resolvedDeclaration instanceof ResolvedConstructorDeclaration)
-            if (((ResolvedConstructorDeclaration) resolvedDeclaration).toAst().isEmpty()) {
+            if (((ResolvedConstructorDeclaration) resolvedDeclaration).toAst().isPresent()) {
                 return Optional.ofNullable(ClassGraph.getInstance().getMethodDeclarationBySig(processSignature(resolvedDeclaration.getQualifiedSignature())));
             } else {
                 return ((ResolvedConstructorDeclaration) resolvedDeclaration).toAst();
@@ -155,7 +156,7 @@ public class ASTUtils {
 
     public static boolean shouldVisitArgumentsForMethodCalls(Resolvable<? extends ResolvedMethodLikeDeclaration> call) {
         try {
-            return getResolvedAST(call.resolve()).isEmpty();
+            return getResolvedAST(call.resolve()).isPresent();
         } catch (Exception e) {
             return false;
         }
@@ -167,8 +168,12 @@ public class ASTUtils {
 
     public static boolean shouldInsertExplicitConstructorInvocation(ConstructorDeclaration declaration) {
         NodeList<Statement> statements = declaration.getBody().getStatements();
-        if (declaration.findAncestor(TypeDeclaration.class).orElseThrow().isEnumDeclaration())
+        TypeDeclaration<?> typeDeclaration = declaration.findAncestor(TypeDeclaration.class)
+                .orElseThrow(() -> new NoSuchElementException("No TypeDeclaration found in ancestors"));
+
+        if (typeDeclaration.isEnumDeclaration())
             return false;
+
         return statements.isEmpty() || !statements.get(0).isExplicitConstructorInvocationStmt();
     }
 
@@ -232,7 +237,10 @@ public class ASTUtils {
     /** Generates the default initializer, given a field. In Java, reference types
      *  default to null, booleans to false and all other primitives to 0. */
     public static Expression initializerForField(FieldDeclaration field) {
-        Type type = field.getVariables().getFirst().orElseThrow().getType();
+        Type type = field.getVariables().getFirst()
+                .orElseThrow(() -> new NoSuchElementException("No variable present in the list"))
+                .getType();
+
         if (type.isReferenceType())
             return new NullLiteralExpr();
         if (type.isPrimitiveType()) {
@@ -258,7 +266,11 @@ public class ASTUtils {
     }
 
     public static ResolvedType resolvedTypeOfCurrentClass(Node n) {
-        return resolvedTypeDeclarationToResolvedType(n.findAncestor(TypeDeclaration.class).orElseThrow().resolve());
+        TypeDeclaration<?> typeDeclaration = n.findAncestor(TypeDeclaration.class).orElseThrow(() ->
+                new NoSuchElementException("No TypeDeclaration found in ancestors"));
+
+        return resolvedTypeDeclarationToResolvedType(typeDeclaration.resolve());
+
     }
     public static String processSignature(String signature) {
         // 找到参数列表的开始和结束位置
