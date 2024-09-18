@@ -29,8 +29,8 @@ public enum Model {
             .withPresencePenalty(0)
             .build()),
     // 添加更多模型
-    CODE_QWEN("codeqwen:v1.5-chat_16384", new ModelConfig.Builder()
-            .withModelName("codeqwen:v1.5-chat_16384")
+    CODE_QWEN("codeqwen:v1.5-chat", new ModelConfig.Builder()
+            .withModelName("codeqwen:v1.5-chat")
             .withUrl(null)
             .withContextLength(16385)
             .withTemperature(0.5)
