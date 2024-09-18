@@ -140,13 +140,13 @@ public class ASTUtils {
 
     public static Optional<? extends CallableDeclaration<?>> getResolvedAST(ResolvedMethodLikeDeclaration resolvedDeclaration) {
         if (resolvedDeclaration instanceof ResolvedMethodDeclaration)
-            if (((ResolvedMethodDeclaration) resolvedDeclaration).toAst().isPresent()) {
+            if (!((ResolvedMethodDeclaration) resolvedDeclaration).toAst().isPresent()) {
                 return Optional.ofNullable(ClassGraph.getInstance().getMethodDeclarationBySig(processSignature(resolvedDeclaration.getQualifiedSignature())));
             } else {
                 return ((ResolvedMethodDeclaration) resolvedDeclaration).toAst();
             }
         if (resolvedDeclaration instanceof ResolvedConstructorDeclaration)
-            if (((ResolvedConstructorDeclaration) resolvedDeclaration).toAst().isPresent()) {
+            if (!((ResolvedConstructorDeclaration) resolvedDeclaration).toAst().isPresent()) {
                 return Optional.ofNullable(ClassGraph.getInstance().getMethodDeclarationBySig(processSignature(resolvedDeclaration.getQualifiedSignature())));
             } else {
                 return ((ResolvedConstructorDeclaration) resolvedDeclaration).toAst();
@@ -156,7 +156,7 @@ public class ASTUtils {
 
     public static boolean shouldVisitArgumentsForMethodCalls(Resolvable<? extends ResolvedMethodLikeDeclaration> call) {
         try {
-            return getResolvedAST(call.resolve()).isPresent();
+            return !getResolvedAST(call.resolve()).isPresent();
         } catch (Exception e) {
             return false;
         }

@@ -363,7 +363,7 @@ public class CFGBuilder extends VoidVisitorAdapter<Void> {
     @Override
     public void visit(ObjectCreationExpr n, Void arg) {
         // Skip anonymous classes
-        if (n.getAnonymousClassBody().isPresent())
+        if (!n.getAnonymousClassBody().isPresent())
             super.visit(n, arg);
     }
 

@@ -190,7 +190,7 @@ public class CallGraph extends DirectedPseudograph<CallGraph.Vertex, CallGraph.E
             @Override
             public void visit(MethodCallExpr n, Void arg) {
                 try {
-                    if (n.resolve().toAst().isPresent()) {
+                    if (!n.resolve().toAst().isPresent()) {
                         CallableDeclaration<?> decl = classGraph.getMethodDeclarationBySig(ASTUtils.processSignature(n.resolve().getQualifiedSignature()));
                         if (decl != null) {
                             createPolyEdges(decl.asMethodDeclaration(), n);
@@ -205,7 +205,7 @@ public class CallGraph extends DirectedPseudograph<CallGraph.Vertex, CallGraph.E
             @Override
             public void visit(ObjectCreationExpr n, Void arg) {
                 try {
-                    if (n.resolve().toAst().isPresent()) {
+                    if (!n.resolve().toAst().isPresent()) {
                         CallableDeclaration<?> decl = classGraph.getMethodDeclarationBySig(ASTUtils.processSignature(n.resolve().getQualifiedSignature()));
                         if (decl != null) {
                             createNormalEdge(decl, n);
@@ -235,14 +235,14 @@ public class CallGraph extends DirectedPseudograph<CallGraph.Vertex, CallGraph.E
                     Optional<Expression> scope = call.getScope();
                     // Determine the type of the call's scope
                     Set<? extends TypeDeclaration<?>> dynamicTypes;
-                    if (scope.isPresent()) {
+                    if (!scope.isPresent()) {
                         // a) No scope: any class the method is in, or any outer class if the class is not static.
                         // Early exit: it is easier to find the methods that override the
                         // detected call than to account for all cases (implicit inner or outer class)
                         classGraph.overriddenSetOf(decl)
                                 .forEach(methodDecl -> createNormalEdge(methodDecl, call));
                         return;
-                    } else if (scope.get().isThisExpr() && scope.get().asThisExpr().getTypeName().isPresent()) {
+                    } else if (scope.get().isThisExpr() && !scope.get().asThisExpr().getTypeName().isPresent()) {
                         // b) just 'this', the current class and any subclass
                         dynamicTypes = classGraph.subclassesOf(typeStack.peek());
                     } else if (scope.get().isThisExpr()) {

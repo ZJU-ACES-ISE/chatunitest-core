@@ -146,9 +146,9 @@ public class Config {
         public String hostname = "null";
         public String port = "-1";
         public OkHttpClient client = new OkHttpClient.Builder()
-                .connectTimeout(5, TimeUnit.MINUTES)
-                .writeTimeout(5, TimeUnit.MINUTES)
-                .readTimeout(5, TimeUnit.MINUTES)
+                .connectTimeout(10, TimeUnit.MINUTES)
+                .writeTimeout(10, TimeUnit.MINUTES)
+                .readTimeout(10, TimeUnit.MINUTES)
                 .build();
         public Validator validator;
         public String pluginSign;
@@ -497,18 +497,18 @@ public class Config {
 
         public void setClinet() {
             this.client = new OkHttpClient.Builder()
-                    .connectTimeout(5, TimeUnit.MINUTES)
-                    .writeTimeout(5, TimeUnit.MINUTES)
-                    .readTimeout(5, TimeUnit.MINUTES)
+                    .connectTimeout(10, TimeUnit.MINUTES)
+                    .writeTimeout(10, TimeUnit.MINUTES)
+                    .readTimeout(10, TimeUnit.MINUTES)
                     .build();
         }
 
         public void setClinetwithProxy() {
             Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(this.hostname, Integer.parseInt(this.port)));
             this.client = new OkHttpClient.Builder()
-                    .connectTimeout(5, TimeUnit.MINUTES)
-                    .writeTimeout(5, TimeUnit.MINUTES)
-                    .readTimeout(5, TimeUnit.MINUTES)
+                    .connectTimeout(10, TimeUnit.MINUTES)
+                    .writeTimeout(10, TimeUnit.MINUTES)
+                    .readTimeout(10, TimeUnit.MINUTES)
                     .proxy(proxy)
                     .build();
         }

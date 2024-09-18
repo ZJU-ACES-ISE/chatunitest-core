@@ -285,7 +285,7 @@ public class ClassParser {
                 ParseResult<CompilationUnit> parseResult = parser.parse(new File(classPath));
                 CompilationUnit cu = parseResult.getResult()
                         .orElseThrow(() -> new NoSuchElementException("Parsing result is empty"));
-                String packageName = cu.getPackageDeclaration().isPresent()? "" : cu.getPackageDeclaration().get().getNameAsString();
+                String packageName = cu.getPackageDeclaration().isPresent()? cu.getPackageDeclaration().get().getNameAsString() : "";
                 List<ClassOrInterfaceDeclaration> classes = cu.findAll(ClassOrInterfaceDeclaration.class);
                 for (ClassOrInterfaceDeclaration classDeclaration : classes) {
                     for (ClassOrInterfaceType extendedType : classDeclaration.getExtendedTypes()) {
@@ -381,7 +381,7 @@ public class ClassParser {
         String sig = "";
         if (node instanceof MethodDeclaration) {
             MethodDeclaration methodNode = (MethodDeclaration) node;
-            if (methodNode.getBody().isPresent()) {
+            if (!methodNode.getBody().isPresent()) {
                 sig = getSourceCodeByPosition(
                         getTokenString(cu),
                         methodNode.getBegin().orElseThrow(() -> new NoSuchElementException("Begin position not present")),

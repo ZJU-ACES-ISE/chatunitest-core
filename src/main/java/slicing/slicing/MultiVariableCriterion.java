@@ -30,7 +30,7 @@ public class MultiVariableCriterion implements SlicingCriterion {
   @Override
   public Set<GraphNode<?>> findNode(SDG graph) {
     Optional<CompilationUnit> optCu = findCompilationUnit(graph.getCompilationUnits());
-    if (optCu.isPresent())
+    if (!optCu.isPresent())
       throw new NoSuchElementException();
 
     Set<GraphNode<?>> set = optCu.get().findAll(Node.class, this::matchesLine).stream()

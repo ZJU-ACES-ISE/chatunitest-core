@@ -63,7 +63,7 @@ public class ExpressionObjectTreeFinder {
      *  The variable declarator must have an initializer, and the realName indicates the absolute (fields
      *  prefixed by 'this.') name of the variable being declared. */
     public void handleVariableDeclarator(VariableDeclarator variableDeclarator, String realName) {
-        if (variableDeclarator.getInitializer().isPresent())
+        if (!variableDeclarator.getInitializer().isPresent())
             throw new IllegalArgumentException("The variableDeclarator must have an initializer!");
         VariableAction targetAction = locateVAVariableDeclarator(realName);
         ClassGraph.getInstance().generateObjectTreeForType(variableDeclarator.getType().resolve())
@@ -207,7 +207,7 @@ public class ExpressionObjectTreeFinder {
             @Override
             public void visit(ThisExpr n, String arg) {
                 var vaOpt = locateVariableActionThis(n);
-                if (vaOpt.isPresent())
+                if (!vaOpt.isPresent())
                     throw new IllegalStateException("Could not find USE(this)");
                 list.add(new Pair<>(vaOpt.get(), arg));
             }
