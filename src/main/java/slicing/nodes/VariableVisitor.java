@@ -563,7 +563,6 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         // If we don't have the AST for the call, we should visit the rest of the call.
         if (ASTUtils.shouldVisitArgumentsForMethodCalls(call, graphNode))
             return true;
-        System.out.println("-----------------------------------call.resolve().getQualifiedSignature:"+call.resolve().getQualifiedSignature() + " " + call.resolve().getSignature() );
         CallableDeclaration<?> decl = ASTUtils.getResolvedAST(call.resolve()).orElseThrow(()->new NoSuchElementException("No CallableDeclaration found for the resolved call."));
         // Start
         graphNode.addCallMarker(call, true);
