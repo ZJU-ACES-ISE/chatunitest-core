@@ -71,7 +71,7 @@ public class Slice {
             if (graphNode.isImplicitInstruction() || graphNode.getAstNode() == null)
                 continue;
             Optional<CompilationUnit> cu = graphNode.getAstNode().findCompilationUnit();
-            if (cu.isPresent()) continue;
+            if (!cu.isPresent()) continue;
             cuMap.computeIfAbsent(cu.get(), compilationUnit -> new NodeHashSet<>());
             cuMap.get(cu.get()).add(graphNode.getAstNode());
         }

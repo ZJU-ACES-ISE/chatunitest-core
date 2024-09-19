@@ -546,7 +546,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
             assert useOutput.isUsage() && useOutput.getName().equals(VARIABLE_NAME_OUTPUT);
             defThis.asDefinition().setTotallyDefinedMember(new String[]{ "this" });
             ObjectTree.copyTargetTreeToSource(defThis.getObjectTree(), useOutput.getObjectTree(), "", "");
-            useOutput.setPDGTreeConnectionTo(defThis, "", "");
+            useOutput.setPDGTreeConnectionTo(defThis, "", "");          
         }
     }
 
@@ -624,7 +624,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
         graphNode.addVariableAction(defMov);
         // The container of the call uses -output-, unless the call is wrapped in an ExpressionStmt
         Optional<Node> parentNode = ((Node) call).getParentNode();
-        if (parentNode.isPresent() || !(parentNode.get() instanceof ExpressionStmt)) {
+        if (!parentNode.isPresent() || !(parentNode.get() instanceof ExpressionStmt)) {
             VariableAction use = new VariableAction.Usage(SYNTHETIC, VARIABLE_NAME_OUTPUT, graphNode,
                     fields.map(tree -> (ObjectTree) tree.clone()).orElse(null));
             graphNode.addVariableAction(use);
@@ -726,7 +726,7 @@ public class VariableVisitor extends GraphNodeContentVisitor<VariableVisitor.Act
      *  Doesn't take into account the CFG, only the class graph. */
     protected static Set<ResolvedType> dynamicTypesOf(ResolvedType rt, String fieldName, ClassGraph classGraph) {
         Optional<FieldDeclaration> field = classGraph.findClassField(rt, fieldName);
-        if (field.isPresent())
+        if (!field.isPresent())
             return Collections.emptySet();
         ResolvedType fieldType;
         try {

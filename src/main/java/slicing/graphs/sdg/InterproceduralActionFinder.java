@@ -121,7 +121,7 @@ public abstract class InterproceduralActionFinder<A extends VariableAction> exte
 
         if (vertex.getDeclaration().isAbstract() ||
                 (vertex.getDeclaration().isMethodDeclaration() &&
-                        vertex.getDeclaration().asMethodDeclaration().getBody().isPresent()))
+                        !vertex.getDeclaration().asMethodDeclaration().getBody().isPresent()))
             return new HashSet<>();
         CFG cfg = cfgMap.get(vertex.getDeclaration());
         if (cfg == null) {

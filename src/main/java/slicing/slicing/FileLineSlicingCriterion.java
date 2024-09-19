@@ -23,7 +23,7 @@ public class FileLineSlicingCriterion extends LineNumberCriterion {
     @Override
     protected Optional<CompilationUnit> findCompilationUnit(NodeList<CompilationUnit> cus) {
         for (CompilationUnit cu : cus) {
-            if (cu.getStorage().isPresent())
+            if (!cu.getStorage().isPresent())
                 continue;
             CompilationUnit.Storage storage = cu.getStorage().get();
             if (storage.getDirectory().toAbsolutePath().equals(file.toPath().toAbsolutePath().getParent())

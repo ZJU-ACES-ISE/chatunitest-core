@@ -45,7 +45,7 @@ public class InterproceduralDefinitionFinder extends InterproceduralActionFinder
         GraphNode<?> graphNode = edge.getGraphNode();
         if (def.isParameter()) {
             Optional<Expression> arg = extractArgument(def, edge, false);
-            if (arg.isPresent())
+            if (!arg.isPresent())
                 return;
             ActualIONode actualOut = locateActualOutNode(edge, def.getName())
                     .orElseGet(() -> ActualIONode.createActualOut(edge.getCall(), def.getName(), arg.get()));
@@ -121,6 +121,6 @@ public class InterproceduralDefinitionFinder extends InterproceduralActionFinder
     protected Stream<Definition> mapAndFilterActionStream(Stream<VariableAction> stream, CFG cfg) {
         return stream.filter(VariableAction::isDefinition)
                 .map(VariableAction::asDefinition)
-                .filter(def -> cfg.findDeclarationFor(def).isPresent());
+                .filter(def -> !cfg.findDeclarationFor(def).isPresent());
     }
 }

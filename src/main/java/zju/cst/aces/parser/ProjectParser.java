@@ -166,7 +166,7 @@ public class ProjectParser {
 
     private String findCodeBySlice(Slice slice, String callerClassFullName) {
         for (CompilationUnit cu : slice.toAst()) {
-            if (cu.getType(0).getNameAsString().equals(callerClassFullName)) {
+            if (!"".equals(cu.toString()) && cu.getType(0).getNameAsString().equals(callerClassFullName)) {
                 return cu.toString();
             }
         }
