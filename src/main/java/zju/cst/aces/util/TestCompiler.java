@@ -124,6 +124,9 @@ public class TestCompiler {
             if (!outputPath.toAbsolutePath().getParent().toFile().exists()) {
                 outputPath.toAbsolutePath().getParent().toFile().mkdirs();
             }
+            if(!buildFolder.exists()){
+                buildFolder.mkdir();
+            }
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
             StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
 
