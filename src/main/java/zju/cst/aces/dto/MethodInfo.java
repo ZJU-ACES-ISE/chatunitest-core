@@ -11,6 +11,7 @@ public class MethodInfo {
     public String className;
     public String methodName;
     public String packageName;
+    public String returnType;
     public String brief;
     public String methodSignature;
     public String sourceCode;
@@ -25,21 +26,4 @@ public class MethodInfo {
     public String full_method_info;
     public String method_comment;
     public String method_annotation;
-
-    public MethodInfo(String className, String methodName, String packageName, String brief, String methodSignature,
-                      String sourceCode, List<String> parameters, Map<String, Set<String>> dependentMethods,String full_method_info,String method_comment,String method_annotation ){
-        this.className = className;
-        this.methodName = methodName;
-        this.packageName = packageName;
-        this.brief = brief;
-        this.methodSignature = methodSignature;
-        this.sourceCode = sourceCode;
-        this.parameters = parameters;
-        this.dependentMethods = dependentMethods;
-        this.full_method_info=full_method_info;
-        this.method_comment=method_comment;
-        this.method_annotation=method_annotation;
-    }
-
-
 }

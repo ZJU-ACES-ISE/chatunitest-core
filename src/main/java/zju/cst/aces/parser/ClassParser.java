@@ -17,6 +17,7 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
+import com.github.javaparser.symbolsolver.model.typesystem.ReferenceTypeImpl;
 import com.google.gson.Gson;
 import org.jetbrains.annotations.NotNull;
 import slicing.graphs.CallGraph;
@@ -164,19 +165,19 @@ public class ClassParser {
      * Generate extracted information of focal method(constructor).
      */
     private MethodInfo getInfoByMethod(CompilationUnit cu, ClassOrInterfaceDeclaration classNode, CallableDeclaration node) {
-        MethodInfo mi = new MethodInfo(
-                classNode.getNameAsString(),
-                node.getNameAsString(),
-                cu.getPackageDeclaration().orElse(null) == null ? "" : cu.getPackageDeclaration().get().getNameAsString(),
-                getBriefMethod(cu, node),
-                getMethodSig(node),
-                getMethodCode(cu, node),
-                getParameters(node),
-                getDependentMethods(cu, node),
-                node.toString(),
-                getMethodComment(node),
-                getMethodAnnotation(node)
-        );
+        MethodInfo mi = new MethodInfo();
+        mi.setClassName(classNode.getNameAsString());
+        mi.setMethodName(node.getNameAsString());
+        mi.setPackageName(cu.getPackageDeclaration().orElse(null) == null ? "" : cu.getPackageDeclaration().get().getNameAsString());
+        mi.setReturnType(getReturnType(node));
+        mi.setBrief(getBriefMethod(cu, node));
+        mi.setMethodSignature(getMethodSig(node));
+        mi.setSourceCode(getMethodCode(cu, node));
+        mi.setParameters(getParameters(node));
+        mi.setDependentMethods(getDependentMethods(cu, node));
+        mi.setFull_method_info(node.toString());
+        mi.setMethod_comment(getMethodComment(node));
+        mi.setMethod_annotation(getMethodAnnotation(node));
         mi.setUseField(useField(node));
         mi.setConstructor(node.isConstructorDeclaration());
         mi.setGetSet(isGetSet2(node));
@@ -234,6 +235,19 @@ public class ClassParser {
             return node.getSignature().asString();
         } else {
             return node.getSignature().asString();
+        }
+    }
+
+    private String getReturnType(CallableDeclaration node) {
+        if (node instanceof MethodDeclaration) {
+            var returnType = ((MethodDeclaration) node).resolve().getReturnType();
+            if (((ReferenceTypeImpl) returnType).typeParametersValues().isEmpty()) {
+                return returnType.describe();
+            } else {
+                return ((ReferenceTypeImpl) returnType).typeParametersValues().get(0).describe();
+            }
+        } else {
+            return "";
         }
     }
 
