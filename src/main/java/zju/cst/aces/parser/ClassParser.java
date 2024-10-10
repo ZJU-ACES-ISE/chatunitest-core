@@ -167,6 +167,7 @@ public class ClassParser {
         MethodInfo mi = new MethodInfo(
                 classNode.getNameAsString(),
                 node.getNameAsString(),
+                cu.getPackageDeclaration().orElse(null) == null ? "" : cu.getPackageDeclaration().get().getNameAsString(),
                 getBriefMethod(cu, node),
                 getMethodSig(node),
                 getMethodCode(cu, node),

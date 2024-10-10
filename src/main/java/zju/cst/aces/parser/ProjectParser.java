@@ -297,7 +297,9 @@ public class ProjectParser {
         List<String> classPaths = new ArrayList<>();
         File[] files = Paths.get(project.getCompileSourceRoots().get(0)).toFile().listFiles();
         if (files != null) {
-            for (File file : files) {
+            List<File> listFiles = new ArrayList<>(Arrays.asList(files));
+            listFiles.add(Paths.get(project.getCompileSourceRoots().get(0).replace("src/main/java", "src/test/java")).toFile());
+            for (File file : listFiles) {
                 try {
                     Files.walk(file.toPath()).forEach(path -> {
                         if (path.toString().endsWith(".java")) {
