@@ -26,4 +26,6 @@ public class MethodInfo {
     public String full_method_info;
     public String method_comment;
     public String method_annotation;
+    public int lineCount;
+    public int branchCount;
 }

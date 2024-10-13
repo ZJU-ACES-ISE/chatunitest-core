@@ -24,6 +24,7 @@ public class ClassInfo {
     public boolean isInterface;
     public boolean isAbstract;
     public List<String> imports;
+    public List<String> importTypes;
     public List<String> fields;
     public List<String> superClasses;
     public List<String> implementedTypes;
@@ -37,6 +38,7 @@ public class ClassInfo {
     public String compilationUnitCode;
     public String classDeclarationCode;
     public List<String> subClasses;
+    public int lineCount;
 
     public ClassInfo(CompilationUnit cu, ClassOrInterfaceDeclaration classNode, int index, String classSignature,
                      List<String> imports, List<String> fields, List<String> superClasses, Map<String, String> methodSigs,

@@ -11,6 +11,7 @@ import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName;
+import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
@@ -150,6 +151,8 @@ public class ClassParser {
                 getConstructorDeps(cu, classNode),
                 getSubClasses(classNode)
         );
+        ci.setImportTypes(getImportTypes(cu));
+        ci.setLineCount(getLineCount(classNode));
 
         ci.setPublic(classNode.isPublic());
 //        ci.setPublic(!classNode.isPrivate() && !classNode.isProtected());
@@ -184,11 +187,32 @@ public class ClassParser {
         mi.setPublic(isPublic(node));
         mi.setBoolean(isBoolean(node));
         mi.setAbstract(node.isAbstract());
+        mi.setLineCount(getLineCount(node));
+        mi.setBranchCount(getBranchCount(node));
 //        findObjectConstructionCode(cu, node);
 //        if (node instanceof MethodDeclaration) {
 //            findObjectConstructionCode(cu, node.asMethodDeclaration());
 //        }
         return mi;
+    }
+
+    private int getLineCount(ClassOrInterfaceDeclaration classNode) {
+        return classNode.getEnd().orElseThrow().line - classNode.getBegin().orElseThrow().line;
+    }
+
+    private int getLineCount(CallableDeclaration node) {
+        if (node instanceof MethodDeclaration) {
+            MethodDeclaration methodNode = (MethodDeclaration) node;
+            return methodNode.getEnd().orElseThrow().line - methodNode.getBegin().orElseThrow().line;
+        } else if (node instanceof ConstructorDeclaration) {
+            ConstructorDeclaration constructorNode = (ConstructorDeclaration) node;
+            return constructorNode.getEnd().orElseThrow().line - constructorNode.getBegin().orElseThrow().line;
+        }
+        return 0;
+    }
+
+    private int getBranchCount(CallableDeclaration node) {
+        return node.findAll(BlockStmt.class).size(); // block count
     }
 
     private Map<String, Set<String>> getConstructorDeps(CompilationUnit cu, ClassOrInterfaceDeclaration classNode) {
@@ -241,10 +265,10 @@ public class ClassParser {
     private String getReturnType(CallableDeclaration node) {
         if (node instanceof MethodDeclaration) {
             var returnType = ((MethodDeclaration) node).resolve().getReturnType();
-            if (((ReferenceTypeImpl) returnType).typeParametersValues().isEmpty()) {
-                return returnType.describe();
-            } else {
+            if (returnType.isReferenceType() && !((ReferenceTypeImpl) returnType).typeParametersValues().isEmpty()) {
                 return ((ReferenceTypeImpl) returnType).typeParametersValues().get(0).describe();
+            } else {
+                return returnType.describe();
             }
         } else {
             return "";
@@ -253,6 +277,14 @@ public class ClassParser {
 
     private List<ImportDeclaration> getImportDeclarations(CompilationUnit compilationUnit) {
         return compilationUnit.getImports();
+    }
+
+    private List<String> getImportTypes(CompilationUnit compilationUnit) {
+        List<String> importTypes = new ArrayList<>();
+        for (ImportDeclaration i : compilationUnit.getImports()) {
+            importTypes.add(i.getNameAsString().trim());
+        }
+        return importTypes;
     }
 
     /**
