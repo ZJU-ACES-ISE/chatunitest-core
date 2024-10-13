@@ -15,6 +15,7 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
@@ -553,7 +554,14 @@ public class ClassParser {
     private List<String> getParameters(CallableDeclaration node) {
         List<String> parameters = new ArrayList<>();
         node.getParameters().forEach(p -> {
-            parameters.add(((Parameter) p).getType().asString());
+            Type par = ((Parameter) p).getType();
+            if (par.isArrayType()) {
+                parameters.add(par.resolve().asArrayType().getComponentType().describe());
+            } else if ( (par.isReferenceType() && !((ReferenceTypeImpl) par.resolve()).typeParametersValues().isEmpty())) {
+                parameters.add(((ReferenceTypeImpl)  par.resolve()).typeParametersValues().get(0).describe());
+            } else {
+                parameters.add(par.resolve().describe());
+            }
         });
         return parameters;
     }
