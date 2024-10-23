@@ -31,6 +31,7 @@ public class Task {
         PROJECT;
     }
     Granularity granularity;
+    ClassNameProcessor classNameProcessor;
 
     public Task(Config config, Runner runner) {
         this.config = config;
@@ -103,7 +104,7 @@ public class Task {
         log.info(String.format("\n==========================\n[%s] Generation finished", config.pluginSign));
 
         Path testOutPutPath = config.getTestOutput();
-        ClassNameProcessor.proccess(testOutPutPath);
+        classNameProcessor.processJavaFiles(testOutPutPath);
         log.info(String.format("\n==========================\n[%s] Test processed", config.pluginSign));
     }
 
@@ -132,7 +133,7 @@ public class Task {
         log.info(String.format("\n==========================\n[%s] Generation finished",config.pluginSign));
 
         Path testOutPutPath = config.getTestOutput();
-        ClassNameProcessor.proccess(testOutPutPath);
+        classNameProcessor.processJavaFiles(testOutPutPath);
         log.info(String.format("\n==========================\n[%s] Test processed", config.pluginSign));
     }
 
@@ -185,7 +186,7 @@ public class Task {
         log.info(String.format("\n==========================\n[%s] Generation finished",config.pluginSign));
 
         Path testOutPutPath = config.getTestOutput();
-        ClassNameProcessor.proccess(testOutPutPath);
+        classNameProcessor.processJavaFiles(testOutPutPath);
         log.info(String.format("\n==========================\n[%s] Test processed",config.pluginSign));
     }
 

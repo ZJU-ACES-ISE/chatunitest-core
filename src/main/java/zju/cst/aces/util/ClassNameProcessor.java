@@ -1,121 +1,79 @@
 package zju.cst.aces.util;
 
+
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.EnumDeclaration;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 public class ClassNameProcessor {
 
-    private static final Pattern INNER_CLASS_PATTERN = Pattern.compile("^(?!.*\\bpublic\\b).*\\bclass\\s+(\\w+)");
-    private static final Pattern ENUM_PATTERN = Pattern.compile("\\benum\\s+(\\w+)");
-    private static final Pattern IMPORT_PATTERN = Pattern.compile("^\\s*import\\s+");
-    private static final Pattern COMMENT_PATTERN = Pattern.compile("//");
+    private Map<String, AtomicInteger> classNameCountMap = new HashMap<>();
+    private Map<String, AtomicInteger> enumNameCountMap = new HashMap<>();
 
-    public static void main(String[] args) throws IOException {
-        String directoryPath = "D:\\APP\\IdeaProjects\\commons-lang\\src\\test\\java\\org\\apache\\commons\\lang3"; // use your path
-        Path path = Paths.get(directoryPath);
-        proccess(path);
+    public void processJavaFiles(Path testPath) throws IOException {
+        try (Stream<Path> paths = Files.walk(testPath)) {
+            // Filter Java files and process each one
+            paths.filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .forEach(this::processJavaFile);
+        }
     }
 
-    public static void proccess(Path testPath) throws IOException {
-        Map<String, Integer> classNameCount = new HashMap<>();
-        Map<String, Integer> enumNameCount = new HashMap<>();
-
-        // First pass: count occurrences of inner classes and enums
-        Files.walk(testPath)
-                .filter(Files::isRegularFile)
-                .filter(path -> path.toString().endsWith(".java"))
-                .forEach(path -> countClassesAndEnums(path, classNameCount, enumNameCount));
-
-        // Second pass: rename and replace classes and enums
-        Files.walk(testPath)
-                .filter(Files::isRegularFile)
-                .filter(path -> path.toString().endsWith(".java"))
-                .forEach(path -> renameClassesAndEnums(path, classNameCount, enumNameCount));
-    }
-
-
-    private static void countClassesAndEnums(Path path, Map<String, Integer> classNameCount, Map<String, Integer> enumNameCount) {
+    private void processJavaFile(Path javaFilePath) {
         try {
-            List<String> lines = Files.readAllLines(path);
-            for (String line : lines) {
-                int commentIndex = line.indexOf("//");
-                String codePart = commentIndex != -1 ? line.substring(0, commentIndex) : line;
+            final String[] content = {new String(Files.readAllBytes(javaFilePath))};
+            CompilationUnit compilationUnit = StaticJavaParser.parse(content[0]);
 
-                Matcher innerClassMatcher = INNER_CLASS_PATTERN.matcher(codePart);
-                if (innerClassMatcher.find()) {
-                    String className = innerClassMatcher.group(1);
-                    if (!className.endsWith("Test")) { // Ignore inner classes with suffix 'Test'
-                        classNameCount.put(className, classNameCount.getOrDefault(className, 0) + 1);
-                    }
-                }
+            // Process classes
+            compilationUnit.findAll(ClassOrInterfaceDeclaration.class).stream()
+                    .filter(c -> !c.getNameAsString().endsWith("Test") && !c.getNameAsString().endsWith("Suite"))
+                    .forEach(c -> content[0] = renameAndTrack(c.getNameAsString(), classNameCountMap, content[0]));
 
-                Matcher enumMatcher = ENUM_PATTERN.matcher(codePart);
-                if (enumMatcher.find()) {
-                    String enumName = enumMatcher.group(1);
-                    enumNameCount.put(enumName, enumNameCount.getOrDefault(enumName, 0) + 1);
-                }
-            }
+            // Process enums
+            compilationUnit.findAll(EnumDeclaration.class).stream()
+                    .filter(e -> !e.getNameAsString().endsWith("Test") && !e.getNameAsString().endsWith("Suite"))
+                    .forEach(e -> content[0] = renameAndTrack(e.getNameAsString(), enumNameCountMap, content[0]));
+
+            Files.write(javaFilePath, content[0].getBytes());
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private static void renameClassesAndEnums(Path path, Map<String, Integer> classNameCount, Map<String, Integer> enumNameCount) {
+    private String renameAndTrack(String originalName, Map<String, AtomicInteger> nameCountMap, String content) {
+        nameCountMap.putIfAbsent(originalName, new AtomicInteger(0));
+        int count = nameCountMap.get(originalName).incrementAndGet();
+        String newName = originalName + "_" + count;
+
+        // Replace class or enum name in the content, but skip import statements
+        StringBuilder newContent = new StringBuilder();
+        String[] lines = content.split("\n");
+        for (String line : lines) {
+            if (line.startsWith("import ")) {
+                newContent.append(line).append("\n");
+            } else {
+                newContent.append(line.replaceAll("\\b" + originalName + "\\b", newName)).append("\n");
+            }
+        }
+        return newContent.toString();
+    }
+
+    public static void main(String[] args) {
         try {
-            List<String> lines = Files.readAllLines(path);
-            Map<String, String> classNameMapping = new HashMap<>();
-            int classCounter = 1;
-
-            for (String line : lines) {
-                int commentIndex = line.indexOf("//"); // Processing annotations
-                String codePart = commentIndex != -1 ? line.substring(0, commentIndex) : line;
-
-                Matcher innerClassMatcher = INNER_CLASS_PATTERN.matcher(codePart);
-                if (innerClassMatcher.find()) {
-                    String className = innerClassMatcher.group(1);
-                    if (!className.endsWith("Test")) { // // Ignore inner classes with suffix 'Test'
-                        String newClassName = className + "_" + classCounter++;
-                        classNameMapping.put(className, newClassName);
-                    }
-                }
-
-                Matcher enumMatcher = ENUM_PATTERN.matcher(codePart);
-                if (enumMatcher.find()) {
-                    String enumName = enumMatcher.group(1);
-                    int enumCounter = enumNameCount.get(enumName);
-                    String newEnumName = enumName + "_" + enumCounter;
-                    enumNameCount.put(enumName, enumCounter + 1);
-                    classNameMapping.put(enumName, newEnumName);
-                }
-            }
-
-            List<String> newLines = new ArrayList<>();
-            for (String line : lines) {
-                if (IMPORT_PATTERN.matcher(line).find()) {
-                    // Keep the import line unchanged
-                    newLines.add(line);
-                } else {
-                    for (Map.Entry<String, String> entry : classNameMapping.entrySet()) {
-                        line = line.replaceAll("\\b" + entry.getKey() + "\\b", entry.getValue());
-                    }
-                    newLines.add(line);
-                }
-            }
-
-            Files.write(path, newLines);
-
-            // Print the renamed classes and enums
-            classNameMapping.forEach((original, renamed) ->
-                    System.out.println("Original: " + original + " -> Renamed: " + renamed));
-
+            Path testPath = Paths.get("D:\\APP\\IdeaProjects\\commons-lang\\src\\test\\java\\org\\apache\\commons\\lang3");
+            ClassNameProcessor processor = new ClassNameProcessor();
+            processor.processJavaFiles(testPath);
         } catch (IOException e) {
             e.printStackTrace();
         }
