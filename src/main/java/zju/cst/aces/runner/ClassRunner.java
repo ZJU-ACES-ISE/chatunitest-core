@@ -5,11 +5,13 @@ import zju.cst.aces.dto.MethodInfo;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.util.Counter;
 import zju.cst.aces.util.TestClassMerger;
+import zju.cst.aces.util.ClassNameProcessor;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -48,6 +50,8 @@ public class ClassRunner extends AbstractRunner {
         if (config.isEnableMerge()) {
             new TestClassMerger(config, fullClassName).mergeWithSuite();
         }
+        Path testOutPutPath = config.getTestOutput();
+        ClassNameProcessor.proccess(testOutPutPath);
     }
 
     public void methodJob() {
