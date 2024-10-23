@@ -50,8 +50,6 @@ public class ClassRunner extends AbstractRunner {
         if (config.isEnableMerge()) {
             new TestClassMerger(config, fullClassName).mergeWithSuite();
         }
-        Path testOutPutPath = config.getTestOutput();
-        ClassNameProcessor.proccess(testOutPutPath);
     }
 
     public void methodJob() {

@@ -19,7 +19,7 @@ public class ClassNameProcessor {
     private static final Pattern COMMENT_PATTERN = Pattern.compile("//");
 
     public static void main(String[] args) throws IOException {
-        String directoryPath = "D:\\APP\\IdeaProjects\\commons-lang\\src\\test\\java\\org\\apache\\commons\\lang3"; // ?????????
+        String directoryPath = "D:\\APP\\IdeaProjects\\commons-lang\\src\\test\\java\\org\\apache\\commons\\lang3"; // use your path
         Path path = Paths.get(directoryPath);
         proccess(path);
     }
