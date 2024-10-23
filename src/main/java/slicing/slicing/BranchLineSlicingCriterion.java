@@ -31,7 +31,7 @@ public class BranchLineSlicingCriterion implements SlicingCriterion {
   @Override
   public Set<GraphNode<?>> findNode(SDG graph) {
     Optional<CompilationUnit> optCu = findCompilationUnit(graph.getCompilationUnits());
-    if (optCu.isEmpty()) throw new NoSuchElementException();
+    if (!optCu.isPresent()) throw new NoSuchElementException();
 
     MethodDeclaration method = optCu.get().findAll(MethodDeclaration.class, this::matchesMethodSignature)
             .stream()

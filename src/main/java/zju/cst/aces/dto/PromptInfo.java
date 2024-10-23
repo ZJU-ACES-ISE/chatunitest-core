@@ -77,7 +77,8 @@ public class PromptInfo {
     }
 
     public void addCorrectTest(MethodDeclaration m) {
-        ClassOrInterfaceDeclaration c = (ClassOrInterfaceDeclaration) m.getParentNode().orElseThrow();
+        ClassOrInterfaceDeclaration c = (ClassOrInterfaceDeclaration) m.getParentNode()
+                .orElseThrow(() -> new NoSuchElementException("Parent node not found"));
         String className = c.getNameAsString();
         if (this.correctTests.containsKey(className)) {
             this.correctTests.get(className).add(m);

@@ -12,6 +12,7 @@ import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
+import lombok.var;
 import slicing.arcs.Arc;
 import slicing.graphs.ClassGraph;
 import slicing.graphs.ExpressionObjectTreeFinder;
@@ -24,10 +25,7 @@ import slicing.utils.ASTUtils;
 import slicing.utils.NodeHashSet;
 import slicing.utils.NodeNotFoundException;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -49,9 +47,11 @@ public class JSysCFG extends ESCFG {
         builder.classGraph = classGraph;
         declaration.accept(builder, null);
         vertexSet().stream()
-                .filter(Predicate.not(GraphNode::isImplicitInstruction))
+                .filter(gn -> !gn.isImplicitInstruction()) // Call the instance method on the node
                 .filter(gn -> builder.methodInsertedInstructions.contains(gn.getAstNode()))
                 .forEach(GraphNode::markAsImplicit);
+
+
         // Verify that it has been built
         exitNode = vertexSet().stream().filter(MethodExitNode.class::isInstance).findFirst()
                 .orElseThrow(() -> new IllegalStateException("Built graph has no exit node!"));
@@ -99,8 +99,17 @@ public class JSysCFG extends ESCFG {
         visited.add(currentNode);
 
         Stream<VariableAction> stream = currentNode.getVariableActions().stream();
-        if (var.getGraphNode().equals(currentNode))
-            stream = stream.dropWhile(va -> va != var);
+        if (var.getGraphNode().equals(currentNode)) {
+            boolean[] found = {false}; // Array to use as mutable flag
+            stream = stream.filter(va -> {
+                if (found[0] || va == var) {
+                    found[0] = true; // Set flag to true after the first occurrence
+                    return true;
+                }
+                return false;
+            });
+        }
+
         stream.filter(filter).forEach(result::add);
 
         // always traverse forwards!
@@ -124,7 +133,7 @@ public class JSysCFG extends ESCFG {
         if (!this.containsVertex(definition.getGraphNode()))
             throw new NodeNotFoundException(definition.getGraphNode(), this);
         if (definition.hasTreeMember(member))
-            return List.of(definition);
+            return Collections.singletonList(definition);
         List<VariableAction> list = new LinkedList<>();
         findNextVarActionsFor(new HashSet<>(), list, definition.getGraphNode(), definition, VariableAction::isDefinition, member);
         return list;
@@ -142,8 +151,17 @@ public class JSysCFG extends ESCFG {
         visited.add(currentNode);
 
         Stream<VariableAction> stream = currentNode.getVariableActions().stream();
-        if (var.getGraphNode().equals(currentNode))
-            stream = stream.dropWhile(va -> va != var);
+        if (var.getGraphNode().equals(currentNode)) {
+            boolean[] found = {false}; // Array to use as mutable flag
+            stream = stream.filter(va -> {
+                if (found[0] || va == var) {
+                    found[0] = true; // Set flag to true after the first occurrence
+                    return true;
+                }
+                return false;
+            });
+        }
+
         List<VariableAction> list = stream.filter(var::matches).filter(filter).collect(Collectors.toList());
         if (!list.isEmpty()) {
             boolean found = false;
@@ -197,9 +215,13 @@ public class JSysCFG extends ESCFG {
             // 1. Connect to the following statements
             connectTo(n);
             // 2. Insert dynamic class code (only for super())
-            if (!n.isThis())
-                ASTUtils.getTypeInit(n.findAncestor(TypeDeclaration.class).orElseThrow(), false)
+            if (!n.isThis()) {
+                TypeDeclaration typeDeclaration = n.findAncestor(TypeDeclaration.class)
+                        .orElseThrow(() -> new NoSuchElementException("TypeDeclaration ancestor not found"));
+                ASTUtils.getTypeInit(typeDeclaration, false)
                         .forEach(node -> node.accept(this, arg));
+            }
+
             // 3. Handle exceptions
             super.visitCallForExceptions(n);
             stmtStack.pop();
@@ -245,7 +267,8 @@ public class JSysCFG extends ESCFG {
             // must be placed after the root node
             if (callableDeclaration.isConstructorDeclaration()) {
                 ConstructorDeclaration cd = callableDeclaration.asConstructorDeclaration();
-                TypeDeclaration<?> type = cd.findAncestor(TypeDeclaration.class).orElseThrow();
+                TypeDeclaration<?> type = cd.findAncestor(TypeDeclaration.class)
+                        .orElseThrow(() -> new NoSuchElementException("TypeDeclaration ancestor not found"));
                 if (!ASTUtils.shouldInsertExplicitConstructorInvocation(cd) &&
                         type.isEnumDeclaration() &&
                         ASTUtils.shouldInsertDynamicInitInEnum(cd)) {
@@ -304,7 +327,9 @@ public class JSysCFG extends ESCFG {
             vertexSet().stream()
                     .filter(gn -> gn.getAstNode() instanceof ReturnStmt)
                     .forEach(gn -> {
-                        Expression expr = ((ReturnStmt) gn.getAstNode()).getExpression().orElseThrow();
+                        Expression expr = ((ReturnStmt) gn.getAstNode()).getExpression()
+                                .orElseThrow(() -> new NoSuchElementException("No expression present in the return statement"));
+
                         new ExpressionObjectTreeFinder(gn).locateAndMarkTransferenceToRoot(expr, -1);
                     });
         }

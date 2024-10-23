@@ -18,6 +18,7 @@ import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.google.gson.Gson;
+import lombok.var;
 import org.jetbrains.annotations.NotNull;
 import slicing.graphs.CallGraph;
 import slicing.graphs.sdg.SDG;
@@ -66,7 +67,8 @@ public class ClassParser {
     public int extractClass(String classPath) throws FileNotFoundException {
         File file = new File(classPath);
         ParseResult<CompilationUnit> parseResult = parser.parse(file);
-        CompilationUnit cu = parseResult.getResult().orElseThrow();
+        CompilationUnit cu = parseResult.getResult()
+                .orElseThrow(() -> new NoSuchElementException("Parsing result is empty"));
         List<ClassOrInterfaceDeclaration> classes = cu.findAll(ClassOrInterfaceDeclaration.class);
         for (ClassOrInterfaceDeclaration classDeclaration : classes) {
             try {
@@ -155,7 +157,12 @@ public class ClassParser {
         ci.setAbstract(classNode.isAbstract());
         ci.setInterface(classNode.isInterface());
         ci.setCode(cu.toString(), classNode.toString());
-        ci.setFullClassName(cu.getPackageDeclaration().orElseThrow().getNameAsString() + "." + ci.className);
+        ci.setFullClassName(
+                cu.getPackageDeclaration()
+                        .orElseThrow(() -> new NoSuchElementException("Package declaration not present"))
+                        .getNameAsString() + "." + ci.className
+        );
+
         ci.setImplementedTypes(getInterfaces(classNode));
         return ci;
     }
@@ -264,7 +271,10 @@ public class ClassParser {
     }
 
     public List<String> getSubClasses(ClassOrInterfaceDeclaration node) {
-        String targetClassName = node.getFullyQualifiedName().orElseThrow().toString();
+        String targetClassName = node.getFullyQualifiedName()
+                .orElseThrow(() -> new NoSuchElementException("Fully qualified name not present"))
+                .toString();
+
         List<String> subClasses = new ArrayList<>();
         List<String> classPaths = ProjectParser.scanSourceDirectory(this.project);
         if (classPaths.isEmpty()) {
@@ -273,13 +283,19 @@ public class ClassParser {
         try {
             for (String classPath : classPaths) {
                 ParseResult<CompilationUnit> parseResult = parser.parse(new File(classPath));
-                CompilationUnit cu = parseResult.getResult().orElseThrow();
-                String packageName = cu.getPackageDeclaration().isEmpty() ? "" : cu.getPackageDeclaration().get().getNameAsString();
+                CompilationUnit cu = parseResult.getResult()
+                        .orElseThrow(() -> new NoSuchElementException("Parsing result is empty"));
+                String packageName = cu.getPackageDeclaration().isPresent()? cu.getPackageDeclaration().get().getNameAsString() : "";
                 List<ClassOrInterfaceDeclaration> classes = cu.findAll(ClassOrInterfaceDeclaration.class);
                 for (ClassOrInterfaceDeclaration classDeclaration : classes) {
                     for (ClassOrInterfaceType extendedType : classDeclaration.getExtendedTypes()) {
                         if (targetClassName.equals(packageName + "." + extendedType.getNameAsString())) {
-                            subClasses.add(classDeclaration.getFullyQualifiedName().orElseThrow().toString());
+                            subClasses.add(
+                                    classDeclaration.getFullyQualifiedName()
+                                            .orElseThrow(() -> new NoSuchElementException("Fully qualified name not present"))
+                                            .toString()
+                            );
+
                         }
                     }
                 }
@@ -365,22 +381,33 @@ public class ClassParser {
         String sig = "";
         if (node instanceof MethodDeclaration) {
             MethodDeclaration methodNode = (MethodDeclaration) node;
-            if (methodNode.getBody().isPresent()) {
-                sig = getSourceCodeByPosition(getTokenString(cu),
-                        methodNode.getBegin().orElseThrow(), methodNode.getBody().get().getBegin().orElseThrow());
+            if (!methodNode.getBody().isPresent()) {
+                sig = getSourceCodeByPosition(
+                        getTokenString(cu),
+                        methodNode.getBegin().orElseThrow(() -> new NoSuchElementException("Begin position not present")),
+                        methodNode.getBody().get().getBegin().orElseThrow(() -> new NoSuchElementException("Body begin position not present"))
+                );
                 if (')'==(sig.charAt(sig.lastIndexOf("{") - 1))) {
                     sig = sig.substring(0, sig.lastIndexOf("{")) + "{}";
                 } else {
                     sig = sig.substring(0, sig.lastIndexOf("{") - 1) + "{}";
                 }
             } else {
-                sig = getSourceCodeByPosition(getTokenString(cu),
-                        methodNode.getBegin().orElseThrow(), methodNode.getEnd().orElseThrow());
+                sig = getSourceCodeByPosition(
+                        getTokenString(cu),
+                        methodNode.getBegin().orElseThrow(() -> new NoSuchElementException("Begin position not present")),
+                        methodNode.getEnd().orElseThrow(() -> new NoSuchElementException("End position not present"))
+                );
+
             }
         } else if (node instanceof ConstructorDeclaration) {
             ConstructorDeclaration constructorNode = (ConstructorDeclaration) node.removeComment();
-            sig = getSourceCodeByPosition(getTokenString(cu),
-                    constructorNode.getBegin().orElseThrow(), constructorNode.getBody().getBegin().orElseThrow());
+            sig = getSourceCodeByPosition(
+                    getTokenString(cu),
+                    constructorNode.getBegin().orElseThrow(() -> new NoSuchElementException("Begin position not present")),
+                    constructorNode.getBody().getBegin().orElseThrow(() -> new NoSuchElementException("Body begin position not present"))
+            );
+
             sig = sig.substring(0, sig.lastIndexOf("{") - 1) + "{}";
         }
         return sig;
@@ -393,14 +420,21 @@ public class ClassParser {
         if (!node.hasRange()) {
             return node.getNameAsString();
         }
-        return getSourceCodeByPosition(getTokenString(cu), node.getBegin().orElseThrow(), node.getName().getEnd().orElseThrow());
+        return getSourceCodeByPosition(
+                getTokenString(cu),
+                node.getBegin().orElseThrow(() -> new NoSuchElementException("Begin position not present")),
+                node.getName().getEnd().orElseThrow(() -> new NoSuchElementException("Name end position not present"))
+        );
+
     }
 
     /**
      * Get method(constructor) source code start from the first modifier to the end of the node.
      */
     private String getMethodCode(CompilationUnit cu, CallableDeclaration node) {
-        return node.getTokenRange().orElseThrow().toString();
+        return node.getTokenRange()
+                .orElseThrow(() -> new NoSuchElementException("Token range not present"))
+                .toString();
     }
 
     private String getMethodAnnotation(CallableDeclaration node) {
@@ -440,7 +474,10 @@ public class ClassParser {
      * Get field source code start from the first modifier to the end of the node
      */
     private String getFieldCode(CompilationUnit cu, FieldDeclaration node) {
-        return node.getTokenRange().orElseThrow().toString();
+        return node.getTokenRange()
+                .orElseThrow(() -> new NoSuchElementException("Token range not present"))
+                .toString();
+
     }
 
     /**
@@ -468,7 +505,7 @@ public class ClassParser {
                 return true;
             }
             // setter: assign field
-            if (fa.getParentNode().orElse(null) instanceof AssignExpr && ((AssignExpr) fa.getParentNode().orElseThrow()).getTarget().equals(fa)) {
+            if (fa.getParentNode().orElse(null) instanceof AssignExpr && ((AssignExpr) fa.getParentNode().orElseThrow(() -> new NoSuchElementException("No Parent Node Exist"))).getTarget().equals(fa)) {
                 return true;
             }
         }
@@ -670,7 +707,7 @@ public class ClassParser {
     }
 
     private List<Path> getSources() {
-        try (Stream<Path> paths = Files.walk(Path.of(System.getProperty("user.dir")))) {
+        try (Stream<Path> paths = Files.walk(Paths.get(System.getProperty("user.dir")))) {
             return paths
                     .filter(ClassParser::isJavaSourceDir)
                     .collect(Collectors.toList());

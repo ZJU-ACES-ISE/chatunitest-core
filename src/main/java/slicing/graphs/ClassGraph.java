@@ -9,11 +9,13 @@ import com.github.javaparser.ast.nodeTypes.NodeWithName;
 import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName;
 import com.github.javaparser.ast.type.TypeParameter;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import com.github.javaparser.resolution.SymbolResolver;
 import com.github.javaparser.resolution.UnsolvedSymbolException;
 import com.github.javaparser.resolution.declarations.ResolvedClassDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.github.javaparser.resolution.types.ResolvedType;
 import lombok.Getter;
+import lombok.var;
 import org.jgrapht.graph.DirectedPseudograph;
 import slicing.arcs.Arc;
 import slicing.nodes.ObjectTree;
@@ -77,7 +79,10 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
 
     /** Set of method declarations that override the given argument. */
     public Set<MethodDeclaration> overriddenSetOf(MethodDeclaration method) {
-        return subclassesStreamOf(findClassVertex(method.findAncestor(TypeDeclaration.class).orElseThrow()))
+        TypeDeclaration<?> typeDeclaration = method.findAncestor(TypeDeclaration.class)
+                .orElseThrow(() -> new NoSuchElementException("No TypeDeclaration ancestor found for method"));
+
+        return subclassesStreamOf(findClassVertex(typeDeclaration))
                 .flatMap(vertex -> outgoingEdgesOf(vertex).stream()
                         .filter(ClassArc.Member.class::isInstance)
                         .map(ClassGraph.this::getEdgeTarget)
@@ -85,6 +90,7 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
                         .filter(v -> v.declaration.asMethodDeclaration().getSignature().equals(method.getSignature()))
                         .map(v -> v.declaration.asMethodDeclaration()))
                 .collect(Collectors.toSet());
+
     }
 
     /** Locates a field declaration within a given type, given its name. */
@@ -123,8 +129,10 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
 
     /** @see #subclassesOf(TypeDeclaration) */
     protected Set<? extends TypeDeclaration<?>> subclassesOf(Vertex<? extends TypeDeclaration<?>> v) {
-        if (v.getDeclaration() instanceof EnumDeclaration)
-            return Set.of(v.getDeclaration());
+        if (v.getDeclaration() instanceof EnumDeclaration) {
+            return new HashSet<>(Collections.singleton(v.getDeclaration()));
+        }
+
         return subclassesStreamOf(v)
                 .map(Vertex::getDeclaration)
                 .map(ClassOrInterfaceDeclaration.class::cast)
@@ -179,21 +187,39 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
     public Optional<ObjectTree> generateObjectTreeForReturnOf(CallableDeclaration<?> callableDeclaration) {
         if (callableDeclaration.isMethodDeclaration()) {
             MethodDeclaration method = callableDeclaration.asMethodDeclaration();
-            if (method.getType().isClassOrInterfaceType())
+            if (method.getType().isClassOrInterfaceType()) {
                 try {
-                    // TODO: improve. Sometimes, the cu doesn't have the symbol solver. We readd that here.
-                    method.getType().findCompilationUnit().ifPresentOrElse(cu -> {
-                        if (!cu.containsData(Node.SYMBOL_RESOLVER_KEY))
-                            cu.setData(Node.SYMBOL_RESOLVER_KEY, StaticJavaParser.getConfiguration().getSymbolResolver().orElseThrow(() -> new IllegalStateException("Symbol resolution not configured: to configure consider setting a SymbolResolver in the ParserConfiguration")));
-                    }, () -> { throw new IllegalStateException("The node is not inserted in a CompilationUnit"); });
+                    Optional<CompilationUnit> optionalCu = method.getType().findCompilationUnit();
+
+                    if (optionalCu.isPresent()) {
+                        CompilationUnit cu = optionalCu.get();
+
+                        if (!cu.containsData(Node.SYMBOL_RESOLVER_KEY)) {
+                            SymbolResolver resolver = StaticJavaParser.getConfiguration()
+                                    .getSymbolResolver()
+                                    .orElseThrow(() -> new IllegalStateException("Symbol resolution not configured: to configure consider setting a SymbolResolver in the ParserConfiguration"));
+
+                            // Assuming you have methods for adding data; if not, you need to ensure that such methods exist.
+                            cu.setData(Node.SYMBOL_RESOLVER_KEY, resolver);
+                        }
+                    } else {
+                        throw new IllegalStateException("The node is not inserted in a CompilationUnit");
+                    }
+
                     return Optional.of(generateObjectTreeFor(method.getType().asClassOrInterfaceType().resolve()));
                 } catch (UnsolvedSymbolException | UnsupportedOperationException e) {
                     return Optional.empty();
                 }
-            else
+            } else {
                 return Optional.empty();
+            }
+
         } else if (callableDeclaration.isConstructorDeclaration()) {
-            return Optional.of(generateObjectTreeFor(callableDeclaration.findAncestor(TypeDeclaration.class).orElseThrow()));
+            TypeDeclaration<?> typeDeclaration = callableDeclaration.findAncestor(TypeDeclaration.class)
+                    .orElseThrow(() -> new NoSuchElementException("No TypeDeclaration ancestor found for callableDeclaration"));
+
+            return Optional.of(generateObjectTreeFor(typeDeclaration));
+
         } else {
             throw new IllegalArgumentException("Invalid callable declaration type");
         }
@@ -311,7 +337,11 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
     }
 
     protected String mapKey(TypeDeclaration<?> n) {
-        return n.getFullyQualifiedName().orElseThrow();
+        String fullyQualifiedName = n.getFullyQualifiedName()
+                .orElseThrow(() -> new NoSuchElementException("No fully qualified name found"));
+
+        return fullyQualifiedName;
+
     }
 
     protected String mapKey(ResolvedClassDeclaration n) {
@@ -323,11 +353,12 @@ public class ClassGraph extends DirectedPseudograph<ClassGraph.Vertex<?>, ClassG
     }
 
     protected String mapKey(CallableDeclaration<?> declaration, TypeDeclaration<?> clazz) {
-        return clazz.getFullyQualifiedName().orElseThrow() + "." + declaration.getSignature();
+        return clazz.getFullyQualifiedName().orElseThrow(() -> new NoSuchElementException("Fully qualified name is not present"))+ "." + declaration.getSignature();
     }
 
     protected String mapKey(FieldDeclaration declaration, TypeDeclaration<?> clazz) {
-        return clazz.getFullyQualifiedName().orElseThrow() + "." + declaration;
+        return clazz.getFullyQualifiedName().orElseThrow(() -> new NoSuchElementException("Fully qualified name is not present")) + "." + declaration;
+
     }
 
     /** Find the class declarations, the field declaration, and method and constructor declarations (vertices)

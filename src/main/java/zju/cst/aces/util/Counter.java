@@ -74,7 +74,7 @@ public class Counter {
 
         for (String classJsonFile : classJsonFiles) {
             File classInfoFile = new File(classJsonFile);
-            ClassInfo classInfo = GSON.fromJson(Files.readString(classInfoFile.toPath(), StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo classInfo = GSON.fromJson(new String(Files.readAllBytes(classInfoFile.toPath()), StandardCharsets.UTF_8), ClassInfo.class);
 
             if (!filter(classInfo)) {
                 continue;
@@ -118,7 +118,7 @@ public class Counter {
 
         for (String classJsonFile : classJsonFiles) {
             File classInfoFile = new File(classJsonFile);
-            ClassInfo classInfo = GSON.fromJson(Files.readString(classInfoFile.toPath(), StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo classInfo = GSON.fromJson(new String(Files.readAllBytes(classInfoFile.toPath()), StandardCharsets.UTF_8), ClassInfo.class);
 
             if (!filter(classInfo)) {
                 continue;
@@ -169,7 +169,7 @@ public class Counter {
 
         for (String classJsonFile : classJsonFiles) {
             File classInfoFile = new File(classJsonFile);
-            ClassInfo classInfo = GSON.fromJson(Files.readString(classInfoFile.toPath(), StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo classInfo = GSON.fromJson(new String(Files.readAllBytes(classInfoFile.toPath()), StandardCharsets.UTF_8), ClassInfo.class);
 
             if (!filter(classInfo)) {
                 continue;
@@ -207,7 +207,7 @@ public class Counter {
         if (!depMethodInfoPath.toFile().exists()) {
             return null;
         }
-        return GSON.fromJson(Files.readString(depMethodInfoPath, StandardCharsets.UTF_8), MethodInfo.class);
+        return GSON.fromJson(new String(Files.readAllBytes(depMethodInfoPath), StandardCharsets.UTF_8),MethodInfo.class);
     }
 
     public static boolean filter(ClassInfo classInfo) {

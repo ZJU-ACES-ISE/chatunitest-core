@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 public enum Model {
     GPT_3_5_TURBO("gpt-3.5-turbo", new ModelConfig.Builder()
             .withModelName("gpt-3.5-turbo")
-            .withUrl("https://api.openai.com/v1/chat/completions")
+            .withUrl("https://api.gptsapi.net/v1/chat/completions")
             .withContextLength(4096)
             .withTemperature(0.5)
             .withFrequencyPenalty(0)
@@ -14,7 +14,7 @@ public enum Model {
             .build()),
     GPT_3_5_TURBO_1106("gpt-3.5-turbo-1106", new ModelConfig.Builder()
             .withModelName("gpt-3.5-turbo-1106")
-            .withUrl("https://api.openai.com/v1/chat/completions")
+            .withUrl("https://api.gptsapi.net/v1/chat/completions")
             .withContextLength(16385)
             .withTemperature(0.5)
             .withFrequencyPenalty(0)
@@ -27,8 +27,16 @@ public enum Model {
             .withTemperature(0.5)
             .withFrequencyPenalty(0)
             .withPresencePenalty(0)
-            .build());
+            .build()),
     // 添加更多模型
+    CODE_QWEN("codeqwen:v1.5-chat", new ModelConfig.Builder()
+            .withModelName("codeqwen:v1.5-chat")
+            .withUrl(null)
+            .withContextLength(16385)
+            .withTemperature(0.5)
+            .withFrequencyPenalty(0)
+            .withPresencePenalty(0)
+            .build());
 
     private final String modelName;
     private final ModelConfig defaultConfig;

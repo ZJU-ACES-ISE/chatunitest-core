@@ -6,6 +6,7 @@ import slicing.graphs.cfg.CFGBuilder;
 import slicing.nodes.GraphNode;
 import slicing.utils.ASTUtils;
 
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,7 +38,7 @@ public class ACFGBuilder extends CFGBuilder {
 
     @Override
     protected void saveHanging() {
-        nonExecHangingNodesStack.push(List.copyOf(nonExecHangingNodes));
+        nonExecHangingNodesStack.push(new ArrayList<>(nonExecHangingNodes));
         super.saveHanging();
     }
 

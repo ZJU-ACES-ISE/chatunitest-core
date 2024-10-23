@@ -57,7 +57,7 @@ public class ExceptionSensitiveSlicingAlgorithm implements SlicingAlgorithm {
 
     @Override
     public Slice traverseProcedure(GraphNode<?> slicingCriterion) {
-        this.slicingCriterion = Set.of(slicingCriterion);
+        this.slicingCriterion = Collections.singleton(slicingCriterion);
         Slice slice = new Slice(this.slicingCriterion);
         pass(slice, INTRAPROCEDURAL.or(this::commonIgnoreConditions));
         return slice;

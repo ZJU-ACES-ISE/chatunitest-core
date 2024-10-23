@@ -14,6 +14,7 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.resolution.UnsolvedSymbolException;
 import com.github.javaparser.resolution.types.ResolvedType;
+import lombok.var;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
 import slicing.graphs.CallGraph;
 import slicing.graphs.CallGraph.Edge;
@@ -68,7 +69,9 @@ public class ProjectParser {
             File file = new File(classPath);
             try {
                 ParseResult<CompilationUnit> parseResult = parser.parse(file);
-                CompilationUnit cu = parseResult.getResult().orElseThrow();
+                CompilationUnit cu = parseResult.getResult()
+                        .orElseThrow(() -> new NoSuchElementException("No result present in parseResult"));
+
                 cus.add(cu);
             } catch (Exception e) {
                 throw new RuntimeException("In ProjectParser.parse: " + e);
@@ -163,7 +166,7 @@ public class ProjectParser {
 
     private String findCodeBySlice(Slice slice, String callerClassFullName) {
         for (CompilationUnit cu : slice.toAst()) {
-            if (cu.getType(0).getNameAsString().equals(callerClassFullName)) {
+            if (!"".equals(cu.toString()) && cu.getType(0).getNameAsString().equals(callerClassFullName)) {
                 return cu.toString();
             }
         }
@@ -243,7 +246,11 @@ public class ProjectParser {
     }
 
     private CompilationUnit findClassByCallable(CallableDeclaration<?> node) {
-        return node.findAncestor(CompilationUnit.class).orElseThrow();
+        CompilationUnit cu = node.findAncestor(CompilationUnit.class)
+                .orElseThrow(() -> new NoSuchElementException("No CompilationUnit ancestor found for node"));
+
+        return cu;
+
     }
 
     private Set<Edge<?>> findEdgeByCallGraph(CallableDeclaration node, CallGraph callGraph) {
@@ -335,7 +342,9 @@ public class ProjectParser {
     }
 
     public static void setLanguageLevel(ParserConfiguration configuration) {
-        int version = Runtime.version().feature();
+        String versionStr = System.getProperty("java.version");
+        int version = parseJavaVersion(versionStr);
+
 //        int versionPrefix = Integer.parseInt(System.getProperty("java.version").split("\\.")[0]);
         switch (version) {
             case 8: // java 8
@@ -370,4 +379,19 @@ public class ProjectParser {
                 break;
         }
     }
+    private static int parseJavaVersion(String versionStr) {
+        String[] parts = versionStr.split("\\.");
+        if (parts.length > 1) {
+            try {
+                // Major version
+                return Integer.parseInt(parts[0]);
+            } catch (NumberFormatException e) {
+                // Handle error if version format is unexpected
+                throw new IllegalArgumentException("Invalid Java version format: " + versionStr, e);
+            }
+        }
+        // Fallback if version format is unexpected
+        throw new IllegalArgumentException("Invalid Java version format: " + versionStr);
+    }
+
 }

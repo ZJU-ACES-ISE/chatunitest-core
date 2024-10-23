@@ -130,6 +130,7 @@ public class InterproceduralUsageFinder extends InterproceduralActionFinder<Usag
     protected Stream<Usage> mapAndFilterActionStream(Stream<VariableAction> stream, CFG cfg) {
         return stream.filter(VariableAction::isUsage)
                 .map(VariableAction::asUsage)
-                .filter(Predicate.not(cfg::isCompletelyDefined));
+                .filter(v -> !cfg.isCompletelyDefined(v));
+
     }
 }

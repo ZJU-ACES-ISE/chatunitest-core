@@ -22,7 +22,7 @@ public class ModelConfig {
 
     public static class Builder {
         private String modelName = "gpt-3.5-turbo";
-        private String url = "https://api.openai.com/v1/chat/completions";
+        private String url = "https://api.gptsapi.net/v1/chat/completions";
         private int contextLength = 4096;
         private double temperature = 0.5;
         private int frequencyPenalty = 0;

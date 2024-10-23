@@ -20,9 +20,10 @@ public class Slice {
     private final Set<GraphNode<?>> immutableSC;
 
     public Slice(Set<GraphNode<?>> slicingCriterion) {
-        immutableSC = Set.copyOf(slicingCriterion);
+        immutableSC = Collections.unmodifiableSet(new HashSet<>(slicingCriterion));
         addAll(slicingCriterion);
     }
+
 
     public Set<GraphNode<?>> getCriterion() {
         return immutableSC;
@@ -56,8 +57,9 @@ public class Slice {
 
     /** Obtain the nodes from this slice. */
     public Set<GraphNode<?>> getGraphNodes() {
-        return Set.copyOf(map.values());
+        return Collections.unmodifiableSet(new HashSet<>(map.values()));
     }
+
 
     /** Organize all nodes pertaining to this slice in one or more CompilationUnits. CompilationUnits
      *  themselves need not be part of the slice to be included if any of their components are present. */
@@ -69,7 +71,7 @@ public class Slice {
             if (graphNode.isImplicitInstruction() || graphNode.getAstNode() == null)
                 continue;
             Optional<CompilationUnit> cu = graphNode.getAstNode().findCompilationUnit();
-            if (cu.isEmpty()) continue;
+            if (!cu.isPresent()) continue;
             cuMap.computeIfAbsent(cu.get(), compilationUnit -> new NodeHashSet<>());
             cuMap.get(cu.get()).add(graphNode.getAstNode());
         }

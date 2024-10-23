@@ -6,6 +6,7 @@ import com.github.javaparser.resolution.Resolvable;
 import com.github.javaparser.resolution.declarations.ResolvedMethodLikeDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.github.javaparser.resolution.types.ResolvedType;
+import lombok.var;
 import slicing.arcs.sdg.ReturnArc;
 import slicing.graphs.CallGraph;
 import slicing.graphs.sdg.CallConnector;
@@ -57,11 +58,15 @@ public class ExceptionSensitiveCallConnector extends CallConnector {
         ReturnNode normalReturn = (ReturnNode) synthNodes.stream()
                 .filter(NormalReturnNode.class::isInstance)
                 .filter(n -> n.getAstNode() == call || ASTUtils.equalsWithRange(n.getAstNode(), call))
-                .findAny().orElseThrow();
+                .findAny()
+                .orElseThrow(() -> new NoSuchElementException("No matching NormalReturnNode found"));
+
         ExitNode normalExit = (ExitNode) synthNodes.stream()
                 .filter(NormalExitNode.class::isInstance)
                 .filter(n -> n.getAstNode() == decl || ASTUtils.equalsWithRange(n.getAstNode(), decl))
-                .findAny().orElseThrow();
+                .findAny()
+                .orElseThrow(() -> new NoSuchElementException("No matching NormalExitNode found for the given declaration"));
+
         ((ESSDG) sdg).addReturnArc(normalExit, normalReturn);
     }
 
@@ -85,10 +90,14 @@ public class ExceptionSensitiveCallConnector extends CallConnector {
                     .map(ExceptionReturnNode.class::cast)
                     .filter(n -> n.getAstNode() == call)
                     .filter(n -> n.getExceptionType().equals(type))
-                    .findAny().orElseThrow();
+                    .findAny()
+                    .orElseThrow(() -> new NoSuchElementException("No matching ExceptionReturnNode found for the given call and exception type"));
+
             ExceptionExitNode exceptionExit = eeNodes.stream()
                     .filter(n -> n.getExceptionType().equals(type))
-                    .findAny().orElseThrow();
+                    .findAny()
+                    .orElseThrow(() -> new NoSuchElementException("No matching ExceptionExitNode found for the given exception type"));
+
             eeNodes.remove(exceptionExit);
             exceptionReturnMap.put(type, exceptionReturn);
             ((ESSDG) sdg).addReturnArc(exceptionExit, exceptionReturn);
@@ -103,7 +112,7 @@ public class ExceptionSensitiveCallConnector extends CallConnector {
         boolean hasException = resolvedTypeSetContains(exceptionReturnMap.keySet(), "java.lang.Exception");
 
         eeFor: for (ExceptionExitNode ee : eeNodes) {
-            List<ResolvedReferenceType> typeList = List.of(ee.getExceptionType().asReferenceType());
+            List<ResolvedReferenceType> typeList = Collections.singletonList(ee.getExceptionType().asReferenceType());
             while (!typeList.isEmpty()) {
                 List<ResolvedReferenceType> newTypeList = new LinkedList<>();
                 for (ResolvedReferenceType type : typeList) {

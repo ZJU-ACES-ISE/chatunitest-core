@@ -13,6 +13,7 @@ import slicing.nodes.io.ActualIONode;
 import slicing.nodes.io.CallNode;
 import slicing.nodes.oo.MemberNode;
 
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -167,7 +168,7 @@ public class JSysPDG extends ESPDG {
         @Override
         protected void expandCalls() {
             for (GraphNode<?> graphNode : vertexSet()) {
-                for (VariableAction action : List.copyOf(graphNode.getVariableActions())) {
+                for (VariableAction action : new ArrayList<>(graphNode.getVariableActions())) {
                     if (action instanceof VariableAction.Movable) {
                         ((VariableAction.Movable) action).moveOnly();
                     }

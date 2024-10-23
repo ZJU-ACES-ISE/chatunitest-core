@@ -126,7 +126,7 @@ public class ObjectTree implements Cloneable {
     /** Insert a polymorphic node for the given type. The type node will be
      *  generated immediately beneath this tree node. */
     public ObjectTree addType(ResolvedType rt) {
-        assert !rt.describe().isBlank();
+        assert !rt.describe().trim().isEmpty();
         assert !(memberNode instanceof PolyMemberNode);
         return childrenMap.computeIfAbsent(rt.describe(), n -> new ObjectTree(rt, this));
     }
@@ -162,13 +162,13 @@ public class ObjectTree implements Cloneable {
     /** Insert a field in the current level of object tree. The field should be a variable name,
      *  and not contain dots or be blank. */
     public ObjectTree addImmediateField(String fieldName) {
-        if (fieldName.contains(".") || fieldName.isBlank())
+        if (fieldName.contains(".") || fieldName.trim().isEmpty())
             throw new IllegalArgumentException("field name must not include dots or be blank!");
         return childrenMap.computeIfAbsent(fieldName, f -> new ObjectTree(f, this));
     }
 
     public ObjectTree addStaticField(String fieldName, Node node) {
-        if (fieldName.contains(".") || fieldName.isBlank())
+        if (fieldName.contains(".") || fieldName.trim().isEmpty())
             throw new IllegalArgumentException("field name must not include dots or be blank!");
         return childrenMap.computeIfAbsent(fieldName, f -> new ObjectTree(new MemberNode(fieldName, node, memberNode)));
     }
@@ -239,7 +239,7 @@ public class ObjectTree implements Cloneable {
     /** Similar to {@link #getNodesForPoly(String)}, but returns object trees
      *  instead of member nodes. */
     Collection<ObjectTree> findObjectTreeOfPolyMember(String member) {
-        Collection<ObjectTree> result = List.of(this);
+        Collection<ObjectTree> result = Collections.singletonList(this);
         while (!member.isEmpty()) {
             int firstDot = member.indexOf('.');
             String first, rest;
@@ -286,7 +286,7 @@ public class ObjectTree implements Cloneable {
     }
 
     Collection<ObjectTree> findObjectTreeOfPolyMember(String[] member) {
-        Collection<ObjectTree> result = List.of(this);
+        Collection<ObjectTree> result = Collections.singletonList(this);
         for (String field : member) {
             Collection<ObjectTree> newResult = new LinkedList<>();
             for (ObjectTree res : result) {
@@ -425,7 +425,7 @@ public class ObjectTree implements Cloneable {
     /** @return An iterable through the names (with full prefixes) of all members of this tree,
      *  excluding the root. */
     public Iterable<String> nameIterable() {
-        return () -> new Iterator<>() {
+        return () -> new Iterator<String>() {
             final Iterator<ObjectTree> it = treeIterator();
 
             @Override
@@ -455,7 +455,7 @@ public class ObjectTree implements Cloneable {
     }
 
     public Iterable<String[]> nameAsArrayIterable() {
-        return () -> new Iterator<>() {
+        return () -> new Iterator<String[]>() {
             final Iterator<ObjectTree> it = treeIterator();
 
             @Override
@@ -485,7 +485,7 @@ public class ObjectTree implements Cloneable {
 
     /** @return An iterable through the nodes of all members of this tree, excluding the root. */
     public Iterable<MemberNode> nodeIterable() {
-        return () -> new Iterator<>() {
+        return () -> new Iterator<MemberNode>() {
             final Iterator<ObjectTree> it = treeIterator();
 
             @Override
@@ -502,7 +502,7 @@ public class ObjectTree implements Cloneable {
 
     /** @return An iterator through all the trees of this structure, excluding the root. */
     private Iterator<ObjectTree> treeIterator() {
-        return new Iterator<>() {
+        return new Iterator<ObjectTree>() {
             final Set<ObjectTree> remaining = new HashSet<>(childrenMap.values());
             Iterator<ObjectTree> childIterator = null;
 

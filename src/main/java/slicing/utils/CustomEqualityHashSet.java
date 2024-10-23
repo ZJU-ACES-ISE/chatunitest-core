@@ -89,7 +89,7 @@ public abstract class CustomEqualityHashSet<T> extends AbstractSet<T> {
     @Override
     public Iterator<T> iterator() {
         Iterator<T> it = map.values().stream().flatMap(Collection::stream).iterator();
-        return new Iterator<>() {
+        return new Iterator<T>() {
             T last = null;
 
             @Override

@@ -18,10 +18,7 @@ import slicing.nodes.io.ActualIONode;
 import slicing.nodes.io.FormalIONode;
 import slicing.utils.ASTUtils;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -71,7 +68,7 @@ public class DynamicTypeResolver {
                 .map(cfgMap::get)
                 .flatMap(cfg -> cfg.vertexSet().stream())
                 .filter(node -> node.getAstNode() instanceof ReturnStmt)
-                .flatMap(node -> resolveStreamed(((ReturnStmt) node.getAstNode()).getExpression().orElseThrow(), node));
+                .flatMap(node -> resolveStreamed(((ReturnStmt) node.getAstNode()).getExpression().orElseThrow(()-> new NoSuchElementException("Expression not present in ReturnStmt")), node));
     }
 
     /** Searches for the corresponding VariableAction object, then calls {@link #resolveVariableAction(VariableAction)}. */
@@ -104,7 +101,7 @@ public class DynamicTypeResolver {
         return cfgMap.values().stream()
                 .filter(cfg -> cfg.containsVertex(node))
                 .map(CFG::getDeclaration)
-                .findFirst().orElseThrow();
+                .findFirst().orElseThrow(()->new NoSuchElementException("find CallableDeclaration from GraphNode failed."));
     }
 
     /** Looks up the expression assigned to all corresponding actual-in nodes and resolves it. */
@@ -134,7 +131,7 @@ public class DynamicTypeResolver {
                 .map(cfg -> cfg.findNodeByASTNode(astNode))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .findFirst().orElseThrow();
+                .findFirst().orElseThrow(()->new NoSuchElementException("findNodeByASTNode failed."));
     }
 
     /** Checks if the cast marks a more specific type and returns that one.
@@ -150,7 +147,7 @@ public class DynamicTypeResolver {
      *  and locating all subtypes in the class graph. */
     protected Stream<ResolvedType> anyTypeOf(Expression expression) {
         ResolvedClassDeclaration type = expression.calculateResolvedType().asReferenceType()
-                .getTypeDeclaration().orElseThrow().asClass();
+                .getTypeDeclaration().orElseThrow(()->new NoSuchElementException("No Expression")).asClass();
         return classGraph.subclassesOf(type).stream()
                 .map(TypeDeclaration::resolve)
                 .map(ASTUtils::resolvedTypeDeclarationToResolvedType);

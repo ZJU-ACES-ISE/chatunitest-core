@@ -6,6 +6,7 @@ import slicing.graphs.Graph;
 import slicing.nodes.GraphNode;
 import slicing.utils.Utils;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -22,7 +23,7 @@ public class ClassicSlicingAlgorithm implements SlicingAlgorithm {
 
     @Override
     public Slice traverseProcedure(GraphNode<?> slicingCriterion) {
-        Slice slice = new Slice(Set.of(slicingCriterion));
+        Slice slice = new Slice(Collections.singleton(slicingCriterion));
         pass(slice, this::ignoreProcedure);
         return slice;
     }

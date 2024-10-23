@@ -210,7 +210,7 @@ public class Task {
             return name;
         }
         Path classMapPath = config.getClassNameMapPath();
-        Map<String, List<String>> classMap = config.getGSON().fromJson(Files.readString(classMapPath, StandardCharsets.UTF_8), Map.class);
+        Map<String, List<String>> classMap = config.getGSON().fromJson(new String(Files.readAllBytes(classMapPath), StandardCharsets.UTF_8), Map.class);
         if (classMap.containsKey(name)) {
             if (classMap.get(name).size() > 1) {
                 throw new RuntimeException((String.format("[%s] Multiple classes Named ",config.pluginSign)) + name + ": " + classMap.get(name)

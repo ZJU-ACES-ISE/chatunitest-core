@@ -195,7 +195,7 @@ public class PromptTemplate {
     }
 
     public static Map<String,List<String>> get_method_invocation_code(String staticCreationRecordPath,String fqcn_target_method,String methodName_target_method){
-        if(!Files.exists(Path.of(staticCreationRecordPath))){
+        if(!Files.exists(Paths.get(staticCreationRecordPath))){
             return null;
         }
         List<String> invocation_codes_outerclass=new ArrayList<>();
@@ -251,7 +251,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depBrief;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -341,7 +341,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depBodies;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -367,7 +367,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depFields;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -384,7 +384,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depFields;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -402,7 +402,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depConstructorSigs;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -419,7 +419,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depConstructorSigs;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -437,7 +437,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depConstructorBodies;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -463,7 +463,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depConstructorBodies;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -491,7 +491,7 @@ public class PromptTemplate {
 //                return depClassSigs;
                 continue;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -509,7 +509,7 @@ public class PromptTemplate {
 //                return depClassSigs;
                 continue;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -527,7 +527,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depClassSigs;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -544,7 +544,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 continue;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -562,7 +562,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depClassBodies;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -579,7 +579,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depClassBodies;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -597,7 +597,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depPackages;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -614,7 +614,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depPackages;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -632,7 +632,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depImports;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -649,7 +649,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depImports;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -667,7 +667,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depGSSigs;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -684,7 +684,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depGSSigs;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -702,7 +702,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depGSBodies;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -728,7 +728,7 @@ public class PromptTemplate {
             if (!depClassInfoPath.toFile().exists()) {
                 return depGSBodies;
             }
-            ClassInfo depClassInfo = GSON.fromJson(Files.readString(depClassInfoPath, StandardCharsets.UTF_8), ClassInfo.class);
+            ClassInfo depClassInfo = GSON.fromJson(new String(Files.readAllBytes(depClassInfoPath), StandardCharsets.UTF_8), ClassInfo.class);
             if (depClassInfo == null) {
                 continue;
             }
@@ -756,7 +756,7 @@ public class PromptTemplate {
                 continue;
             }
             try {
-                fullProjectCode += Files.readString(Paths.get(path), StandardCharsets.UTF_8) + "\n";
+                fullProjectCode += new String(Files.readAllBytes(Paths.get(path)), StandardCharsets.UTF_8) + "\n";
             } catch (IOException e) {
                 config.getLogger().warn("Failed to append class code for " + className);
             }

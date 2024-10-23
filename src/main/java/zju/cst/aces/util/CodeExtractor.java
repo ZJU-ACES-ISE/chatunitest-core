@@ -21,7 +21,7 @@ public class CodeExtractor {
 
     public String extractText(String text) {
         if (text.contains("<INFO>")) {
-            List<String> infoList = List.of(text.split("<INFO>"));
+            List<String> infoList = Arrays.asList(text.split("<INFO>"));
 
             String importsInfo = infoList.get(1);
             Pattern pattern = Pattern.compile("```[java]*([\\s\\S]*?)```");

@@ -1,6 +1,7 @@
 package slicing.graphs.pdg;
 
 import com.github.javaparser.ast.body.CallableDeclaration;
+import lombok.var;
 import slicing.arcs.Arc;
 import slicing.arcs.pdg.ControlDependencyArc;
 import slicing.arcs.pdg.DataDependencyArc;
@@ -11,10 +12,7 @@ import slicing.nodes.VariableAction;
 import slicing.nodes.io.ActualIONode;
 import slicing.nodes.io.CallNode;
 
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * The <b>Program Dependence Graph</b> represents the statements of a method in
@@ -112,9 +110,9 @@ public class PDG extends GraphWithRootNode<CallableDeclaration<?>> {
          * them via control dependency to the node they were located at.
          */
         protected void expandCalls() {
-            for (GraphNode<?> graphNode : Set.copyOf(vertexSet())) {
+            for (GraphNode<?> graphNode : new HashSet<>(vertexSet())) {
                 Deque<CallNode> callNodeStack = new LinkedList<>();
-                for (VariableAction action : List.copyOf(graphNode.getVariableActions())) {
+                for (VariableAction action : new ArrayList<>(graphNode.getVariableActions())) {
                     if (action instanceof VariableAction.CallMarker) {
                         // Compute the call node, if entering the marker. Additionally, it places the node
                         // in the graph and makes it control-dependent on its container.
