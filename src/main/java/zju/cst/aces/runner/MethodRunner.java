@@ -69,6 +69,7 @@ public class MethodRunner extends ClassRunner {
         // Validation
         if (phase.new Validation().execute(pc)) {
             exportRecord(pc.getPromptInfo(), classInfo, num);
+
             return true;
         }
 
@@ -80,8 +81,8 @@ public class MethodRunner extends ClassRunner {
             // Repair
             phase.new Repair().execute(pc);
 
-            // Validation
-            if (phase.new Validation().execute(pc)) {
+            // Validation and process
+            if (phase.new Validation().execute(pc)) { // if passed validation
                 exportRecord(pc.getPromptInfo(), classInfo, num);
                 return true;
             }

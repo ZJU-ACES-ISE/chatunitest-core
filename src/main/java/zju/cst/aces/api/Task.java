@@ -5,6 +5,7 @@ import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.runner.AbstractRunner;
+import zju.cst.aces.util.ClassNameProcessor;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,6 +25,13 @@ public class Task {
     Config config;
     Logger log;
     Runner runner;
+    public enum Granularity {
+        METHOD,
+        CLASS,
+        PROJECT;
+    }
+    Granularity granularity;
+    ClassNameProcessor classNameProcessor;
 
     public Task(Config config, Runner runner) {
         this.config = config;
@@ -31,7 +39,10 @@ public class Task {
         this.runner = runner;
     }
 
-    public void startMethodTask(String className, String methodName) {
+    public void startMethodTask(String className, String methodName) throws IOException {
+        if(granularity == null){
+            granularity = Granularity.METHOD;
+        }
         try {
             checkTargetFolder(config.getProject());
         } catch (RuntimeException e) {
@@ -91,9 +102,16 @@ public class Task {
         }
 
         log.info(String.format("\n==========================\n[%s] Generation finished", config.pluginSign));
+
+        Path testOutPutPath = config.getTestOutput();
+        classNameProcessor.processJavaFiles(testOutPutPath);
+        log.info(String.format("\n==========================\n[%s] Test processed", config.pluginSign));
     }
 
-    public void startClassTask(String className) {
+    public void startClassTask(String className) throws IOException {
+        if(granularity == null){
+            granularity = Granularity.CLASS;
+        }
         try {
             checkTargetFolder(config.getProject());
         } catch (RuntimeException e) {
@@ -113,9 +131,16 @@ public class Task {
             log.warn("Class not found: " + className + " in " + config.getProject().getArtifactId());
         }
         log.info(String.format("\n==========================\n[%s] Generation finished",config.pluginSign));
+
+        Path testOutPutPath = config.getTestOutput();
+        classNameProcessor.processJavaFiles(testOutPutPath);
+        log.info(String.format("\n==========================\n[%s] Test processed", config.pluginSign));
     }
 
-    public void startProjectTask() {
+    public void startProjectTask() throws IOException {
+        if(granularity == null){
+            granularity = Granularity.PROJECT;
+        }
         Project project = config.getProject();
         try {
             checkTargetFolder(project);
@@ -159,6 +184,10 @@ public class Task {
         }
 
         log.info(String.format("\n==========================\n[%s] Generation finished",config.pluginSign));
+
+        Path testOutPutPath = config.getTestOutput();
+        classNameProcessor.processJavaFiles(testOutPutPath);
+        log.info(String.format("\n==========================\n[%s] Test processed",config.pluginSign));
     }
 
     public void projectJob(List<String> classPaths) {
