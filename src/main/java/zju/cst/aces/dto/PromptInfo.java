@@ -3,6 +3,7 @@ package zju.cst.aces.dto;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import lombok.Data;
+import zju.cst.aces.util.JsonResponseProcessor;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -29,6 +30,9 @@ public class PromptInfo {
     public List<RoundRecord> records = new ArrayList<>();
     public MethodInfo methodInfo;
     public ClassInfo classInfo;
+    public Path methodSlicePath; // todo
+    public Integer sliceNum;
+    public JsonResponseProcessor.JsonData.Step sliceStep;
 
     public PromptInfo(boolean hasDep, String fullClassName, String methodName,
                       String methodSignature) {

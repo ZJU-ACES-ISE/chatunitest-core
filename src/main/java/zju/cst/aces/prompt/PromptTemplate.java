@@ -38,6 +38,11 @@ public class PromptTemplate {
     public String TEMPLATE_INIT = "";
     public String TEMPLATE_EXTRA = "";
     public String TEMPLATE_REPAIR = "";
+    public String TEMPLATE_GEN_SLICE = "";
+    public String TEMPLATE_SYS_GEN = "";
+    public String TEMPLATE_HITS_REPAIR= "";
+    public String TEMPLATE_GEN_CODE = "";
+    public String TEMPLATE_HITS_SYS_REPAIR = "";
     public Map<String, Object> dataModel = new HashMap<>();
     public Properties properties;
     public Path promptPath;
@@ -52,6 +57,11 @@ public class PromptTemplate {
         TEMPLATE_INIT = properties.getProperty("PROMPT_TEMPLATE_INIT");
         TEMPLATE_EXTRA = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
         TEMPLATE_REPAIR = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
+        TEMPLATE_GEN_SLICE = properties.getProperty("PROMPT_TEMPLATE_GEN_SLICE");
+        TEMPLATE_SYS_GEN = properties.getProperty("PROMPT_TEMPLATE_SYS_GEN");
+        TEMPLATE_GEN_CODE = properties.getProperty("PROMPT_TEMPLATE_GEN_CODE");
+        TEMPLATE_HITS_SYS_REPAIR = properties.getProperty("PROMPT_TEMPLATE_HITS_SYS_REPAIR");
+        TEMPLATE_HITS_REPAIR = properties.getProperty("PROMPT_TEMPLATE_HITS_REPAIR");
     }
 
     //渲染
@@ -66,6 +76,7 @@ public class PromptTemplate {
         configuration.setDefaultEncoding("utf-8");
         Template template = configuration.getTemplate(templateFileName);
 
+        //Find variables used in the template
         Pattern pattern = Pattern.compile("\\$\\{([a-zA-Z_][\\w]*)\\}");
         Matcher matcher = pattern.matcher(template.toString());
         List<String> matches = new ArrayList<>();
@@ -163,7 +174,13 @@ public class PromptTemplate {
             this.dataModel.put("other_method_sigs", null);
             this.dataModel.put("other_method_bodies", null);
         }
-
+        if (promptInfo.getSliceStep() != null) {
+            this.dataModel.put("step_desp", promptInfo.getSliceStep().getDesp());
+            this.dataModel.put("step_code", promptInfo.getSliceStep().getCode());
+        } else {
+            this.dataModel.put("step_desp", null);
+            this.dataModel.put("step_code", null);
+        }
         //add target method invocation example in the project
         Map<String, List<String>> invocationCodeMap = get_method_invocation_code(Paths.get(config.tmpOutput.toString(),
                 "methodExampleCode.json").toString(), promptInfo.getFullClassName(), promptInfo.getMethodSignature());
