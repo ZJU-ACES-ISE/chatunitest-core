@@ -379,6 +379,33 @@ public abstract class AbstractRunner {
         }
     }
 
+    public void exportSliceRecord(PromptInfo promptInfo, ClassInfo classInfo, int attempt, int sliceNum) {
+        String methodIndex = classInfo.methodSigs.get(promptInfo.methodSignature);
+        Path recordPath = config.getHistoryPath();
+
+        recordPath = recordPath.resolve("class" + classInfo.index);
+        exportMethodMapping(classInfo, recordPath);
+
+        recordPath = recordPath.resolve("method" + methodIndex);
+        exportAttemptMapping(promptInfo, recordPath);
+
+        recordPath = recordPath.resolve("attempt" + attempt);
+        if (!recordPath.toFile().exists()) {
+            recordPath.toFile().mkdirs();
+        }
+        recordPath = recordPath.resolve("sliceNum" + sliceNum);
+        if (!recordPath.toFile().exists()) {
+            recordPath.toFile().mkdirs();
+        }
+        File recordFile = recordPath.resolve("records.json").toFile();
+        try (OutputStreamWriter writer = new OutputStreamWriter(
+                new FileOutputStream(recordFile), StandardCharsets.UTF_8)) {
+            writer.write(GSON.toJson(promptInfo.getRecords()));
+        } catch (IOException e) {
+            throw new RuntimeException("In AbstractRunner.exportRecord: " + e);
+        }
+    }
+
     public static synchronized void exportClassMapping(Config config, Path savePath) {
         if (!savePath.toFile().exists()) {
             savePath.toFile().mkdirs();
