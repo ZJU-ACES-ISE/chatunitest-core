@@ -2,6 +2,7 @@ package zju.cst.aces.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.javaparser.ParseProblemException;
 import lombok.AllArgsConstructor;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.ChatGenerator;
@@ -198,9 +199,9 @@ public class Phase {
             record.setAttempt(promptInfo.getTestNum());
 
             if (rounds == 0) {
-                config.getLogger().info("Generating test for method < " + methodInfo.methodName + " > sliceNum"+ promptInfo.getSliceNum() + " < "+ " > round " + rounds + " ...");
+                config.getLogger().info("Generating test for method slices < " + methodInfo.methodName + "_slice" + promptInfo.getSliceNum() + " > round " + rounds + " ...");
             } else {
-                config.getLogger().info("Fixing test for method < " + methodInfo.methodName + " > sliceNum"+ promptInfo.getSliceNum() + " < "+ " > round "  + rounds + " ...");
+                config.getLogger().info("Fixing test for method slices < " + methodInfo.methodName + "_slice" + promptInfo.getSliceNum() + " > round " + rounds + " ...");
             }
 
             List<ChatMessage> prompt;
@@ -294,6 +295,8 @@ public class Phase {
             String content = JsonResponseProcessor.getJsonContentByResponse(response.toString()); //todo get slice json result
             config.getLogger().debug("[Response]:\n" + content);
 
+            boolean success = true;
+
             if (content != null) {
                 // Step 2: Extract information from JSON content
                 JsonResponseProcessor.JsonData info = JsonResponseProcessor.extractInfoFromJson(content);//todo extract main info and store in file
@@ -302,10 +305,31 @@ public class Phase {
                     // Step 3: Write the extracted JSON information to a file
                     JsonResponseProcessor.writeJsonToFile(new ObjectMapper().valueToTree(info), fullDirectoryPath);
                 } else {
+                    success = false;
                     config.getLogger().debug("Failed to extract required information from JSON.");
                 }
             } else {
+                success = false;
                 config.getLogger().debug("No JSON content found in the response.");
+            }
+            // todo 这里应该要有重复生成的机制，如果说content为null，或者提取不出info，应该要重新生成
+
+            if (!success) { //If getting method slices fails
+                for (int i = 0; i < 3; i++) { // todo 这里暂定3次，可以在config中设置
+                    try {
+                        response = ChatGenerator.chat(config, prompt);
+                        content = JsonResponseProcessor.getJsonContentByResponse(response.toString());
+                        if (content != null) {
+                            JsonResponseProcessor.JsonData info = JsonResponseProcessor.extractInfoFromJson(content);
+                            if (info != null) {
+                                JsonResponseProcessor.writeJsonToFile(new ObjectMapper().valueToTree(info), fullDirectoryPath);
+                                break;
+                            }
+                        }
+                    } catch (Exception e) {
+                        config.getLogger().debug("generate method slices failed with exception: " + e.getMessage());
+                    }
+                }
             }
 
             record.setPromptToken(response.getUsage().getPromptTokens());
