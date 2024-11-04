@@ -124,7 +124,7 @@ public class Task {
             return;
         }
         Phase phase = new Phase(config);
-        phase.new Preparation().execute();
+        phase.prepare();
         log.info(String.format("\n==========================\n[%s] Generating tests for class < " + className + " > ...",config.pluginSign));
         try {
             this.runner.runClass(getFullClassName(config, className));
@@ -154,7 +154,7 @@ public class Task {
             return;
         }
         Phase phase = new Phase(config);
-        phase.new Preparation().execute();
+        phase.prepare();
         List<String> classPaths = ProjectParser.scanSourceDirectory(project);
 
         try {
