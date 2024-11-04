@@ -1,4 +1,4 @@
-package zju.cst.aces.prompt;
+package zju.cst.aces.prompt.template;
 
 
 import com.google.gson.Gson;
@@ -20,8 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;

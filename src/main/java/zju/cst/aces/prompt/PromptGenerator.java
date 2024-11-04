@@ -2,6 +2,7 @@ package zju.cst.aces.prompt;
 
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.*;
+import zju.cst.aces.prompt.template.PromptTemplate;
 import zju.cst.aces.util.TokenCounter;
 
 import java.io.IOException;

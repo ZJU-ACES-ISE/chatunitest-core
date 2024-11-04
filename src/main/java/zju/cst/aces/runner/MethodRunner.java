@@ -1,6 +1,6 @@
 package zju.cst.aces.runner;
 
-import zju.cst.aces.api.Phase;
+import zju.cst.aces.api.phase.Phase;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
 import zju.cst.aces.dto.*;
@@ -59,15 +59,15 @@ public class MethodRunner extends ClassRunner {
         Phase phase = new Phase(config);
 
         // Prompt Construction Phase
-        PromptConstructorImpl pc = phase.new PromptGeneration(classInfo, methodInfo).execute(num);
+        PromptConstructorImpl pc = phase.generatePrompt(classInfo, methodInfo,num);
         PromptInfo promptInfo = pc.getPromptInfo();
         promptInfo.setRound(0);
 
         // Test Generation Phase
-        phase.new TestGeneration().execute(pc);
+        phase.generateTest(pc);
 
         // Validation
-        if (phase.new Validation().execute(pc)) {
+        if (phase.validateTest(pc)) {
             exportRecord(pc.getPromptInfo(), classInfo, num);
 
             return true;
@@ -79,10 +79,10 @@ public class MethodRunner extends ClassRunner {
             promptInfo.setRound(rounds);
 
             // Repair
-            phase.new Repair().execute(pc);
+            phase.repairTest(pc);
 
             // Validation and process
-            if (phase.new Validation().execute(pc)) { // if passed validation
+            if (phase.validateTest(pc)) { // if passed validation
                 exportRecord(pc.getPromptInfo(), classInfo, num);
                 return true;
             }

@@ -20,7 +20,7 @@ import zju.cst.aces.api.Logger;
 import zju.cst.aces.api.impl.ValidatorImpl;
 import zju.cst.aces.dto.OCM;
 import zju.cst.aces.parser.ProjectParser;
-import zju.cst.aces.prompt.PromptTemplate;
+import zju.cst.aces.prompt.template.PromptTemplate;
 
 import java.io.File;
 import java.io.IOException;
@@ -95,6 +95,7 @@ public class Config {
     public static OCM ocm = new OCM();
     public Validator validator;
     public String pluginSign;
+    public String phaseType;
 
     @Getter
     @Setter

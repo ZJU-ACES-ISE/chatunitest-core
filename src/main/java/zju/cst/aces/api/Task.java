@@ -1,5 +1,6 @@
 package zju.cst.aces.api;
 
+import zju.cst.aces.api.phase.Phase;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
@@ -55,7 +56,7 @@ public class Task {
         }
 
         Phase phase = new Phase(config);
-        phase.new Preparation().execute();
+        phase.prepare();
 
         log.info(String.format("\n==========================\n[%s] Generating tests for class: < ",config.pluginSign) + className
                 + "> method: < " + methodName + " > ...");
