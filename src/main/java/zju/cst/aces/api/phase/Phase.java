@@ -1,13 +1,11 @@
 
 package zju.cst.aces.api.phase;
 
-import lombok.AllArgsConstructor;
 import zju.cst.aces.api.config.Config;
-import zju.cst.aces.api.impl.Parser;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
+import zju.cst.aces.api.phase.phaseTask.*;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
-import zju.cst.aces.parser.ProjectParser;
 
 public class Phase {
     private final Config config;
@@ -46,6 +44,8 @@ public class Phase {
                 return new Phase_TestPilot(config);
             case "Phase_CoverUp":
                 return new Phase_CoverUp(config);
+            case "Phase_HITS":
+                return new Phase_HITS(config);
             default:
                 return new Phase(config); // Default or fallback Phase
         }
