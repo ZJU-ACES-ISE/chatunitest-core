@@ -1,4 +1,4 @@
-package zju.cst.aces.api.phase.phaseTask;
+package zju.cst.aces.api.phase.step;
 
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
@@ -10,13 +10,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 
-public class PromptGenerationTask {
+public class PromptGeneration {
     private final Config config;
     private final ClassInfo classInfo;
     private final MethodInfo methodInfo;
     private static final String separator = "_";
 
-    public PromptGenerationTask(Config config, ClassInfo classInfo, MethodInfo methodInfo) {
+    public PromptGeneration(Config config, ClassInfo classInfo, MethodInfo methodInfo) {
         this.config = config;
         this.classInfo = classInfo;
         this.methodInfo = methodInfo;
@@ -49,7 +49,7 @@ public class PromptGenerationTask {
             return pc;
 
         } catch (IOException e) {
-            throw new RuntimeException("In PromptGenerationTask.execute: " + e);
+            throw new RuntimeException("In PromptGeneration.execute: " + e);
         }
     }
 }

@@ -1,54 +1,68 @@
-
 package zju.cst.aces.api.phase;
 
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
-import zju.cst.aces.api.phase.phaseTask.*;
+import zju.cst.aces.api.phase.step.*;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 
 public class Phase {
-    private final Config config;
+    public enum PhaseType {
+        TEPLA,
+        TEST_PILOT,
+        COVER_UP,
+        HITS
+    }
+
+    protected final Config config;
 
     public Phase(Config config) {
         this.config = config;
     }
 
     public void prepare() {
-        new PreparationTask(config).execute();
+        new Preparation(config).execute();
     }
 
     public PromptConstructorImpl generatePrompt(ClassInfo classInfo, MethodInfo methodInfo, int num) {
-        return new PromptGenerationTask(config, classInfo, methodInfo).execute(num);
+        return new PromptGeneration(config, classInfo, methodInfo).execute(num);
     }
 
     public void generateTest(PromptConstructorImpl pc) {
-        new TestGenerationTask(config).execute(pc);
+        new TestGeneration(config).execute(pc);
     }
 
     public boolean validateTest(PromptConstructorImpl pc) {
-        return new ValidationTask(config).execute(pc);
+        return new Validation(config).execute(pc);
     }
 
     public void repairTest(PromptConstructorImpl pc) {
-        new RepairTask(config).execute(pc);
+        new Repair(config).execute(pc);
     }
+
     // Factory method to select the appropriate Phase subclass based on config
-    private Phase createPhase() {
+    public Phase createPhase() {
         // Example logic to select Phase subclass based on config properties
-        String phaseType = config.getPhaseType();
+        String phaseTypeString = config.getPhaseType();
+        PhaseType phaseType;
+
+        try {
+            phaseType = PhaseType.valueOf(phaseTypeString); // todo 这里似乎如果没有找到枚举对象会直接崩溃
+        } catch (IllegalArgumentException e) {
+            return new Phase(config); // Default or fallback Phase
+        }
+
         switch (phaseType) {
-            case "Phase_TEPLA":
+            case TEPLA:
                 return new Phase_TEPLA(config);
-            case "Phase_TestPilot":
+            case TEST_PILOT:
                 return new Phase_TestPilot(config);
-            case "Phase_CoverUp":
+            case COVER_UP:
                 return new Phase_CoverUp(config);
-            case "Phase_HITS":
+            case HITS:
                 return new Phase_HITS(config);
             default:
                 return new Phase(config); // Default or fallback Phase
         }
     }
-
 }

@@ -1,4 +1,4 @@
-package zju.cst.aces.api.phase.phaseTask;
+package zju.cst.aces.api.phase.step;
 
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.ChatGenerator;
@@ -12,12 +12,12 @@ import zju.cst.aces.util.CodeExtractor;
 
 import java.util.List;
 
-public class TestGenerationTask {
-    private final Config config;
-    private PromptGenerator promptGenerator;
-    private MethodInfo methodInfo;
+public class TestGeneration {
+    protected final Config config;
+    protected PromptGenerator promptGenerator;
+    protected MethodInfo methodInfo;
 
-    public TestGenerationTask(Config config) {
+    public TestGeneration(Config config) {
         this.config = config;
     }
 
@@ -79,6 +79,7 @@ public class TestGenerationTask {
         promptInfo.setUnitTest(code);
         record.setCode(code);
     }
+
     public String generateTest(List<ChatMessage> prompt, RoundRecord record) {
 
         if (MethodRunner.isExceedMaxTokens(config.getMaxPromptTokens(), prompt)) {
