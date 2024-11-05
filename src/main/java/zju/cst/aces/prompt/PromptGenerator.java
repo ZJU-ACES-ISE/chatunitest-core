@@ -1,6 +1,7 @@
 package zju.cst.aces.prompt;
 
 import zju.cst.aces.api.config.Config;
+import zju.cst.aces.api.phase.PromptFile;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.prompt.template.PromptTemplate;
 import zju.cst.aces.util.TokenCounter;
@@ -30,19 +31,38 @@ public class PromptGenerator {
     public List<ChatMessage> generateMessages(PromptInfo promptInfo) {
         List<ChatMessage> chatMessages = new ArrayList<>();
         if (promptInfo.errorMsg == null) { // round 0
-            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, promptTemplate.TEMPLATE_INIT)));
+            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, promptTemplate.TEMPLATE_INIT_SYSTEM)));
             chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_INIT)));
         } else {
             chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_REPAIR)));
         }
         return chatMessages;
     }
-
+    /**
+     * Generate messages by promptInfo with no errors (generation - round 0) or errors (repair - round > 0)
+     * @param promptInfo
+     * @return
+     */
     public List<ChatMessage> generateMessages(PromptInfo promptInfo, String templateName) {
         List<ChatMessage> chatMessages = new ArrayList<>();
-        chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, templateName)));
-        chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, templateName)));
+        if (promptInfo.errorMsg == null) { // round 0
+            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, selectPromptFile(templateName).getInit())));
+            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, selectPromptFile(templateName).getInitSystem())));
+        } else {
+            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_REPAIR)));
+        }
+
         return chatMessages;
+    }
+    public PromptFile selectPromptFile(String templateName) {
+        // Map templateName to a specific PromptFile enum constant
+        switch (templateName) {
+            case "testpilot":
+                return PromptFile.testpilot;
+            // Add additional cases if there are more PromptFile constants
+            default:
+                return PromptFile.chatunitest;
+        }
     }
 
     public String createUserPrompt(PromptInfo promptInfo, String templateName) {
@@ -81,7 +101,7 @@ public class PromptGenerator {
     public String createSystemPrompt(PromptInfo promptInfo, String templateName) {
         try {
             String filename;
-            filename = addSystemFileName(templateName);
+            filename = templateName;
             return promptTemplate.renderTemplate(filename);
         } catch (Exception e) {
             if (e instanceof IOException) {
@@ -91,13 +111,7 @@ public class PromptGenerator {
         }
     }
 
-    public String addSystemFileName(String filename) {
-        String[] parts = filename.split("\\.");
-        if (parts.length > 1) {
-            return parts[0] + "_system." + parts[1];
-        }
-        return filename;
-    }
+
 
     public String buildCOT(COT<?> cot) {
         return "";

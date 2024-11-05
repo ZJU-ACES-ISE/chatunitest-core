@@ -2,7 +2,7 @@ package zju.cst.aces.api.phase;
 
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
-import zju.cst.aces.api.phase.task.*;
+import zju.cst.aces.api.phase.step.*;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 
@@ -14,43 +14,43 @@ public class Phase{
     }
 
     public void prepare() {
-        Preparation preparation =createPreparationTask();
+        Preparation preparation =createPreparation();
         preparation.execute();
     }
 
     public PromptConstructorImpl generatePrompt(ClassInfo classInfo, MethodInfo methodInfo, int num) {
-        return createPromptGenerationTask(classInfo, methodInfo).execute(num);
+        return createPromptGeneration(classInfo, methodInfo).execute(num);
     }
 
     public void generateTest(PromptConstructorImpl pc) {
-        createTestGenerationTask().execute(pc);
+        createTestGeneration().execute(pc);
     }
 
     public boolean validateTest(PromptConstructorImpl pc) {
-        return createValidationTask().execute(pc);
+        return createValidation().execute(pc);
     }
 
     public void repairTest(PromptConstructorImpl pc) {
         createRepairTask().execute(pc);
     }
     // Factory methods to create task instances
-    private Preparation createPreparationTask() {
+    protected Preparation createPreparation() {
         return new Preparation(config);
     }
 
-    private PromptGeneration createPromptGenerationTask(ClassInfo classInfo, MethodInfo methodInfo) {
+    protected PromptGeneration createPromptGeneration(ClassInfo classInfo, MethodInfo methodInfo) {
         return new PromptGeneration(config, classInfo, methodInfo);
     }
 
-    private TestGeneration  createTestGenerationTask() {
+    protected TestGeneration  createTestGeneration() {
         return new TestGeneration(config);
     }
 
-    private Validation createValidationTask() {
+    protected Validation createValidation() {
         return new Validation(config);
     }
 
-    private Repair createRepairTask() {
+    protected Repair createRepairTask() {
         return new Repair(config);
     }
 

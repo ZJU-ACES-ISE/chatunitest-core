@@ -190,6 +190,12 @@
             <artifactId>jgrapht-core</artifactId>
             <version>1.3.0</version> <!-- Make sure to use the correct version -->
         </dependency>
+        <dependency>
+            <groupId>org.sonarsource.analyzer-commons</groupId>
+            <artifactId>sonar-analyzer-recognizers</artifactId>
+            <version>1.24.0.965</version>
+        </dependency>
+
     </dependencies>
 
     <profiles>

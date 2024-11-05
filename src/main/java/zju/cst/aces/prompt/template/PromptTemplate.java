@@ -36,6 +36,8 @@ public class PromptTemplate {
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     public static final String CONFIG_FILE = "config.properties";
     public String TEMPLATE_INIT = "";
+    public String TEMPLATE_INIT_SYSTEM  = "";
+    public String TEMPLATE_EXTRA_SYSTEM  = "";
     public String TEMPLATE_EXTRA = "";
     public String TEMPLATE_REPAIR = "";
     public String TEMPLATE_TESTPILOT_INIT = "";
@@ -51,7 +53,9 @@ public class PromptTemplate {
         this.promptPath = promptPath;
         this.maxPromptTokens = maxPromptTokens;
         TEMPLATE_INIT = properties.getProperty("PROMPT_TEMPLATE_INIT");
+        TEMPLATE_INIT_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_INIT_SYSTEM");
         TEMPLATE_EXTRA = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
+        TEMPLATE_EXTRA_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
         TEMPLATE_REPAIR = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
         TEMPLATE_TESTPILOT_INIT = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
     }

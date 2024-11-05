@@ -1,5 +1,6 @@
-package zju.cst.aces.api.phase.task;
+package zju.cst.aces.api.phase.step;
 
+import lombok.Data;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.ChatGenerator;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
@@ -11,7 +12,7 @@ import zju.cst.aces.runner.MethodRunner;
 import zju.cst.aces.util.CodeExtractor;
 
 import java.util.List;
-
+@Data
 public class TestGeneration {
     private final Config config;
     private PromptGenerator promptGenerator;
@@ -52,7 +53,7 @@ public class TestGeneration {
             Obfuscator obfuscator = new Obfuscator(config);
             PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
             obfuscator.obfuscatePromptInfo(obfuscatedPromptInfo);
-            prompt = promptGenerator.generateMessages(obfuscatedPromptInfo);
+            prompt = promptGenerator.generateMessages(obfuscatedPromptInfo,config.getPhaseType());
             code = generateTest(prompt, record);
             if (!record.isHasCode()) {
                 promptInfo.setUnitTest("");
@@ -60,7 +61,7 @@ public class TestGeneration {
             }
             code = obfuscator.deobfuscateJava(code);
         } else {
-            prompt = promptGenerator.generateMessages(promptInfo);
+            prompt = promptGenerator.generateMessages(promptInfo,config.getPhaseType());
             code = generateTest(prompt, record);
             if (!record.isHasCode()) {
                 promptInfo.setUnitTest("");
