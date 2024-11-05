@@ -1,14 +1,14 @@
-package zju.cst.aces.api.phase.phaseTask;
+package zju.cst.aces.api.phase.task;
 
 import zju.cst.aces.api.PreProcess;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.Parser;
 import zju.cst.aces.parser.ProjectParser;
 
-public class PreparationTask {
+public  class Preparation {
     private final Config config;
 
-    public PreparationTask(Config config) {
+    public Preparation(Config config) {
         this.config = config;
     }
 

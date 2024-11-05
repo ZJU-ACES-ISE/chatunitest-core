@@ -15,6 +15,8 @@ import zju.cst.aces.dto.MethodInfo;
 import zju.cst.aces.dto.PromptInfo;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.runner.AbstractRunner;
+import zju.cst.aces.util.testpilot.JavadocCodeExampleCheck;
+import zju.cst.aces.util.testpilot.SnippetAnalyzer;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +38,7 @@ public class PromptTemplate {
     public String TEMPLATE_INIT = "";
     public String TEMPLATE_EXTRA = "";
     public String TEMPLATE_REPAIR = "";
+    public String TEMPLATE_TESTPILOT_INIT = "";
     public Map<String, Object> dataModel = new HashMap<>();
     public Properties properties;
     public Path promptPath;
@@ -50,8 +53,8 @@ public class PromptTemplate {
         TEMPLATE_INIT = properties.getProperty("PROMPT_TEMPLATE_INIT");
         TEMPLATE_EXTRA = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
         TEMPLATE_REPAIR = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
+        TEMPLATE_TESTPILOT_INIT = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
     }
-
     //渲染
     public String renderTemplate(String templateFileName) throws IOException, TemplateException{
         Configuration configuration = new Configuration(Configuration.VERSION_2_3_30);
@@ -161,7 +164,11 @@ public class PromptTemplate {
             this.dataModel.put("other_method_sigs", null);
             this.dataModel.put("other_method_bodies", null);
         }
-
+        //add javaDocs
+        String javadocs=promptInfo.getMethodInfo().getMethod_comment();
+        this.dataModel.put("java_doc",javadocs);
+        this.dataModel.put("java_doc_code",getJavaDocCodeExample(javadocs));
+        this.dataModel.put("doc_infos",getSnippetCode(promptInfo.getMethodInfo().getMethodName(),config));
         //add target method invocation example in the project
         Map<String, List<String>> invocationCodeMap = get_method_invocation_code(Paths.get(config.tmpOutput.toString(),
                 "methodExampleCode.json").toString(), promptInfo.getFullClassName(), promptInfo.getMethodSignature());
@@ -179,6 +186,8 @@ public class PromptTemplate {
         this.dataModel.put("c_deps", cdep_temp);
         this.dataModel.put("m_deps", mdep_temp);
         this.dataModel.put("full_fm", promptInfo.getContext());
+
+
     }
 
     public static void main(String[] args) {
@@ -760,5 +769,17 @@ public class PromptTemplate {
             }
         }
         return fullProjectCode;
+    }
+    public String getJavaDocCodeExample(String javadocs) {
+        List<String> lines = Arrays.asList(javadocs.split("\r\n"));
+        JavadocCodeExampleCheck javadocCodeExampleCheck=new JavadocCodeExampleCheck();
+        List<String> javaDocCodeExample = javadocCodeExampleCheck.getJavaDocCodeExample(lines);
+        return  String.join("\r\n", javaDocCodeExample);
+    }
+    public List<String> getSnippetCode(String methodName, Config config) {
+        String absolutePath = config.getProject().getBasedir().getAbsolutePath();
+        SnippetAnalyzer snippetAnalyzer=new SnippetAnalyzer();
+        List<String> docSnippets = snippetAnalyzer.getDocSnippets(absolutePath, methodName);
+        return docSnippets;
     }
 }

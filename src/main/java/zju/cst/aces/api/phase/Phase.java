@@ -1,41 +1,61 @@
-
 package zju.cst.aces.api.phase;
 
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
-import zju.cst.aces.api.phase.phaseTask.*;
+import zju.cst.aces.api.phase.task.*;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 
-public class Phase {
-    private final Config config;
+public class Phase{
+    protected final Config config;
 
     public Phase(Config config) {
         this.config = config;
     }
 
     public void prepare() {
-        new PreparationTask(config).execute();
+        Preparation preparation =createPreparationTask();
+        preparation.execute();
     }
 
     public PromptConstructorImpl generatePrompt(ClassInfo classInfo, MethodInfo methodInfo, int num) {
-        return new PromptGenerationTask(config, classInfo, methodInfo).execute(num);
+        return createPromptGenerationTask(classInfo, methodInfo).execute(num);
     }
 
     public void generateTest(PromptConstructorImpl pc) {
-        new TestGenerationTask(config).execute(pc);
+        createTestGenerationTask().execute(pc);
     }
 
     public boolean validateTest(PromptConstructorImpl pc) {
-        return new ValidationTask(config).execute(pc);
+        return createValidationTask().execute(pc);
     }
 
     public void repairTest(PromptConstructorImpl pc) {
-        new RepairTask(config).execute(pc);
+        createRepairTask().execute(pc);
     }
-    // Factory method to select the appropriate Phase subclass based on config
-    private Phase createPhase() {
-        // Example logic to select Phase subclass based on config properties
+    // Factory methods to create task instances
+    private Preparation createPreparationTask() {
+        return new Preparation(config);
+    }
+
+    private PromptGeneration createPromptGenerationTask(ClassInfo classInfo, MethodInfo methodInfo) {
+        return new PromptGeneration(config, classInfo, methodInfo);
+    }
+
+    private TestGeneration  createTestGenerationTask() {
+        return new TestGeneration(config);
+    }
+
+    private Validation createValidationTask() {
+        return new Validation(config);
+    }
+
+    private Repair createRepairTask() {
+        return new Repair(config);
+    }
+
+
+    public static Phase createPhase(Config config) {
         String phaseType = config.getPhaseType();
         switch (phaseType) {
             case "Phase_TEPLA":
@@ -47,8 +67,7 @@ public class Phase {
             case "Phase_HITS":
                 return new Phase_HITS(config);
             default:
-                return new Phase(config); // Default or fallback Phase
+                throw new IllegalArgumentException("Unknown phase type: " + phaseType);
         }
     }
-
 }

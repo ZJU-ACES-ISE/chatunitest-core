@@ -1,4 +1,4 @@
-package zju.cst.aces.api.phase.phaseTask;
+package zju.cst.aces.api.phase.task;
 
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.ChatGenerator;
@@ -12,12 +12,12 @@ import zju.cst.aces.util.CodeExtractor;
 
 import java.util.List;
 
-public class TestGenerationTask {
+public class TestGeneration {
     private final Config config;
     private PromptGenerator promptGenerator;
     private MethodInfo methodInfo;
 
-    public TestGenerationTask(Config config) {
+    public TestGeneration(Config config) {
         this.config = config;
     }
 

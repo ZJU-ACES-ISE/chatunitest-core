@@ -1,14 +1,14 @@
-package zju.cst.aces.api.phase.phaseTask;
+package zju.cst.aces.api.phase.task;
 
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
 import zju.cst.aces.dto.PromptInfo;
 import static zju.cst.aces.runner.AbstractRunner.runTest;
 
-public class ValidationTask {
+public class Validation {
     private final Config config;
 
-    public ValidationTask(Config config) {
+    public Validation(Config config) {
         this.config = config;
     }
 
