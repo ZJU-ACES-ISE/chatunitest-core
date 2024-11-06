@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.nio.file.Path;
 import java.util.*;
+import zju.cst.aces.util.JsonResponseProcessor;
 
 @Data
 public class PromptInfo {
@@ -29,6 +30,9 @@ public class PromptInfo {
     public List<RoundRecord> records = new ArrayList<>();
     public MethodInfo methodInfo;
     public ClassInfo classInfo;
+    public Path methodSlicePath;
+    public Integer sliceNum;
+    public JsonResponseProcessor.JsonData.Step sliceStep;
 
     public PromptInfo(boolean hasDep, String fullClassName, String methodName,
                       String methodSignature) {

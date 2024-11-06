@@ -41,6 +41,11 @@ public class PromptTemplate {
     public String TEMPLATE_EXTRA = "";
     public String TEMPLATE_REPAIR = "";
     public String TEMPLATE_TESTPILOT_INIT = "";
+    public String TEMPLATE_GEN_SLICE = "";
+    public String TEMPLATE_SYS_GEN = "";
+    public String TEMPLATE_HITS_REPAIR= "";
+    public String TEMPLATE_GEN_CODE = "";
+    public String TEMPLATE_HITS_SYS_REPAIR = "";
     public Map<String, Object> dataModel = new HashMap<>();
     public Properties properties;
     public Path promptPath;
@@ -58,6 +63,11 @@ public class PromptTemplate {
         TEMPLATE_EXTRA_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
         TEMPLATE_REPAIR = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
         TEMPLATE_TESTPILOT_INIT = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
+        TEMPLATE_GEN_SLICE = properties.getProperty("PROMPT_TEMPLATE_GEN_SLICE");
+        TEMPLATE_SYS_GEN = properties.getProperty("PROMPT_TEMPLATE_SYS_GEN");
+        TEMPLATE_GEN_CODE = properties.getProperty("PROMPT_TEMPLATE_GEN_CODE");
+        TEMPLATE_HITS_SYS_REPAIR = properties.getProperty("PROMPT_TEMPLATE_HITS_SYS_REPAIR");
+        TEMPLATE_HITS_REPAIR = properties.getProperty("PROMPT_TEMPLATE_HITS_REPAIR");
     }
     //渲染
     public String renderTemplate(String templateFileName) throws IOException, TemplateException{
@@ -173,6 +183,13 @@ public class PromptTemplate {
         this.dataModel.put("java_doc",javadocs);
         this.dataModel.put("java_doc_code",getJavaDocCodeExample(javadocs));
         this.dataModel.put("doc_infos",getSnippetCode(promptInfo.getMethodInfo().getMethodName(),config));
+        if (promptInfo.getSliceStep() != null) {
+            this.dataModel.put("step_desp", promptInfo.getSliceStep().getDesp());
+            this.dataModel.put("step_code", promptInfo.getSliceStep().getCode());
+        } else {
+            this.dataModel.put("step_desp", null);
+            this.dataModel.put("step_code", null);
+        }
         //add target method invocation example in the project
         Map<String, List<String>> invocationCodeMap = get_method_invocation_code(Paths.get(config.tmpOutput.toString(),
                 "methodExampleCode.json").toString(), promptInfo.getFullClassName(), promptInfo.getMethodSignature());

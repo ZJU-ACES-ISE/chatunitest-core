@@ -12,11 +12,11 @@ import zju.cst.aces.runner.MethodRunner;
 import zju.cst.aces.util.CodeExtractor;
 
 import java.util.List;
-@Data
+
 public class TestGeneration {
-    private final Config config;
-    private PromptGenerator promptGenerator;
-    private MethodInfo methodInfo;
+    protected final Config config;
+    protected PromptGenerator promptGenerator;
+    protected MethodInfo methodInfo;
 
     public TestGeneration(Config config) {
         this.config = config;
@@ -80,6 +80,7 @@ public class TestGeneration {
         promptInfo.setUnitTest(code);
         record.setCode(code);
     }
+
     public String generateTest(List<ChatMessage> prompt, RoundRecord record) {
 
         if (MethodRunner.isExceedMaxTokens(config.getMaxPromptTokens(), prompt)) {

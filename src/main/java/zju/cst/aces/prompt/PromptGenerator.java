@@ -24,6 +24,35 @@ public class PromptGenerator {
     }
 
     /**
+     * Generate messages for hits
+     * @param promptInfo
+     * @return
+     */
+    public List<ChatMessage> generateTestForHITS(PromptInfo promptInfo) {
+        List<ChatMessage> chatMessages = new ArrayList<>();
+        if (promptInfo.errorMsg == null) { // round 0
+            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, promptTemplate.TEMPLATE_SYS_GEN)));
+            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_GEN_CODE)));
+        } else {
+            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, promptTemplate.TEMPLATE_HITS_SYS_REPAIR)));
+            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_HITS_REPAIR)));
+        }
+        return chatMessages;
+    }
+
+    /**
+     * Generate slices for hits
+     * @param promptInfo
+     * @return
+     */
+    public List<ChatMessage> generateSliceForHITS(PromptInfo promptInfo) {
+        List<ChatMessage> chatMessages = new ArrayList<>();
+        chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, promptTemplate.TEMPLATE_SYS_GEN))); //todo 为空
+        chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_GEN_SLICE)));
+        return chatMessages;
+    }
+
+    /**
      * Generate messages by promptInfo with no errors (generation - round 0) or errors (repair - round > 0)
      * @param promptInfo
      * @return

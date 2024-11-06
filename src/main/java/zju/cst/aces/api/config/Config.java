@@ -153,6 +153,7 @@ public class Config {
                 .build();
         public Validator validator;
         public String pluginSign;
+        public String phaseType; //TODO
 
         public ConfigBuilder(Project project) {
             initDefault(project);
@@ -241,6 +242,11 @@ public class Config {
 
         public ConfigBuilder pluginSign(String pluginSign){
             this.pluginSign=pluginSign;
+            return this;
+        }
+
+        public ConfigBuilder phaseType(String phaseType){
+            this.phaseType=phaseType;
             return this;
         }
 

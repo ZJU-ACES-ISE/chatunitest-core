@@ -1,3 +1,4 @@
+
 package zju.cst.aces.api.phase;
 
 import zju.cst.aces.api.config.Config;
@@ -6,7 +7,14 @@ import zju.cst.aces.api.phase.step.*;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 
-public class Phase{
+public class Phase {
+    public enum PhaseType {
+        TEPLA,
+        TEST_PILOT,
+        COVER_UP,
+        HITS
+    }
+
     protected final Config config;
 
     public Phase(Config config) {
@@ -14,8 +22,7 @@ public class Phase{
     }
 
     public void prepare() {
-        Preparation preparation =createPreparation();
-        preparation.execute();
+        createPreparation().execute();
     }
 
     public PromptConstructorImpl generatePrompt(ClassInfo classInfo, MethodInfo methodInfo, int num) {
@@ -55,19 +62,28 @@ public class Phase{
     }
 
 
-    public static Phase createPhase(Config config) {
-        String phaseType = config.getPhaseType();
-        switch (phaseType) {
-            case "Phase_TEPLA":
-                return new Phase_TEPLA(config);
-            case "Phase_TestPilot":
-                return new Phase_TestPilot(config);
-            case "Phase_CoverUp":
-                return new Phase_CoverUp(config);
-            case "Phase_HITS":
-                return new Phase_HITS(config);
-            default:
-                throw new IllegalArgumentException("Unknown phase type: " + phaseType);
+    // Factory method to select the appropriate Phase subclass based on config
+    public Phase createPhase() {
+        // Example logic to select Phase subclass based on config properties
+        String phaseTypeString = config.getPhaseType();
+
+        try {
+            PhaseType phaseType = PhaseType.valueOf(phaseTypeString); // todo 这里似乎如果没有找到枚举对象会直接崩溃
+            switch (phaseType) {
+                case TEPLA:
+                    return new Phase_TEPLA(config);
+                case TEST_PILOT:
+                    return new Phase_TestPilot(config);
+                case COVER_UP:
+                    return new Phase_CoverUp(config);
+                case HITS:
+                    return new Phase_HITS(config);
+                default:
+                    return new Phase(config); // Default or fallback Phase
+            }
+        }catch (IllegalArgumentException e) {
+            return new Phase(config); // Default or fallback Phase
         }
+
     }
 }
