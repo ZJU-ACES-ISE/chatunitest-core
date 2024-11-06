@@ -18,6 +18,7 @@ import zju.cst.aces.api.Validator;
 import zju.cst.aces.api.impl.LoggerImpl;
 import zju.cst.aces.api.Logger;
 import zju.cst.aces.api.impl.ValidatorImpl;
+import zju.cst.aces.dto.MethodExampleMap;
 import zju.cst.aces.dto.OCM;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.prompt.template.PromptTemplate;
@@ -74,6 +75,7 @@ public class Config {
     public int frequencyPenalty;
     public int presencePenalty;
     public Path testOutput;
+    public Path counterExamplePath;
     public Path tmpOutput;
     public Path compileOutputPath;
     public Path parseOutput;
@@ -83,6 +85,7 @@ public class Config {
     public Path examplePath;
     public Path symbolFramePath;
 
+    public String coverageAnalyzer_jar_path;
     public String proxy;
     public String hostname;
     public String port;
@@ -93,6 +96,7 @@ public class Config {
     public static Map<String, Map<String, String>> classMapping = new HashMap<>();
     public static Map<String, TreeSet<String>> objectConstructionCode = new HashMap<>();
     public static OCM ocm = new OCM();
+    public static MethodExampleMap methodExampleMap;
     public Validator validator;
     public String pluginSign;
     public String phaseType;
@@ -135,6 +139,7 @@ public class Config {
         public int frequencyPenalty = 0;
         public int presencePenalty = 0;
         public Path testOutput;
+        public Path counterExamplePath;
         public Path tmpOutput = Paths.get(System.getProperty("java.io.tmpdir"), "chatunitest-info");
         public Path parseOutput;
         public Path compileOutputPath;
@@ -151,6 +156,7 @@ public class Config {
                 .writeTimeout(5, TimeUnit.MINUTES)
                 .readTimeout(5, TimeUnit.MINUTES)
                 .build();
+        public String coverageAnalyzer_jar_path;
         public Validator validator;
         public String pluginSign;
         public String phaseType; //TODO
@@ -192,6 +198,7 @@ public class Config {
             this.classNameMapPath = this.tmpOutput.resolve("classNameMapping.json");
             this.historyPath = this.tmpOutput.resolve("history" + this.date);
             this.symbolFramePath = this.tmpOutput.resolve("symbolFrames.json");
+            this.counterExamplePath = project.getBasedir().toPath().resolve("smartut-tests");
             this.testOutput = project.getBasedir().toPath().resolve("chatunitest-tests");
             this.validator = new ValidatorImpl(this.testOutput, this.compileOutputPath,
                     this.project.getBasedir().toPath().resolve("target"), this.classPaths);
@@ -215,7 +222,10 @@ public class Config {
             setProxy(proxy);
             return this;
         }
-
+        public ConfigBuilder coverageAnalyzer_jar_path(String coverageAnalyzer_jar_path){
+            this.coverageAnalyzer_jar_path=coverageAnalyzer_jar_path;
+            return this;
+        }
         public ConfigBuilder tmpOutput(Path tmpOutput) {
             this.tmpOutput = tmpOutput;
             Project parent = project.getParent();
@@ -234,7 +244,20 @@ public class Config {
                     this.project.getBasedir().toPath().resolve("target"), this.classPaths);
             return this;
         }
-
+        public ConfigBuilder CounterExamplePath(Path counterExamplePath) {
+            if (counterExamplePath == null) {
+                this.counterExamplePath = project.getBasedir().toPath().resolve("smartut-tests");
+            } else {
+                this.counterExamplePath = counterExamplePath;
+                Project parent = project.getParent();
+                while(parent != null && parent.getBasedir() != null) {
+                    this.counterExamplePath = this.counterExamplePath.resolve(parent.getArtifactId());
+                    parent = parent.getParent();
+                }
+                this.counterExamplePath = this.counterExamplePath.resolve(project.getArtifactId());
+            }
+            return this;
+        }
         public ConfigBuilder project(Project project) {
             this.project = project;
             return this;
@@ -586,6 +609,7 @@ public class Config {
             config.setFrequencyPenalty(this.frequencyPenalty);
             config.setPresencePenalty(this.presencePenalty);
             config.setTestOutput(this.testOutput);
+            config.setCounterExamplePath(this.counterExamplePath);
             config.setTmpOutput(this.tmpOutput);
             config.setCompileOutputPath(this.compileOutputPath);
             config.setParseOutput(this.parseOutput);
@@ -601,6 +625,8 @@ public class Config {
             config.setLogger(this.logger);
             config.setValidator(this.validator);
             config.setPluginSign(this.pluginSign);
+            config.setPhaseType(this.phaseType);
+            config.setCoverageAnalyzer_jar_path(this.coverageAnalyzer_jar_path);
             return config;
         }
     }
@@ -627,6 +653,7 @@ public class Config {
         logger.info(" --- ");
         logger.info(" TestOutput Path >>> " + this.getTestOutput());
         logger.info(" TmpOutput Path >>> " + this.getTmpOutput());
+        logger.info(" CounterExample Path >>> " + this.getCounterExamplePath());
         logger.info(" Prompt path >>> " + this.getPromptPath());
         logger.info(" Example path >>> " + this.getExamplePath());
         logger.info(" --- ");
@@ -642,6 +669,7 @@ public class Config {
         logger.info(" MaxPromptTokens >>> " + this.getMaxPromptTokens());
         logger.info(" SleepTime >>> " + this.getSleepTime());
         logger.info(" DependencyDepth >>> " + this.getDependencyDepth());
+        logger.info(" coverageAnalyzer_jar_path >>> " + this.getCoverageAnalyzer_jar_path());
         logger.info("\n===================================================================\n");
         try {
             Thread.sleep(1000);

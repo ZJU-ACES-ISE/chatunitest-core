@@ -6,6 +6,8 @@ import com.github.javaparser.Position;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.CallableDeclaration;
+import com.github.javaparser.ast.body.ConstructorDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.resolution.UnsolvedSymbolException;
 import com.github.javaparser.resolution.types.ResolvedType;
@@ -18,6 +20,7 @@ import slicing.slicing.MultiVariableCriterion;
 import slicing.slicing.Slice;
 import zju.cst.aces.api.Project;
 import zju.cst.aces.api.config.Config;
+import zju.cst.aces.dto.MethodExampleMap;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,8 +29,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static zju.cst.aces.parser.ProjectParser.config;
+import static zju.cst.aces.parser.ProjectParser.exportJson;
 
 @Data
 public class JavaParserUtil {
@@ -244,5 +249,139 @@ public class JavaParserUtil {
             }
         }
         return false;
+    }
+    public MethodExampleMap createMethodExampleMap(NodeList<CompilationUnit> cus) {
+        config.getLogger().info("Starting to create method example map...");
+        MethodExampleMap methodExampleMap = new MethodExampleMap();
+        SDG sdg = createSDG(cus);
+
+        AtomicInteger cuIndex = new AtomicInteger();
+        AtomicInteger methodIndex = new AtomicInteger();
+        int totalMethods = slicing.graphs.ClassGraph.getInstance().getMethodDeclarationMap().size();
+        cus.forEach(cu -> {
+            cu.findAll(CallableDeclaration.class).forEach(callable -> {
+                Set<CallGraph.Edge<?>> edges = findEdgeByCallGraph(callable, sdg.getCallGraph());
+                if (!edges.isEmpty()) {
+                    config.getLogger().info("Processing method: [ " + callable.getNameAsString() + " ]" + " total: " + methodIndex.getAndIncrement() + " / " + totalMethods);
+                    edges.forEach(edge -> {
+                        config.getLogger().info("Processing edge: " + edge.getSource().getNameAsString() + " -> " + edge.getTarget().getNameAsString());
+                        if (edge.getTarget().equals(callable)) {
+                            if (! (edge.getCall() instanceof Expression)) {
+                                return;
+                            }
+                            Expression callSite = (Expression) edge.getCall();
+                            int callSiteLine = callSite.getBegin().orElse(new Position(0, 0)).line;
+                            List<String> arguments = createStringArgumets(callSite);
+
+                            CallableDeclaration<?> caller = edge.getSource();
+                            CompilationUnit callerCompilationUnit = findClassByCallable(caller);
+                            String callerClassFullName = callerCompilationUnit.getType(0).getFullyQualifiedName().get();
+
+                            if (!arguments.isEmpty()) {
+                                var sc = new MultiVariableCriterion(callerClassFullName, callSiteLine, arguments);
+                                config.getLogger().info("Slicing method: " + getSignatureByCallable(callable) + " at callsite: < " + callSite + " >");
+                                Slice slice = sdg.slice(sc);
+                                if (!slice.toAst().isEmpty()) {
+                                    String code = findCodeBySlice(slice, callerCompilationUnit.getType(0).getNameAsString());
+                                    if (code != null) {
+                                        methodExampleMap.add(getQualifiedSignatureByCallable(callable),
+                                                callerClassFullName,
+                                                getSignatureByCallable(caller),
+                                                callSiteLine,
+                                                code);
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        });
+
+        return methodExampleMap;
+    }
+    public void exportMethodExampleMap(MethodExampleMap methodExampleMap) {
+        Path savePath = config.tmpOutput.resolve("methodExampleCode.json");
+        exportJson(savePath, methodExampleMap.getMEM());
+    }
+    public void findBackwardAnalysis(MethodExampleMap methodExampleMap){
+
+        Map<String, Set<List<MethodExampleMap.MEC>>> paths = new HashMap<>();
+        methodExampleMap.getMEM().forEach((key, value) -> {
+            for (MethodExampleMap.MEC methodExample : value) {
+                List<MethodExampleMap.MEC> path = new ArrayList<>();
+                path.add(methodExample);
+                findPaths(key, methodExample, path, paths, methodExampleMap);
+            }
+        });
+
+        // select ShortestPath
+        filterShortestPaths(methodExampleMap,paths);
+    }
+
+    private void findPaths(String key, MethodExampleMap.MEC currentMethod, List<MethodExampleMap.MEC> currentPath,
+                           Map<String, Set<List<MethodExampleMap.MEC>>> paths, MethodExampleMap methodExampleMap) {
+
+        // Search For Current Method
+        Set<MethodExampleMap.MEC> invokers = methodExampleMap.getMEM().get(currentMethod.getClassName() + "." + currentMethod.getMethodName());
+        if (invokers == null || invokers.isEmpty()) {
+            // If reach the top of the invocation,then stop,and add the currentpath to Paths
+            paths.computeIfAbsent(key, k -> new HashSet<>()).add(new ArrayList<>(currentPath));
+        } else {
+            for (MethodExampleMap.MEC invoker : invokers) {
+                String invokerKey = invoker.getClassName() + "." + invoker.getMethodName();
+                currentPath.add(invoker);
+                findPaths(key, invoker, currentPath, paths, methodExampleMap);
+                currentPath.remove(currentPath.size() - 1);
+            }
+        }
+    }
+
+    private void filterShortestPaths(MethodExampleMap methodExampleMap,Map<String, Set<List<MethodExampleMap.MEC>>> allPaths) {
+        Map<String, Set<List<MethodExampleMap.MEC>>> shortestPaths = new HashMap<>();
+        for (Map.Entry<String, Set<List<MethodExampleMap.MEC>>> entry : allPaths.entrySet()) {
+            String methodFullName = entry.getKey();
+            Set<List<MethodExampleMap.MEC>> paths = entry.getValue();
+            Map<String, List<List<MethodExampleMap.MEC>>> groupedByEndMethod = new HashMap<>();
+
+            for (List<MethodExampleMap.MEC> path : paths) {
+                if (!path.isEmpty()) {
+                    String endMethodFullName = path.get(path.size() - 1).getClassName() + "." + path.get(path.size() - 1).getMethodName();
+                    groupedByEndMethod.computeIfAbsent(endMethodFullName, k -> new ArrayList<>()).add(path);
+                }
+            }
+
+            for (Map.Entry<String, List<List<MethodExampleMap.MEC>>> groupEntry : groupedByEndMethod.entrySet()) {
+                List<List<MethodExampleMap.MEC>> sortedPaths = groupEntry.getValue();
+                sortedPaths.sort(Comparator.comparingInt(List::size));
+
+                int minLength = sortedPaths.isEmpty() ? 0 : sortedPaths.get(0).size();
+                for (List<MethodExampleMap.MEC> path : sortedPaths) {
+                    if (path.size() == minLength) {
+                        methodExampleMap.addBackWardPath(methodFullName,path);
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+
+    public void exportBackwardAnalysis(MethodExampleMap methodExampleMap) {
+        Path savePath = config.tmpOutput.resolve("backwardAnalysis.json");
+        exportJson(savePath, methodExampleMap.getMemList());
+    }
+    private String getQualifiedSignatureByCallable(CallableDeclaration<?> callable) {
+        if (callable.isMethodDeclaration()) {
+            MethodDeclaration md = callable.asMethodDeclaration();
+            return md.resolve().getQualifiedSignature()
+                    .replace(md.resolve().getSignature(), md.getSignature().asString());
+        } else if (callable.isConstructorDeclaration()) {
+            ConstructorDeclaration cd = callable.asConstructorDeclaration();
+            return cd.resolve().getQualifiedSignature();
+        } else {
+            throw new RuntimeException("Unsupported callable type: " + callable.getClass().getSimpleName());
+        }
     }
 }

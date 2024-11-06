@@ -63,7 +63,7 @@ public class Phase {
 
 
     // Factory method to select the appropriate Phase subclass based on config
-    public Phase createPhase() {
+    public static Phase createPhase(Config config) {
         // Example logic to select Phase subclass based on config properties
         String phaseTypeString = config.getPhaseType();
 

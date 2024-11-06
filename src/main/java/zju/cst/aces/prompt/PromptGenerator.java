@@ -88,7 +88,8 @@ public class PromptGenerator {
         switch (templateName) {
             case "testpilot":
                 return PromptFile.testpilot;
-            // Add additional cases if there are more PromptFile constants
+            case "hits":
+                return PromptFile.hits;
             default:
                 return PromptFile.chatunitest;
         }

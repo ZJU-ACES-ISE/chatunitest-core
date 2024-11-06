@@ -63,7 +63,7 @@ public class MethodRunner extends ClassRunner {
     public boolean startRounds(final int num) {
 
         config.setPhaseType("HITS");
-        Phase phase = new Phase(config).createPhase();
+        Phase phase = Phase.createPhase(config);
 
         // Prompt Construction Phase
         PromptConstructorImpl pc = phase.generatePrompt(classInfo, methodInfo,num);
