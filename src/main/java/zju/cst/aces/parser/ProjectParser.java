@@ -77,7 +77,7 @@ public class ProjectParser {
                 throw new RuntimeException("In ProjectParser.parse: " + e);
             }
         }
-        MethodExampleMap methodExampleMap = createMethodExampleMap(cus);
+//        MethodExampleMap methodExampleMap = createMethodExampleMap(cus);
 
         for (var cu : cus) {
             try {
@@ -103,7 +103,7 @@ public class ProjectParser {
         }
         exportClassMapping();
 //        exportOCC();
-        exportMethodExampleMap(methodExampleMap);
+//        exportMethodExampleMap(methodExampleMap);
         exportJson(config.getClassNameMapPath(), classNameMap);
         config.getLogger().info("\nParsed classes: " + classCount + "\nParsed methods: " + methodCount);
     }
