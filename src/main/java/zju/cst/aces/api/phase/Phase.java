@@ -1,89 +1,14 @@
-
 package zju.cst.aces.api.phase;
 
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
-import zju.cst.aces.api.phase.step.*;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 
-public class Phase {
-    public enum PhaseType {
-        TEPLA,
-        TEST_PILOT,
-        COVER_UP,
-        HITS
-    }
-
-    protected final Config config;
-
-    public Phase(Config config) {
-        this.config = config;
-    }
-
-    public void prepare() {
-        createPreparation().execute();
-    }
-
-    public PromptConstructorImpl generatePrompt(ClassInfo classInfo, MethodInfo methodInfo, int num) {
-        return createPromptGeneration(classInfo, methodInfo).execute(num);
-    }
-
-    public void generateTest(PromptConstructorImpl pc) {
-        createTestGeneration().execute(pc);
-    }
-
-    public boolean validateTest(PromptConstructorImpl pc) {
-        return createValidation().execute(pc);
-    }
-
-    public void repairTest(PromptConstructorImpl pc) {
-        createRepairTask().execute(pc);
-    }
-    // Factory methods to create task instances
-    protected Preparation createPreparation() {
-        return new Preparation(config);
-    }
-
-    protected PromptGeneration createPromptGeneration(ClassInfo classInfo, MethodInfo methodInfo) {
-        return new PromptGeneration(config, classInfo, methodInfo);
-    }
-
-    protected TestGeneration  createTestGeneration() {
-        return new TestGeneration(config);
-    }
-
-    protected Validation createValidation() {
-        return new Validation(config);
-    }
-
-    protected Repair createRepairTask() {
-        return new Repair(config);
-    }
-
-
-    // Factory method to select the appropriate Phase subclass based on config
-    public static Phase createPhase(Config config) {
-        // Example logic to select Phase subclass based on config properties
-        String phaseTypeString = config.getPhaseType();
-
-        try {
-            PhaseType phaseType = PhaseType.valueOf(phaseTypeString); // todo 这里似乎如果没有找到枚举对象会直接崩溃
-            switch (phaseType) {
-                case TEPLA:
-                    return new Phase_TEPLA(config);
-                case TEST_PILOT:
-                    return new Phase_TestPilot(config);
-                case COVER_UP:
-                    return new Phase_CoverUp(config);
-                case HITS:
-                    return new Phase_HITS(config);
-                default:
-                    return new Phase(config); // Default or fallback Phase
-            }
-        }catch (IllegalArgumentException e) {
-            return new Phase(config); // Default or fallback Phase
-        }
-
-    }
+public interface Phase {
+    void prepare();
+    PromptConstructorImpl generatePrompt(ClassInfo classInfo, MethodInfo methodInfo, int num);
+    void generateTest(PromptConstructorImpl pc);
+    boolean validateTest(PromptConstructorImpl pc);
+    void repairTest(PromptConstructorImpl pc);
 }

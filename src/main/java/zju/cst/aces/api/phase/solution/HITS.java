@@ -1,4 +1,4 @@
-package zju.cst.aces.api.phase;
+package zju.cst.aces.api.phase.solution;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import zju.cst.aces.api.config.Config;
@@ -6,6 +6,7 @@ import zju.cst.aces.api.impl.ChatGenerator;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
 import zju.cst.aces.api.impl.RepairImpl;
 import zju.cst.aces.api.impl.obfuscator.Obfuscator;
+import zju.cst.aces.api.phase.PhaseImpl;
 import zju.cst.aces.api.phase.step.*;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.runner.MethodRunner;
@@ -16,8 +17,8 @@ import java.nio.file.Path;
 import java.util.List;
 
 
-public class Phase_HITS extends Phase {
-    public Phase_HITS(Config config) {
+public class HITS extends PhaseImpl {
+    public HITS(Config config) {
         super(config);
     }
 
@@ -56,11 +57,21 @@ public class Phase_HITS extends Phase {
                 Obfuscator obfuscator = new Obfuscator(config);
                 PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
                 obfuscator.obfuscatePromptInfo(obfuscatedPromptInfo);
-                prompt = promptGenerator.generateSliceForHITS(obfuscatedPromptInfo); // todo
-                generateMethodSlice(prompt, record, obfuscatedPromptInfo);
+                if(config.useSlice) {
+                    prompt = promptGenerator.generateMessages(obfuscatedPromptInfo, "hits"); // todo
+                    generateMethodSlice(prompt, record, obfuscatedPromptInfo);
+                    config.useSlice = false;
+                }else{
+                    //todo 不生成切片，正常生成test
+                }
             } else {
-                prompt = promptGenerator.generateSliceForHITS(promptInfo);
-                generateMethodSlice(prompt, record, promptInfo);
+                if(config.useSlice) {
+                    prompt = promptGenerator.generateMessages(promptInfo, "hits");
+                    generateMethodSlice(prompt, record, promptInfo);
+                    config.useSlice = false;
+                }else {
+                    //todo
+                }
             }
         }
 
@@ -85,7 +96,7 @@ public class Phase_HITS extends Phase {
                 Obfuscator obfuscator = new Obfuscator(config);
                 PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
                 obfuscator.obfuscatePromptInfo(obfuscatedPromptInfo);
-                prompt = promptGenerator.generateTestForHITS(obfuscatedPromptInfo);
+                prompt = promptGenerator.generateMessages(obfuscatedPromptInfo, "hits");
                 code = generateTest(prompt, record);
                 if (!record.isHasCode()) {
                     promptInfo.setUnitTest("");
@@ -93,7 +104,7 @@ public class Phase_HITS extends Phase {
                 }
                 code = obfuscator.deobfuscateJava(code);
             } else {
-                prompt = promptGenerator.generateTestForHITS(promptInfo);
+                prompt = promptGenerator.generateMessages(promptInfo, "hits");
                 code = generateTest(prompt, record);
                 if (!record.isHasCode()) {
                     promptInfo.setUnitTest("");
