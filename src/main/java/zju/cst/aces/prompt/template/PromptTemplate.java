@@ -39,11 +39,11 @@ public class PromptTemplate {
     public String TEMPLATE_EXTRA = "";
     public String TEMPLATE_REPAIR = "";
     public String TEMPLATE_TESTPILOT_INIT = "";
-    public String TEMPLATE_GEN_SLICE = "";
-    public String TEMPLATE_SYS_GEN = "";
-    public String TEMPLATE_HITS_REPAIR= "";
-    public String TEMPLATE_GEN_CODE = "";
-    public String TEMPLATE_HITS_SYS_REPAIR = "";
+    public String TEMPLATE_HITS_SLICE_INIT = "";
+    public String TEMPLATE_HITS_TEST_INIT = "";
+    public String TEMPLATE_HITS_TEST_INIT_SYSTEM = "";
+    public String TEMPLATE_HITS_TEST_REPAIR= "";
+    public String TEMPLATE_HITS_TEST_REPAIR_SYSTEM = "";
     public Map<String, Object> dataModel = new HashMap<>();
     public Properties properties;
     public Path promptPath;
@@ -61,11 +61,11 @@ public class PromptTemplate {
         TEMPLATE_EXTRA_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
         TEMPLATE_REPAIR = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
         TEMPLATE_TESTPILOT_INIT = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
-        TEMPLATE_GEN_SLICE = properties.getProperty("PROMPT_TEMPLATE_GEN_SLICE");
-        TEMPLATE_SYS_GEN = properties.getProperty("PROMPT_TEMPLATE_SYS_GEN");
-        TEMPLATE_GEN_CODE = properties.getProperty("PROMPT_TEMPLATE_GEN_CODE");
-        TEMPLATE_HITS_SYS_REPAIR = properties.getProperty("PROMPT_TEMPLATE_HITS_SYS_REPAIR");
-        TEMPLATE_HITS_REPAIR = properties.getProperty("PROMPT_TEMPLATE_HITS_REPAIR");
+        TEMPLATE_HITS_SLICE_INIT = properties.getProperty("PROMPT_TEMPLATE_HITS_SLICE_INIT");
+        TEMPLATE_HITS_TEST_INIT_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_INIT_SYSTEM");
+        TEMPLATE_HITS_TEST_INIT = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_INIT");
+        TEMPLATE_HITS_TEST_REPAIR_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_REPAIR_SYSTEM");
+        TEMPLATE_HITS_TEST_REPAIR = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_REPAIR");
     }
     //渲染
     public String renderTemplate(String templateFileName) throws IOException, TemplateException{

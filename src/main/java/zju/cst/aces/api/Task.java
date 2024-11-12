@@ -1,6 +1,6 @@
 package zju.cst.aces.api;
 
-import zju.cst.aces.api.phase.Phase;
+import zju.cst.aces.api.phase.PhaseImpl;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
@@ -55,7 +55,7 @@ public class Task {
             return;
         }
 
-        Phase phase = Phase.createPhase(config);
+        PhaseImpl phase = PhaseImpl.createPhase(config);
         phase.prepare();
 
         log.info(String.format("\n==========================\n[%s] Generating tests for class: < ",config.pluginSign) + className
@@ -123,7 +123,7 @@ public class Task {
             log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...",config.pluginSign));
             return;
         }
-        Phase phase = Phase.createPhase(config);
+        PhaseImpl phase = PhaseImpl.createPhase(config);
         phase.prepare();
         log.info(String.format("\n==========================\n[%s] Generating tests for class < " + className + " > ...",config.pluginSign));
         try {
@@ -153,7 +153,7 @@ public class Task {
             log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...",config.pluginSign));
             return;
         }
-        Phase phase = Phase.createPhase(config);
+        PhaseImpl phase = PhaseImpl.createPhase(config);
         phase.prepare();
         List<String> classPaths = ProjectParser.scanSourceDirectory(project);
 

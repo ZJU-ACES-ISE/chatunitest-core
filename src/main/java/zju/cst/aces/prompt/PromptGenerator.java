@@ -1,7 +1,6 @@
 package zju.cst.aces.prompt;
 
 import zju.cst.aces.api.config.Config;
-import zju.cst.aces.api.phase.PromptFile;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.prompt.template.PromptTemplate;
 import zju.cst.aces.util.TokenCounter;
@@ -23,34 +22,34 @@ public class PromptGenerator {
         this.promptTemplate = new PromptTemplate(config, config.properties, config.getPromptPath(), config.getMaxPromptTokens());
     }
 
-    /**
-     * Generate messages for hits
-     * @param promptInfo
-     * @return
-     */
-    public List<ChatMessage> generateTestForHITS(PromptInfo promptInfo) {
-        List<ChatMessage> chatMessages = new ArrayList<>();
-        if (promptInfo.errorMsg == null) { // round 0
-            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, promptTemplate.TEMPLATE_SYS_GEN)));
-            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_GEN_CODE)));
-        } else {
-            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, promptTemplate.TEMPLATE_HITS_SYS_REPAIR)));
-            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_HITS_REPAIR)));
-        }
-        return chatMessages;
-    }
-
-    /**
-     * Generate slices for hits
-     * @param promptInfo
-     * @return
-     */
-    public List<ChatMessage> generateSliceForHITS(PromptInfo promptInfo) {
-        List<ChatMessage> chatMessages = new ArrayList<>();
-        chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, promptTemplate.TEMPLATE_SYS_GEN))); //todo 为空
-        chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_GEN_SLICE)));
-        return chatMessages;
-    }
+//    /**
+//     * Generate messages for hits
+//     * @param promptInfo
+//     * @return
+//     */
+//    public List<ChatMessage> generateTestForHITS(PromptInfo promptInfo) {
+//        List<ChatMessage> chatMessages = new ArrayList<>();
+//        if (promptInfo.errorMsg == null) { // round 0
+//            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, promptTemplate.TEMPLATE_SYS_GEN)));
+//            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_GEN_CODE)));
+//        } else {
+//            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, promptTemplate.TEMPLATE_HITS_SYS_REPAIR)));
+//            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_HITS_REPAIR)));
+//        }
+//        return chatMessages;
+//    }
+//
+//    /**
+//     * Generate slices for hits
+//     * @param promptInfo
+//     * @return
+//     */
+//    public List<ChatMessage> generateSliceForHITS(PromptInfo promptInfo) {
+//        List<ChatMessage> chatMessages = new ArrayList<>();
+//        chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, promptTemplate.TEMPLATE_SYS_GEN))); //todo 为空
+//        chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_GEN_SLICE)));
+//        return chatMessages;
+//    }
 
     /**
      * Generate messages by promptInfo with no errors (generation - round 0) or errors (repair - round > 0)
@@ -75,23 +74,40 @@ public class PromptGenerator {
     public List<ChatMessage> generateMessages(PromptInfo promptInfo, String templateName) {
         List<ChatMessage> chatMessages = new ArrayList<>();
         if (promptInfo.errorMsg == null) { // round 0
-            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, selectPromptFile(templateName).getInit())));
-            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, selectPromptFile(templateName).getInitSystem())));
+            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, selectPromptFile(templateName, false).getGenerate())));
+            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, selectPromptFile(templateName, false).getGenerateSystem())));
         } else {
-            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, promptTemplate.TEMPLATE_REPAIR)));
+            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, selectPromptFile(templateName, true).getGenerate())));
+            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, selectPromptFile(templateName, true).getGenerateSystem())));
         }
 
         return chatMessages;
     }
-    public PromptFile selectPromptFile(String templateName) {
+    public PromptFile selectPromptFile(String templateName, boolean ifRepair) {
         // Map templateName to a specific PromptFile enum constant
         switch (templateName) {
             case "testpilot":
-                return PromptFile.testpilot;
+                if (!ifRepair){
+                    return PromptFile.testpilot_init;
+                } else {
+                    return PromptFile.testpilot_repair;
+                }
             case "hits":
-                return PromptFile.hits;
+                if(config.useSlice){
+                    return PromptFile.hits_slice_init;
+                }else{
+                    if (!ifRepair){
+                        return PromptFile.hits_test_init;
+                    } else {
+                        return PromptFile.hits_test_repair;
+                    }
+                }
             default:
-                return PromptFile.chatunitest;
+                if (!ifRepair){
+                    return PromptFile.chatunitest_init;
+                } else {
+                    return PromptFile.chatunitest_repair;
+                }
         }
     }
 

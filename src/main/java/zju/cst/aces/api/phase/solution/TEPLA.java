@@ -1,13 +1,14 @@
-package zju.cst.aces.api.phase;
+package zju.cst.aces.api.phase.solution;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.NodeList;
 import zju.cst.aces.api.config.Config;
+import zju.cst.aces.api.phase.PhaseImpl;
 import zju.cst.aces.dto.MethodExampleMap;
 import zju.cst.aces.util.JavaParserUtil;
 
-public class Phase_TEPLA  extends Phase {
-    public Phase_TEPLA(Config config) {
+public class TEPLA extends PhaseImpl {
+    public TEPLA(Config config) {
         super(config);
     }
     @Override

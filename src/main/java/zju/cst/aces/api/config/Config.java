@@ -100,6 +100,7 @@ public class Config {
     public Validator validator;
     public String pluginSign;
     public String phaseType;
+    public boolean useSlice;
 
     @Getter
     @Setter
@@ -159,7 +160,8 @@ public class Config {
         public String coverageAnalyzer_jar_path;
         public Validator validator;
         public String pluginSign;
-        public String phaseType;
+        public String phaseType; //TODO
+        public boolean useSlice;
 
         public ConfigBuilder(Project project) {
             initDefault(project);
@@ -270,6 +272,11 @@ public class Config {
 
         public ConfigBuilder phaseType(String phaseType){
             this.phaseType=phaseType;
+            return this;
+        }
+
+        public ConfigBuilder useSlice(boolean useSlice){
+            this.useSlice=useSlice;
             return this;
         }
 
@@ -626,6 +633,7 @@ public class Config {
             config.setValidator(this.validator);
             config.setPluginSign(this.pluginSign);
             config.setPhaseType(this.phaseType);
+            config.setUseSlice(this.useSlice);
             config.setCoverageAnalyzer_jar_path(this.coverageAnalyzer_jar_path);
             return config;
         }
