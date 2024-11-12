@@ -2,12 +2,17 @@ package zju.cst.aces.prompt;
 
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.phase.solution.COVERUP;
+import zju.cst.aces.api.phase.solution.SYMPROMPT;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.prompt.template.PromptTemplate;
 import zju.cst.aces.util.TokenCounter;
+import zju.cst.aces.util.symprompt.PathConstraintExtractor;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static zju.cst.aces.api.phase.solution.SYMPROMPT.convertedPaths;
 
 public class PromptGenerator {
     public Config config;
@@ -78,6 +83,7 @@ public class PromptGenerator {
             chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, selectPromptFile(templateName, false).getGenerate())));
             chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, selectPromptFile(templateName, false).getGenerateSystem())));
         } else {
+            processRepair(promptInfo);
             chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, selectPromptFile(templateName, true).getGenerate())));
             chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, selectPromptFile(templateName, true).getGenerateSystem())));
         }
@@ -87,7 +93,7 @@ public class PromptGenerator {
     public PromptFile selectPromptFile(String templateName, boolean ifRepair) {
         // Map templateName to a specific PromptFile enum constant
         switch (templateName) {
-            case "testpilot":
+            case "TESTPILOT":
                 if (!ifRepair){
                     return PromptFile.testpilot_init;
                 } else {
@@ -115,6 +121,14 @@ public class PromptGenerator {
                         return PromptFile.coverup_repair;
                     }
                 }
+            case "SYMPROMPT":
+                if(!ifRepair){
+                    promptTemplate.dataModel.put("minPaths", SYMPROMPT.convertedPaths);
+                    return PromptFile.symprompt_init;
+                }else{
+                    return PromptFile.chatunitest_repair;
+                }
+
             default:
                 if (!ifRepair){
                     return PromptFile.chatunitest_init;
@@ -128,26 +142,6 @@ public class PromptGenerator {
         try {
             this.promptTemplate.buildDataModel(config, promptInfo);
             if (templateName.equals(promptTemplate.TEMPLATE_REPAIR)) { // repair process
-
-                int promptTokens = TokenCounter.countToken(promptInfo.getUnitTest())
-                        + TokenCounter.countToken(promptInfo.getMethodSignature())
-                        + TokenCounter.countToken(promptInfo.getClassName())
-                        + TokenCounter.countToken(promptInfo.getContext())
-                        + TokenCounter.countToken(promptInfo.getOtherMethodBrief());
-                int allowedTokens = Math.max(config.getMaxPromptTokens() - promptTokens, config.getMinErrorTokens());
-                TestMessage errorMsg = promptInfo.getErrorMsg();
-                String processedErrorMsg = "";
-                for (String error : errorMsg.getErrorMessage()) {
-                    if (TokenCounter.countToken(processedErrorMsg + error + "\n") <= allowedTokens) {
-                        processedErrorMsg += error + "\n";
-                    }
-                }
-                config.getLogger().debug("Allowed tokens: " + allowedTokens);
-                config.getLogger().debug("Processed error message: \n" + processedErrorMsg);
-
-                promptTemplate.dataModel.put("unit_test", promptInfo.getUnitTest());
-                promptTemplate.dataModel.put("error_message", processedErrorMsg);
-
                 return promptTemplate.renderTemplate(promptTemplate.TEMPLATE_REPAIR);
             } else {
                 return promptTemplate.renderTemplate(templateName);
@@ -180,5 +174,24 @@ public class PromptGenerator {
     public String buildTOT(TOT<?> tot) {
         return "";
     }
+    public void processRepair(PromptInfo promptInfo){
+        int promptTokens = TokenCounter.countToken(promptInfo.getUnitTest())
+                + TokenCounter.countToken(promptInfo.getMethodSignature())
+                + TokenCounter.countToken(promptInfo.getClassName())
+                + TokenCounter.countToken(promptInfo.getContext())
+                + TokenCounter.countToken(promptInfo.getOtherMethodBrief());
+        int allowedTokens = Math.max(config.getMaxPromptTokens() - promptTokens, config.getMinErrorTokens());
+        TestMessage errorMsg = promptInfo.getErrorMsg();
+        String processedErrorMsg = "";
+        for (String error : errorMsg.getErrorMessage()) {
+            if (TokenCounter.countToken(processedErrorMsg + error + "\n") <= allowedTokens) {
+                processedErrorMsg += error + "\n";
+            }
+        }
+        config.getLogger().debug("Allowed tokens: " + allowedTokens);
+        config.getLogger().debug("Processed error message: \n" + processedErrorMsg);
 
+        promptTemplate.dataModel.put("unit_test", promptInfo.getUnitTest());
+        promptTemplate.dataModel.put("error_message", processedErrorMsg);
+    }
 }

@@ -3,10 +3,7 @@ package zju.cst.aces.api.phase;
 
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
-import zju.cst.aces.api.phase.solution.COVERUP;
-import zju.cst.aces.api.phase.solution.HITS;
-import zju.cst.aces.api.phase.solution.TEPLA;
-import zju.cst.aces.api.phase.solution.TestPilot;
+import zju.cst.aces.api.phase.solution.*;
 import zju.cst.aces.api.phase.step.*;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
@@ -16,7 +13,8 @@ public class PhaseImpl implements Phase {
         TEPLA,
         TESTPILOT,
         COVERUP,
-        HITS
+        HITS,
+        SYMPROMPT
     }
 
     protected final Config config;
@@ -38,6 +36,7 @@ public class PhaseImpl implements Phase {
     }
 
     public boolean validateTest(PromptConstructorImpl pc) {
+
         return createValidation().execute(pc);
     }
 
@@ -77,11 +76,13 @@ public class PhaseImpl implements Phase {
                 case TEPLA:
                     return new TEPLA(config);
                 case TESTPILOT:
-                    return new TestPilot(config);
+                    return new TESTPILOT(config);
                 case COVERUP:
                     return new COVERUP(config);
                 case HITS:
                     return new HITS(config);
+                case SYMPROMPT:
+                    return new SYMPROMPT(config);
                 default:
                     return new PhaseImpl(config); // Default or fallback Phase
             }

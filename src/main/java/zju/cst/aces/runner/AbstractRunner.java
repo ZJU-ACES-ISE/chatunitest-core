@@ -558,19 +558,15 @@ public abstract class AbstractRunner {
                     }
                     testProcessor.removeCorrectTest(promptInfo, summary);
                 }
-                if (compileSuccess) {
-                    // Set promptInfo error message
-                    TestMessage testMessage = new TestMessage();
-                    testMessage.setErrorType(TestMessage.ErrorType.RUNTIME_ERROR);
-                    testMessage.setErrorMessage(errors);
-                    promptInfo.setErrorMsg(testMessage);
-                    exportError(code, errors, executionErrorPath);
-                    testProcessor.removeCorrectTest(promptInfo, summary);
-                    config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > execution failed round " + rounds);
-                    return false;
-                }
+                // Set promptInfo error message
+                TestMessage testMessage = new TestMessage();
+                testMessage.setErrorType(TestMessage.ErrorType.RUNTIME_ERROR);
+                testMessage.setErrorMessage(errors);
+                promptInfo.setErrorMsg(testMessage);
+                exportError(code, errors, executionErrorPath);
+                testProcessor.removeCorrectTest(promptInfo, summary);
+                config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > execution failed round " + rounds);
                 return false;
-
             }
         }
         summary.printTo(new PrintWriter(System.out));
