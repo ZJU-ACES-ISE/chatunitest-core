@@ -91,52 +91,57 @@ public class PromptGenerator {
         return chatMessages;
     }
     public PromptFile selectPromptFile(String templateName, boolean ifRepair) {
-        // Map templateName to a specific PromptFile enum constant
+        if (ifRepair) {
+            return getRepairPromptFile(templateName);
+        }
+        return getInitPromptFile(templateName);
+    }
+
+    private PromptFile getRepairPromptFile(String templateName) {
         switch (templateName) {
             case "TESTPILOT":
-                if (!ifRepair){
-                    return PromptFile.testpilot_init;
-                } else {
-                    return PromptFile.testpilot_repair;
-                }
-            case "hits":
-                if(config.useSlice){
-                    return PromptFile.hits_slice_init;
-                }else{
-                    if (!ifRepair){
-                        return PromptFile.hits_test_init;
-                    } else {
-                        return PromptFile.hits_test_repair;
-                    }
-                }
+                return PromptFile.testpilot_repair;
+            case "HITS":
+                return config.useSlice ? PromptFile.hits_slice_init : PromptFile.hits_test_repair;
             case "COVERUP":
-                if(!ifRepair){
-                    return PromptFile.chatunitest_init;
-                }else{
-                    if(COVERUP.entireCovered){
-                        return PromptFile.chatunitest_repair;
-                    }else{
-                        promptTemplate.dataModel.put("coverage_message", COVERUP.coverage_message);
-                        promptTemplate.dataModel.put("uncovered_lines", COVERUP.uncoveredLines);
-                        return PromptFile.coverup_repair;
-                    }
+                if (COVERUP.entireCovered) {
+                    return PromptFile.chatunitest_repair;
+                } else {
+                    setCoverUpRepairData();
+                    return PromptFile.coverup_repair;
                 }
             case "SYMPROMPT":
-                if(!ifRepair){
-                    promptTemplate.dataModel.put("minPaths", SYMPROMPT.convertedPaths);
-                    return PromptFile.symprompt_init;
-                }else{
-                    return PromptFile.chatunitest_repair;
-                }
-
+                return PromptFile.chatunitest_repair;
             default:
-                if (!ifRepair){
-                    return PromptFile.chatunitest_init;
-                } else {
-                    return PromptFile.chatunitest_repair;
-                }
+                return PromptFile.chatunitest_repair;
         }
     }
+
+    private PromptFile getInitPromptFile(String templateName) {
+        switch (templateName) {
+            case "TESTPILOT":
+                return PromptFile.testpilot_init;
+            case "HITS":
+                return config.useSlice ? PromptFile.hits_slice_init : PromptFile.hits_test_init;
+            case "COVERUP":
+                return PromptFile.chatunitest_init;
+            case "SYMPROMPT":
+                setSymPromptInitData();
+                return PromptFile.symprompt_init;
+            default:
+                return PromptFile.chatunitest_init;
+        }
+    }
+
+    private void setCoverUpRepairData() {
+        promptTemplate.dataModel.put("coverage_message", COVERUP.coverage_message);
+        promptTemplate.dataModel.put("uncovered_lines", COVERUP.uncoveredLines);
+    }
+
+    private void setSymPromptInitData() {
+        promptTemplate.dataModel.put("minPaths", SYMPROMPT.convertedPaths);
+    }
+
 
     public String createUserPrompt(PromptInfo promptInfo, String templateName) {
         try {
