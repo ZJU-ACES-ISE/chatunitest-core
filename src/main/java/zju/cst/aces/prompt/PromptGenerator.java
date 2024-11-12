@@ -1,6 +1,7 @@
 package zju.cst.aces.prompt;
 
 import zju.cst.aces.api.config.Config;
+import zju.cst.aces.api.phase.solution.COVERUP;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.prompt.template.PromptTemplate;
 import zju.cst.aces.util.TokenCounter;
@@ -102,6 +103,18 @@ public class PromptGenerator {
                         return PromptFile.hits_test_repair;
                     }
                 }
+            case "COVERUP":
+                if(!ifRepair){
+                    return PromptFile.chatunitest_init;
+                }else{
+                    if(COVERUP.entireCovered){
+                        return PromptFile.chatunitest_repair;
+                    }else{
+                        promptTemplate.dataModel.put("coverage_message", COVERUP.coverage_message);
+                        promptTemplate.dataModel.put("uncovered_lines", COVERUP.uncoveredLines);
+                        return PromptFile.coverup_repair;
+                    }
+                }
             default:
                 if (!ifRepair){
                     return PromptFile.chatunitest_init;
@@ -146,6 +159,7 @@ public class PromptGenerator {
 
     public String createSystemPrompt(PromptInfo promptInfo, String templateName) {
         try {
+            this.promptTemplate.buildDataModel(config, promptInfo);
             String filename;
             filename = templateName;
             return promptTemplate.renderTemplate(filename);

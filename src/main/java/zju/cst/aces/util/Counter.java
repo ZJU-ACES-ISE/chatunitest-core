@@ -218,9 +218,9 @@ public class Counter {
     }
 
     public static boolean filter(MethodInfo methodInfo) {
-        if (methodInfo == null) {
-            return false;
-        }
+//        if (methodInfo == null) {
+//            return false;
+//        }
         if (methodInfo == null
                 || methodInfo.isConstructor || methodInfo.isGetSet || methodInfo.isBoolean || !methodInfo.isPublic) {
             return false;

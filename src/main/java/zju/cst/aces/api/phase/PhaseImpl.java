@@ -3,7 +3,7 @@ package zju.cst.aces.api.phase;
 
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
-import zju.cst.aces.api.phase.solution.CoverUp;
+import zju.cst.aces.api.phase.solution.COVERUP;
 import zju.cst.aces.api.phase.solution.HITS;
 import zju.cst.aces.api.phase.solution.TEPLA;
 import zju.cst.aces.api.phase.solution.TestPilot;
@@ -14,8 +14,8 @@ import zju.cst.aces.dto.MethodInfo;
 public class PhaseImpl implements Phase {
     public enum PhaseType {
         TEPLA,
-        TEST_PILOT,
-        COVER_UP,
+        TESTPILOT,
+        COVERUP,
         HITS
     }
 
@@ -76,10 +76,10 @@ public class PhaseImpl implements Phase {
             switch (phaseType) {
                 case TEPLA:
                     return new TEPLA(config);
-                case TEST_PILOT:
+                case TESTPILOT:
                     return new TestPilot(config);
-                case COVER_UP:
-                    return new CoverUp(config);
+                case COVERUP:
+                    return new COVERUP(config);
                 case HITS:
                     return new HITS(config);
                 default:
