@@ -159,7 +159,7 @@ public class Config {
         public String coverageAnalyzer_jar_path;
         public Validator validator;
         public String pluginSign;
-        public String phaseType; //TODO
+        public String phaseType;
 
         public ConfigBuilder(Project project) {
             initDefault(project);
@@ -670,6 +670,7 @@ public class Config {
         logger.info(" SleepTime >>> " + this.getSleepTime());
         logger.info(" DependencyDepth >>> " + this.getDependencyDepth());
         logger.info(" coverageAnalyzer_jar_path >>> " + this.getCoverageAnalyzer_jar_path());
+        logger.info(" PhaseType >>> " + this.phaseType);
         logger.info("\n===================================================================\n");
         try {
             Thread.sleep(1000);
