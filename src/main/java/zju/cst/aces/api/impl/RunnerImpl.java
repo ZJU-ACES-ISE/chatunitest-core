@@ -2,17 +2,14 @@ package zju.cst.aces.api.impl;
 
 import zju.cst.aces.api.Runner;
 import zju.cst.aces.api.config.Config;
-import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
-import zju.cst.aces.dto.PromptInfo;
-import zju.cst.aces.dto.RoundRecord;
-import zju.cst.aces.runner.AbstractRunner;
+import zju.cst.aces.prompt.PromptFile;
 import zju.cst.aces.runner.ClassRunner;
 import zju.cst.aces.runner.MethodRunner;
+import zju.cst.aces.runner.solution_runner.ChatTesterRunner;
+import zju.cst.aces.runner.solution_runner.HITSRunner;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 
 public class RunnerImpl implements Runner {
     Config config;
@@ -31,11 +28,21 @@ public class RunnerImpl implements Runner {
 
     public void runMethod(String fullClassName, MethodInfo methodInfo) {
         try {
-            new MethodRunner(config, fullClassName, methodInfo).start();
+            selectRunner(config.getPhaseType(), fullClassName, methodInfo);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-
+    public void selectRunner(String templateName, String fullClassName, MethodInfo methodInfo) throws IOException {
+        // Map templateName to a specific PromptFile enum constant
+        switch (templateName) {
+            case "chattester":
+                new ChatTesterRunner(config, fullClassName, methodInfo).start();
+            case "hits":
+                new HITSRunner(config, fullClassName, methodInfo).start();
+            default:
+                new MethodRunner(config, fullClassName, methodInfo).start();
+        }
+    }
 }
