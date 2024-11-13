@@ -13,12 +13,4 @@ public class ChatTester extends PhaseImpl {
     public ChatTester(Config config) {
         super(config);
     }
-
-    // 内部类 ChatTesterValidation
-    public class ChatTesterValidation extends Validation {
-        public ChatTesterValidation(Config config) {
-            super(config);
-        }
-
-    }
 }

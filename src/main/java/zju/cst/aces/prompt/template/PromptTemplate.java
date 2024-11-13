@@ -39,6 +39,17 @@ public class PromptTemplate {
     public String TEMPLATE_EXTRA_SYSTEM  = "";
     public String TEMPLATE_EXTRA = "";
     public String TEMPLATE_REPAIR = "";
+
+    public String TEMPLATE_HITS_SLICE_INIT = "";
+    public String TEMPLATE_HITS_TEST_INIT = "";
+    public String TEMPLATE_HITS_TEST_INIT_SYSTEM = "";
+    public String TEMPLATE_HITS_TEST_REPAIR = "";
+    public String TEMPLATE_HITS_TEST_REPAIR_SYSTEM = "";
+
+    public String TEMPLATE_CHATTESTER_INIT = "";
+    public String TEMPLATE_CHATTESTER_EXTRA = "";
+    public String TEMPLATE_CHATTESTER_REPAIR = "";
+
     public Map<String, Object> dataModel = new HashMap<>();
     public Properties properties;
     public Path promptPath;
@@ -55,6 +66,18 @@ public class PromptTemplate {
         TEMPLATE_EXTRA = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
         TEMPLATE_EXTRA_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
         TEMPLATE_REPAIR = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
+
+        TEMPLATE_HITS_SLICE_INIT = properties.getProperty("PROMPT_TEMPLATE_HITS_SLICE_INIT");
+        TEMPLATE_HITS_TEST_INIT = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_INIT");
+        TEMPLATE_HITS_TEST_INIT_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_INIT_SYSTEM");
+        TEMPLATE_HITS_TEST_REPAIR = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_REPAIR");
+        TEMPLATE_HITS_TEST_REPAIR_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_REPAIR_SYSTEM");
+
+        // 新的 CHATTESTER 模板属性
+        TEMPLATE_CHATTESTER_INIT = properties.getProperty("PROMPT_TEMPLATE_CHATTESTER_INIT");
+        TEMPLATE_CHATTESTER_EXTRA = properties.getProperty("PROMPT_TEMPLATE_CHATTESTER_EXTRA");
+        TEMPLATE_CHATTESTER_REPAIR = properties.getProperty("PROMPT_TEMPLATE_CHATTESTER_REPAIR");
+
     }
     //渲染
     public String renderTemplate(String templateFileName) throws IOException, TemplateException{
