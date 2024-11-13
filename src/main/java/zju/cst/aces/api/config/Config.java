@@ -159,7 +159,7 @@ public class Config {
                 .readTimeout(5, TimeUnit.MINUTES)
                 .build();
         public String coverageAnalyzer_jar_path;
-        public int max_coverage_improve_time;
+        public int max_coverage_improve_time=maxRounds;
         public Validator validator;
         public String pluginSign;
         public String phaseType; //TODO

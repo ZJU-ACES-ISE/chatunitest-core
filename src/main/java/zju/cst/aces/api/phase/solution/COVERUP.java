@@ -72,7 +72,6 @@ public class COVERUP extends PhaseImpl {
                     COVERUP.entireCovered=true;
                     return true;
                 }
-
                 // Check maximum improvement threshold
                 if (promptInfo.coverage_improve_time >= config.max_coverage_improve_time) {
                     exportTest(promptInfo.max_coverage_test_code, savePath);
@@ -81,6 +80,8 @@ public class COVERUP extends PhaseImpl {
 
                 // Update promptInfo if coverage improves
                 promptInfo.setCoverage_improve_time(promptInfo.coverage_improve_time + 1);
+                config.getLogger().warn("maxTimes "+config.max_coverage_improve_time);
+                config.getLogger().warn("The improve time "+promptInfo.coverage_improve_time);
                 if (lineCoverage > promptInfo.coverage) {
                     promptInfo.setCoverage(lineCoverage);
                     promptInfo.setMax_coverage_test_code(code);

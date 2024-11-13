@@ -39,6 +39,7 @@ public class Task {
         this.config = config;
         this.log = config.getLogger();
         this.runner = runner;
+        this.classNameProcessor=new ClassNameProcessor();
     }
 
     public void startMethodTask(String className, String methodName) throws IOException {

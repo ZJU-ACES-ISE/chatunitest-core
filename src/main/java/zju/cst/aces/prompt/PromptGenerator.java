@@ -80,12 +80,12 @@ public class PromptGenerator {
     public List<ChatMessage> generateMessages(PromptInfo promptInfo, String templateName) {
         List<ChatMessage> chatMessages = new ArrayList<>();
         if (promptInfo.errorMsg == null) { // round 0
-            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, selectPromptFile(templateName, false).getGenerate())));
-            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, selectPromptFile(templateName, false).getGenerateSystem())));
+            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, selectPromptFile(templateName, false).getGenerateSystem())));
+            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, selectPromptFile(templateName, false).getGenerate())));
         } else {
             processRepair(promptInfo);
-            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, selectPromptFile(templateName, true).getGenerate())));
-            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, selectPromptFile(templateName, true).getGenerateSystem())));
+            chatMessages.add(ChatMessage.ofSystem(createSystemPrompt(promptInfo, selectPromptFile(templateName, true).getGenerateSystem())));
+            chatMessages.add(ChatMessage.of(createUserPrompt(promptInfo, selectPromptFile(templateName, true).getGenerate())));
         }
 
         return chatMessages;
@@ -105,6 +105,7 @@ public class PromptGenerator {
                 return config.useSlice ? PromptFile.hits_slice_init : PromptFile.hits_test_repair;
             case "COVERUP":
                 if (COVERUP.entireCovered) {
+                    COVERUP.entireCovered=false;
                     return PromptFile.chatunitest_repair;
                 } else {
                     setCoverUpRepairData();

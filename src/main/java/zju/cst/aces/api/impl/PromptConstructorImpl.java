@@ -35,7 +35,7 @@ public class PromptConstructorImpl implements PromptConstructor {
             if (promptInfo == null) {
                 throw new RuntimeException("PromptInfo is null, you need to initialize it first.");
             }
-            this.chatMessages = new PromptGenerator(config).generateMessages(promptInfo);
+            this.chatMessages = new PromptGenerator(config).generateMessages(promptInfo,config.phaseType);
             countToken();
             return this.chatMessages;
         } catch (Exception e) {
