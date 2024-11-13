@@ -118,8 +118,6 @@ public class CodeCoverageAnalyzer {
         }
         urls.add(new File(targetClassCompiledDir).toURI().toURL());
         urls.add(new File("compiled").toURI().toURL());
-//        urls.add(config.compileOutputPath.toFile().toURI().toURL());
-//        ClassLoader memoryClassLoader = new URLClassLoader(urls.toArray(new URL[0]), getClass().getClassLoader());
         MemoryClassLoader memoryClassLoader = new MemoryClassLoader(urls.toArray(new URL[0]));
         memoryClassLoader.addDefinition(targetTestName, instrumentedTest);
         memoryClassLoader.addDefinition(targetClassName, instrumentedClass);
@@ -383,9 +381,8 @@ public class CodeCoverageAnalyzer {
                 "D:\\maven-repository\\org\\mockito\\mockito-inline\\5.2.0\\mockito-inline-5.2.0.jar",
                 "D:\\maven-repository\\org\\junit\\jupiter\\junit-jupiter-params\\5.9.2\\junit-jupiter-params-5.9.2.jar",
                 "D:\\maven-repository\\junit\\junit\\4.12\\junit-4.12.jar"
-
         );
-        String targetTestName = "TeplaB_Test";
+        String targetTestName = "myTest.TeplaB_Test";
         System.out.println(targetTestName);
         Map<String, Object> coverageInfo = new CodeCoverageAnalyzer().analyzeCoverage(testSourceCode,targetTestName, targetClassName, methodSignature, targetClassCompiledDir, targetClassSourceDir, dependencies);
         System.out.println("Coverage Information:");

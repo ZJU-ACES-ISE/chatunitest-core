@@ -86,6 +86,7 @@ public class Config {
     public Path symbolFramePath;
 
     public String coverageAnalyzer_jar_path;
+    public int max_coverage_improve_time;
     public String proxy;
     public String hostname;
     public String port;
@@ -158,6 +159,7 @@ public class Config {
                 .readTimeout(5, TimeUnit.MINUTES)
                 .build();
         public String coverageAnalyzer_jar_path;
+        public int max_coverage_improve_time;
         public Validator validator;
         public String pluginSign;
         public String phaseType; //TODO
@@ -226,6 +228,10 @@ public class Config {
         }
         public ConfigBuilder coverageAnalyzer_jar_path(String coverageAnalyzer_jar_path){
             this.coverageAnalyzer_jar_path=coverageAnalyzer_jar_path;
+            return this;
+        }
+        public ConfigBuilder max_coverage_improve_time(int max_coverage_improve_time){
+            this.max_coverage_improve_time=max_coverage_improve_time;
             return this;
         }
         public ConfigBuilder tmpOutput(Path tmpOutput) {
@@ -635,6 +641,7 @@ public class Config {
             config.setPhaseType(this.phaseType);
             config.setUseSlice(this.useSlice);
             config.setCoverageAnalyzer_jar_path(this.coverageAnalyzer_jar_path);
+            config.setMax_coverage_improve_time(this.max_coverage_improve_time);
             return config;
         }
     }
@@ -678,6 +685,7 @@ public class Config {
         logger.info(" SleepTime >>> " + this.getSleepTime());
         logger.info(" DependencyDepth >>> " + this.getDependencyDepth());
         logger.info(" coverageAnalyzer_jar_path >>> " + this.getCoverageAnalyzer_jar_path());
+        logger.info(" PhaseType >>> " + this.phaseType);
         logger.info("\n===================================================================\n");
         try {
             Thread.sleep(1000);

@@ -33,6 +33,10 @@ public class PromptInfo {
     public Path methodSlicePath;
     public Integer sliceNum;
     public JsonResponseProcessor.JsonData.Step sliceStep;
+    public float coverage=0;//max_coverage
+    public int coverage_improve_time=0;
+    public String max_coverage_test_code;
+
 
     public PromptInfo(boolean hasDep, String fullClassName, String methodName,
                       String methodSignature) {

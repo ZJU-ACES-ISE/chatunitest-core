@@ -5,10 +5,13 @@ import zju.cst.aces.api.impl.PromptConstructorImpl;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 import zju.cst.aces.dto.PromptInfo;
+import zju.cst.aces.util.symprompt.PathConstraintExtractor;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class PromptGeneration {
     private final Config config;
@@ -45,6 +48,7 @@ public class PromptGeneration {
             promptInfo.setTestPath(savePath);
 
             promptInfo.setTestNum(num);
+
             return pc;
 
         } catch (IOException e) {

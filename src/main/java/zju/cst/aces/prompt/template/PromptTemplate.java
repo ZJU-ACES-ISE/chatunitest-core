@@ -7,6 +7,7 @@ import com.google.gson.reflect.TypeToken;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+import lombok.Data;
 import zju.cst.aces.api.Task;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.coverage.CodeCoverageAnalyzer_jar;
@@ -28,7 +29,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
+@Data
 public class PromptTemplate {
 
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
@@ -38,12 +39,6 @@ public class PromptTemplate {
     public String TEMPLATE_EXTRA_SYSTEM  = "";
     public String TEMPLATE_EXTRA = "";
     public String TEMPLATE_REPAIR = "";
-    public String TEMPLATE_TESTPILOT_INIT = "";
-    public String TEMPLATE_HITS_SLICE_INIT = "";
-    public String TEMPLATE_HITS_TEST_INIT = "";
-    public String TEMPLATE_HITS_TEST_INIT_SYSTEM = "";
-    public String TEMPLATE_HITS_TEST_REPAIR= "";
-    public String TEMPLATE_HITS_TEST_REPAIR_SYSTEM = "";
     public Map<String, Object> dataModel = new HashMap<>();
     public Properties properties;
     public Path promptPath;
@@ -60,12 +55,6 @@ public class PromptTemplate {
         TEMPLATE_EXTRA = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
         TEMPLATE_EXTRA_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
         TEMPLATE_REPAIR = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
-        TEMPLATE_TESTPILOT_INIT = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
-        TEMPLATE_HITS_SLICE_INIT = properties.getProperty("PROMPT_TEMPLATE_HITS_SLICE_INIT");
-        TEMPLATE_HITS_TEST_INIT_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_INIT_SYSTEM");
-        TEMPLATE_HITS_TEST_INIT = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_INIT");
-        TEMPLATE_HITS_TEST_REPAIR_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_REPAIR_SYSTEM");
-        TEMPLATE_HITS_TEST_REPAIR = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_REPAIR");
     }
     //渲染
     public String renderTemplate(String templateFileName) throws IOException, TemplateException{
@@ -98,6 +87,7 @@ public class PromptTemplate {
             if (matches.size() > 0) {
                 String key = matches.get(matches.size()-1);
                 if (dataModel.containsKey(key)) {
+                    if(dataModel.get(key)==null) break;
                     if (dataModel.get(key) instanceof String) {
                         dataModel.put(key, "");
                     } else if (dataModel.get(key) instanceof List) {
@@ -136,29 +126,6 @@ public class PromptTemplate {
                 getDepBriefWithAnoAndCom(promptInfo.getClassInfo(),promptInfo.getMethodInfo()))){
             this.dataModel.put("dep_m_sigs_ano_com",getDepBriefWithAno(promptInfo.getClassInfo(),promptInfo.getMethodInfo()));
         }
-        // String
-        if (config.getExamplePath() != null) {
-            ExampleUsage exampleUsage = new ExampleUsage(config.getExamplePath(), promptInfo.className);
-            this.dataModel.put("example_usage", exampleUsage.getShortestUsage(promptInfo.getMethodInfo().methodSignature));
-        }
-        if (config.getTmpOutput() != null) {
-            // 获取前向分析结果
-            Map<String, String> forwardAnalysis = getForwardAnalysis(promptInfo.getClassInfo(), promptInfo.getMethodInfo());
-            // 获取后向分析结果
-            Map<String, String>  backwardAnalysis = getBackwardAnalysis(promptInfo.getClassInfo(), promptInfo.getMethodInfo());
-
-            // 检查分析结果是否非空
-            if (forwardAnalysis != null) {
-                this.dataModel.put("forward_analysis", forwardAnalysis);
-            }
-            if (backwardAnalysis != null) {
-                this.dataModel.put("backward_analysis", backwardAnalysis);
-            }
-        }
-        String counterExampleCode = getCounterExampleCode(promptInfo);
-        if(counterExampleCode!=null){
-            this.dataModel.put("counter_examples",counterExampleCode);
-        }
         this.dataModel.put("project_full_code", getFullProjectCode(promptInfo.getClassName(), config));
         this.dataModel.put("method_name", promptInfo.getMethodName());
         this.dataModel.put("full_class_name",promptInfo.getFullClassName());
@@ -193,6 +160,10 @@ public class PromptTemplate {
         } else {
             this.dataModel.put("other_method_sigs", null);
             this.dataModel.put("other_method_bodies", null);
+        }
+        if (config.getExamplePath() != null) {
+            ExampleUsage exampleUsage = new ExampleUsage(config.getExamplePath(), promptInfo.className);
+            this.dataModel.put("example_usage", exampleUsage.getShortestUsage(promptInfo.getMethodInfo().methodSignature));
         }
         //add javaDocs
         String javadocs=promptInfo.getMethodInfo().getMethod_comment();
