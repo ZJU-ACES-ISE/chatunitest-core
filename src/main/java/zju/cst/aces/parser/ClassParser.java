@@ -134,34 +134,42 @@ public class ClassParser {
      * Extract class information to json format
      */
     private ClassInfo getInfoByClass(CompilationUnit cu, ClassOrInterfaceDeclaration classNode) {
-        ClassInfo ci = new ClassInfo(
-                cu,
-                classNode,
-                this.sharedInteger.getAndIncrement(),
-                getClassSignature(cu, classNode),
-                getImports(getImportDeclarations(cu)),
-                getFields(cu, classNode.getFields()),
-                getSuperClasses(classNode),
-                getMethodSignatures(classNode),
-                getBriefMethods(cu, classNode),
-                hasConstructors(classNode),
-                getConstructorSignatures(classNode),
-                getBriefConstructors(cu, classNode),
-                getGetterSetterSig(cu, classNode),
-                getGetterSetter(cu, classNode),
-                getConstructorDeps(cu, classNode),
-                getSubClasses(classNode)
-        );
-        ci.setImportTypes(getImportTypes(cu));
-        ci.setLineCount(getLineCount(classNode));
+        ClassInfo ci = new ClassInfo();
+        ci.setProjectName(findProjectName());
+        ci.setModuleName(findModuleName());
+        ci.setFullClassName(findFullClassName(cu, classNode));
+        ci.setClassName(classNode.getNameAsString());
+        ci.setIndex(this.sharedInteger.getAndIncrement());
+        ci.setModifier(classNode.getModifiers().toString());
+        ci.setExtend(classNode.getExtendedTypes().toString());
+        ci.setImplement(classNode.getImplementedTypes().toString());
+        ci.setPackageName(findPackageName(cu));
+        ci.setPackageDeclaration(findPackageDeclaration(cu));
+        ci.setClassSignature(getClassSignature(cu, classNode));
 
+        ci.setHasConstructor(hasConstructors(classNode));
         ci.setPublic(classNode.isPublic());
-//        ci.setPublic(!classNode.isPrivate() && !classNode.isProtected());
         ci.setAbstract(classNode.isAbstract());
         ci.setInterface(classNode.isInterface());
-        ci.setCode(cu.toString(), classNode.toString());
-        ci.setFullClassName(cu.getPackageDeclaration().orElseThrow().getNameAsString() + "." + ci.className);
+        ci.setTest(cu.getStorage().orElseThrow().getPath().toString().contains("/src/test/java/"));
+
         ci.setImplementedTypes(getInterfaces(classNode));
+        ci.setImports(getImports(getImportDeclarations(cu)));
+        ci.setImportTypes(getImportTypes(cu));
+        ci.setFields(getFields(cu, classNode.getFields()));
+        ci.setSuperClasses(getSuperClasses(classNode));
+        ci.setMethodSigs(getMethodSignatures(classNode));
+        ci.setMethodsBrief(getBriefMethods(cu, classNode));
+        ci.setConstructorSigs(getConstructorSignatures(classNode));
+        ci.setConstructorBrief(getBriefConstructors(cu, classNode));
+        ci.setGetterSetterSigs(getGetterSetterSig(cu, classNode));
+        ci.setGetterSetterBrief(getGetterSetter(cu, classNode));
+        ci.setConstructorDeps(getConstructorDeps(cu, classNode));
+        ci.setCompilationUnitCode(cu.toString());
+        ci.setClassDeclarationCode(classNode.toString());
+        ci.setSubClasses(getSubClasses(classNode));
+        ci.setLineCount(getLineCount(classNode));
+
         return ci;
     }
 
@@ -170,6 +178,9 @@ public class ClassParser {
      */
     private MethodInfo getInfoByMethod(CompilationUnit cu, ClassOrInterfaceDeclaration classNode, CallableDeclaration node) {
         MethodInfo mi = new MethodInfo();
+        mi.setProjectName(findProjectName());
+        mi.setModuleName(findModuleName());
+        mi.setFullClassName(findFullClassName(cu, classNode));
         mi.setClassName(classNode.getNameAsString());
         mi.setMethodName(node.getNameAsString());
         mi.setPackageName(cu.getPackageDeclaration().orElse(null) == null ? "" : cu.getPackageDeclaration().get().getNameAsString());
@@ -182,12 +193,17 @@ public class ClassParser {
         mi.setFull_method_info(node.toString());
         mi.setMethod_comment(getMethodComment(node));
         mi.setMethod_annotation(getMethodAnnotation(node));
+
         mi.setUseField(useField(node));
         mi.setConstructor(node.isConstructorDeclaration());
         mi.setGetSet(isGetSet2(node));
         mi.setPublic(isPublic(node));
         mi.setBoolean(isBoolean(node));
         mi.setAbstract(node.isAbstract());
+        mi.setTest(node.isAnnotationPresent("Test")
+                || node.isAnnotationPresent("ParameterizedTest")
+                || node.isAnnotationPresent("TestNG"));
+
         mi.setLineCount(getLineCount(node));
         mi.setBranchCount(getBranchCount(node));
 //        findObjectConstructionCode(cu, node);
@@ -931,6 +947,40 @@ public class ClassParser {
                 }
         });
         return new ArrayList<>(set);
+    }
+
+    private String findProjectName() {
+        Project pro = project;
+        while(pro.getParent() != null && pro.getParent().getBasedir() != null) {
+            pro = pro.getParent();
+        }
+        return pro.getArtifactId();
+    }
+
+    private String findModuleName() {
+        Project pro = project;
+        StringBuilder moduleName = new StringBuilder(pro.getArtifactId());
+        while(pro.getParent() != null && pro.getParent().getBasedir() != null) {
+            pro = pro.getParent();
+            moduleName.insert(0, ".").insert(0, pro.getArtifactId());
+        }
+        return moduleName.toString();
+    }
+
+    private String findFullClassName(CompilationUnit cu, ClassOrInterfaceDeclaration classNode) {
+        return cu.getPackageDeclaration().orElseThrow().getNameAsString() + "." + classNode.getNameAsString();
+    }
+
+    private String findPackageName(CompilationUnit cu) {
+        return cu.getPackageDeclaration().orElse(null) == null ? "" : cu.getPackageDeclaration().get().getNameAsString();
+    }
+
+    private String findPackageDeclaration(CompilationUnit compilationUnit) {
+        if (compilationUnit.getPackageDeclaration().isPresent()) {
+            return compilationUnit.getPackageDeclaration().get().toString().trim();
+        } else {
+            return "";
+        }
     }
 }
 

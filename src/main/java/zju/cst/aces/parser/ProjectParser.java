@@ -74,7 +74,7 @@ public class ProjectParser {
                 throw new RuntimeException("In ProjectParser.parse: " + e);
             }
         }
-        MethodExampleMap methodExampleMap = createMethodExampleMap(cus);
+//        MethodExampleMap methodExampleMap = createMethodExampleMap(cus);
 
         for (var cu : cus) {
             try {
@@ -100,7 +100,7 @@ public class ProjectParser {
         }
         exportClassMapping();
 //        exportOCC();
-        exportMethodExampleMap(methodExampleMap);
+//        exportMethodExampleMap(methodExampleMap);
         exportJson(config.getClassNameMapPath(), classNameMap);
         config.getLogger().info("\nParsed classes: " + classCount + "\nParsed methods: " + methodCount);
     }
@@ -298,7 +298,10 @@ public class ProjectParser {
         File[] files = Paths.get(project.getCompileSourceRoots().get(0)).toFile().listFiles();
         if (files != null) {
             List<File> listFiles = new ArrayList<>(Arrays.asList(files));
-            listFiles.add(Paths.get(project.getCompileSourceRoots().get(0).replace("src/main/java", "src/test/java")).toFile());
+            File testFile = Paths.get(project.getCompileSourceRoots().get(0).replace("src/main/java", "src/test/java")).toFile();
+            if (testFile.exists()) {
+                listFiles.add(testFile);
+            }
             for (File file : listFiles) {
                 try {
                     Files.walk(file.toPath()).forEach(path -> {
