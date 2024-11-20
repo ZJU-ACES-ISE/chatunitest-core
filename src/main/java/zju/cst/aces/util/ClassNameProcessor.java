@@ -1,10 +1,10 @@
 package zju.cst.aces.util;
 
-
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
+
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,32 +31,56 @@ public class ClassNameProcessor {
 
     private void processJavaFile(Path javaFilePath) {
         try {
-            final String[] content = {new String(Files.readAllBytes(javaFilePath))};
-            CompilationUnit compilationUnit = StaticJavaParser.parse(content[0]);
+            // 检查文件是否存在且可读
+            if (Files.notExists(javaFilePath) || !Files.isReadable(javaFilePath)) {
+                System.err.println("File not found or not readable: " + javaFilePath);
+                return;
+            }
 
-            // Process classes
+            // 读取文件内容
+            final String content = new String(Files.readAllBytes(javaFilePath));
+            CompilationUnit compilationUnit = StaticJavaParser.parse(content);
+
+            // 处理类
             compilationUnit.findAll(ClassOrInterfaceDeclaration.class).stream()
                     .filter(c -> !c.getNameAsString().endsWith("Test") && !c.getNameAsString().endsWith("Suite"))
-                    .forEach(c -> content[0] = renameAndTrack(c.getNameAsString(), classNameCountMap, content[0]));
+                    .forEach(c -> {
+                        try {
+                            renameAndTrack(c.getNameAsString(), classNameCountMap, content);
+                        } catch (IllegalArgumentException e) {
+                            System.err.println("Error renaming class: " + c.getNameAsString() + " in file " + javaFilePath + ". " + e.getMessage());
+                        }
+                    });
 
-            // Process enums
+            // 处理枚举
             compilationUnit.findAll(EnumDeclaration.class).stream()
                     .filter(e -> !e.getNameAsString().endsWith("Test") && !e.getNameAsString().endsWith("Suite"))
-                    .forEach(e -> content[0] = renameAndTrack(e.getNameAsString(), enumNameCountMap, content[0]));
+                    .forEach(e -> {
+                        try {
+                            renameAndTrack(e.getNameAsString(), enumNameCountMap, content);
+                        } catch (IllegalArgumentException e1) {
+                            System.err.println("Error renaming enum: " + e.getNameAsString() + " in file " + javaFilePath + ". " + e1.getMessage());
+                        }
+                    });
 
-            Files.write(javaFilePath, content[0].getBytes());
+            // 写入更新后的内容
+            Files.write(javaFilePath, content.getBytes());
 
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("I/O error processing file: " + javaFilePath + ". " + e.getMessage());
         }
     }
 
     private String renameAndTrack(String originalName, Map<String, AtomicInteger> nameCountMap, String content) {
+        if (originalName == null) {
+            throw new IllegalArgumentException("Original name cannot be null.");
+        }
+
         nameCountMap.putIfAbsent(originalName, new AtomicInteger(0));
         int count = nameCountMap.get(originalName).incrementAndGet();
         String newName = originalName + "_" + count;
 
-        // Replace class or enum name in the content, but skip import statements
+        // 替换类或枚举名称
         StringBuilder newContent = new StringBuilder();
         String[] lines = content.split("\n");
         for (String line : lines) {
@@ -75,7 +99,7 @@ public class ClassNameProcessor {
             ClassNameProcessor processor = new ClassNameProcessor();
             processor.processJavaFiles(testPath);
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("I/O error: " + e.getMessage());
         }
     }
 }
