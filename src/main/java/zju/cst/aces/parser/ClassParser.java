@@ -16,6 +16,7 @@ import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
+import com.github.javaparser.resolution.UnsolvedSymbolException;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
@@ -170,6 +171,11 @@ public class ClassParser {
         ci.setSubClasses(getSubClasses(classNode));
         ci.setLineCount(getLineCount(classNode));
 
+        if (ci.isTest) {
+            ci.setMockDeps(findMockDeps(cu, classNode));
+        } else {
+            ci.setMockDeps(new ArrayList<>());
+        }
         return ci;
     }
 
@@ -246,6 +252,36 @@ public class ClassParser {
             }
         }
         return constructorDeps;
+    }
+
+    private String getTypeQualifiedName(Type type) {
+        try {
+            if (type.isArrayType()) {
+                return type.resolve().asArrayType().getComponentType().describe();
+            } else if ( (type.isReferenceType() && !type.resolve().asReferenceType().typeParametersValues().isEmpty())) {
+                return type.resolve().asReferenceType().typeParametersValues().get(0).describe();
+            } else {
+                return type.resolve().describe();
+            }
+        } catch (UnsupportedOperationException | UnsolvedSymbolException e) {
+            return "";
+        }
+    }
+
+    private List<String> findMockDeps(CompilationUnit cu, ClassOrInterfaceDeclaration classNode) {
+        List<String> mockDeps = new ArrayList<>();
+        for (FieldDeclaration f : classNode.getFields()) {
+            String typeName = getTypeQualifiedName(f.getElementType());
+            if (typeName.isEmpty()) {
+                continue;
+            }
+            for (AnnotationExpr ano : f.getAnnotations()) {
+                if (ano.getNameAsString().equals("Mock")) {
+                    mockDeps.add(typeName);
+                }
+            }
+        }
+        return mockDeps;
     }
 
     private List<String> getGetterSetter(CompilationUnit cu, ClassOrInterfaceDeclaration classNode) {
@@ -570,13 +606,9 @@ public class ClassParser {
     private List<String> getParameters(CallableDeclaration node) {
         List<String> parameters = new ArrayList<>();
         node.getParameters().forEach(p -> {
-            Type par = ((Parameter) p).getType();
-            if (par.isArrayType()) {
-                parameters.add(par.resolve().asArrayType().getComponentType().describe());
-            } else if ( (par.isReferenceType() && !((ReferenceTypeImpl) par.resolve()).typeParametersValues().isEmpty())) {
-                parameters.add(((ReferenceTypeImpl)  par.resolve()).typeParametersValues().get(0).describe());
-            } else {
-                parameters.add(par.resolve().describe());
+            String parTypeName = getTypeQualifiedName(((Parameter) p).getType());
+            if (!parTypeName.isEmpty()) {
+                parameters.add(parTypeName);
             }
         });
         return parameters;
