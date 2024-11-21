@@ -18,7 +18,6 @@ import zju.cst.aces.api.Validator;
 import zju.cst.aces.api.impl.LoggerImpl;
 import zju.cst.aces.api.Logger;
 import zju.cst.aces.api.impl.ValidatorImpl;
-import zju.cst.aces.dto.MethodExampleMap;
 import zju.cst.aces.dto.OCM;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.prompt.template.PromptTemplate;
@@ -97,7 +96,6 @@ public class Config {
     public static Map<String, Map<String, String>> classMapping = new HashMap<>();
     public static Map<String, TreeSet<String>> objectConstructionCode = new HashMap<>();
     public static OCM ocm = new OCM();
-    public static MethodExampleMap methodExampleMap;
     public Validator validator;
     public String pluginSign;
     public String phaseType;

@@ -74,7 +74,7 @@ public class PhaseImpl implements Phase {
             PhaseType phaseType = PhaseType.valueOf(phaseTypeString); // todo 这里似乎如果没有找到枚举对象会直接崩溃
             switch (phaseType) {
                 case TEPLA:
-                    return new TEPLA(config);
+                    return new TELPA(config);
                 case TESTPILOT:
                     return new TESTPILOT(config);
                 case COVERUP:

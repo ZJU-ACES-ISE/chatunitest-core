@@ -119,7 +119,7 @@ public abstract class InterproceduralActionFinder<A extends VariableAction> exte
     protected Set<A> initialValue(CallGraph.Vertex vertex) {
         // Skip abstract vertices
 
-        if (vertex.getDeclaration().isAbstract() ||
+        if (vertex.getDeclaration().    isAbstract() ||
                 (vertex.getDeclaration().isMethodDeclaration() &&
                         !vertex.getDeclaration().asMethodDeclaration().getBody().isPresent()))
             return new HashSet<>();

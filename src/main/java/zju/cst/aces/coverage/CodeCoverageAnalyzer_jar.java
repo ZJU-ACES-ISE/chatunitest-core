@@ -1,13 +1,11 @@
 package zju.cst.aces.coverage;
 
 import zju.cst.aces.api.config.Config;
+//import zju.cst.aces.coverage.ClassNameExtractor;
 
 import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class CodeCoverageAnalyzer_jar {
     public Map<String, Object> analyzeCoverage(String testSourceCode, String targetTestName, String targetClassName, String methodSignature, String targetClassCompiledDir, String targetClassSourceDir, List<String> dependencies, Config config) throws Exception {
@@ -22,7 +20,7 @@ public class CodeCoverageAnalyzer_jar {
         command.add("java");
         command.add("-cp");
         // 加载jar包
-//        command.add(config.coverageAnalyzer_jar_path);
+        command.add(config.coverageAnalyzer_jar_path);
         command.add("zju.cst.aces.CodeCoverageAnalyzerRunner");
 
         // Adding parameters, wrapping those with spaces in quotes

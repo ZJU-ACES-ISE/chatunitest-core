@@ -115,18 +115,12 @@ public class MethodRunner extends ClassRunner {
 
     public boolean startRounds(final int num) throws IOException {
 
-        config.setPhaseType("HITS");
         PhaseImpl phase = PhaseImpl.createPhase(config);
 
         // Prompt Construction Phase
         PromptConstructorImpl pc = phase.generatePrompt(classInfo, methodInfo,num);
         PromptInfo promptInfo = pc.getPromptInfo();
         promptInfo.setRound(0);
-
-//        if(config.getPhaseType() == "HITS") {
-//            startHITSRounds(num, phase, pc);
-//        }
-
 
         // Test Generation Phase
         phase.generateTest(pc);

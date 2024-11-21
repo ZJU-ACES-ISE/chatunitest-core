@@ -305,4 +305,58 @@ public class CodeExtractor {
         }
         return extractedCode;
     }
+
+    public static void main(String[] args) {
+        String content="```java\n" +
+                "//import sentence...\n" +
+                "\n" +
+                "public class MethodTest {\n" +
+                "\n" +
+                "    @Test\n" +
+                "    public void methodTest1(){//cover the path when:randomBoolean && isTrue(a)\n" +
+                "        TeplaB teplaB = Mockito.mock(TeplaB.class);\n" +
+                "        when(teplaB.init()).thenReturn(5);\n" +
+                "        when(teplaB.getA()).thenReturn(1);\n" +
+                "        when(teplaB.res(5)).thenReturn(true);\n" +
+                "        when(teplaB.isTrue(1)).thenReturn(true);\n" +
+                "\n" +
+                "        TeplaA teplaA = Mockito.mock(TeplaA.class);\n" +
+                "        Tepla tepla = Mockito.mock(Tepla.class);\n" +
+                "\n" +
+                "        teplaB.teplaB();\n" +
+                "\n" +
+                "        verify(teplaA, times(1)).teplaA();\n" +
+                "        verify(tepla, times(0)).calculate();\n" +
+                "        verify(teplaB, times(1)).init();\n" +
+                "        verify(teplaB, times(1)).getA();\n" +
+                "        verify(teplaB, times(1)).res(5);\n" +
+                "        verify(teplaB, times(1)).isTrue(1);\n" +
+                "    }\n" +
+                "\n" +
+                "    @Test\n" +
+                "    public void methodTest2(){//cover the path when:not (randomBoolean && isTrue(a)\n" +
+                "        TeplaB teplaB = Mockito.mock(TeplaB.class);\n" +
+                "        when(teplaB.init()).thenReturn(3);\n" +
+                "        when(teplaB.getA()).thenReturn(2);\n" +
+                "        when(teplaB.res(3)).thenReturn(false);\n" +
+                "        when(teplaB.isTrue(2)).thenReturn(false);\n" +
+                "\n" +
+                "        TeplaA teplaA = Mockito.mock(TeplaA.class);\n" +
+                "        Tepla tepla = Mockito.mock(Tepla.class);\n" +
+                "\n" +
+                "        teplaB.teplaB();\n" +
+                "\n" +
+                "        verify(teplaA, times(0)).teplaA();\n" +
+                "        verify(tepla, times(1)).calculate();\n" +
+                "        verify(teplaB, times(1)).init();\n" +
+                "        verify(teplaB, times(1)).getA();\n" +
+                "        verify(teplaB, times(1)).res(3);\n" +
+                "        verify(teplaB, times(1)).isTrue(2);\n" +
+                "    }\n" +
+                "\n" +
+                "}\n" +
+                "```";
+        String extractedCode1 = new CodeExtractor(content).getExtractedCode();
+        System.out.println(extractedCode1);
+    }
 }

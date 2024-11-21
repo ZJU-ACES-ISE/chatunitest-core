@@ -104,8 +104,7 @@ public class PromptGenerator {
             case "HITS":
                 return config.useSlice ? PromptFile.hits_slice_init : PromptFile.hits_test_repair;
             case "COVERUP":
-                if (COVERUP.entireCovered) {
-                    COVERUP.entireCovered=false;
+                if (COVERUP.uncoveredLines.isEmpty()) {
                     return PromptFile.chatunitest_repair;
                 } else {
                     setCoverUpRepairData();

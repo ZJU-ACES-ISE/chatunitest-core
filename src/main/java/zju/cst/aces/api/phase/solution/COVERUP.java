@@ -1,15 +1,18 @@
 package zju.cst.aces.api.phase.solution;
 
+import zju.cst.aces.CodeCoverageAnalyzer;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
 import zju.cst.aces.api.phase.PhaseImpl;
 import zju.cst.aces.coverage.CodeCoverageAnalyzer_jar;
 import zju.cst.aces.dto.PromptInfo;
+import zju.cst.aces.dto.TestMessage;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -18,9 +21,8 @@ import static zju.cst.aces.runner.AbstractRunner.exportTest;
 import static zju.cst.aces.runner.AbstractRunner.runTest;
 
 public class COVERUP extends PhaseImpl {
-    public static boolean entireCovered=false;
-    public static List<String> uncoveredLines;
-    public static List<String>  coverage_message;
+    public static List<String>  uncoveredLines=new ArrayList<>();
+    public static List<String>  coverage_message=new ArrayList<>();
     public COVERUP(Config config) {
         super(config);
     }
@@ -69,7 +71,6 @@ public class COVERUP extends PhaseImpl {
                     config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() +
                             " > successfully completed at maximum coverage: " + lineCoverage + "% after round " + promptInfo.getRound());
                     exportTest(code, savePath);
-                    COVERUP.entireCovered=true;
                     return true;
                 }
                 // Check maximum improvement threshold
@@ -79,6 +80,11 @@ public class COVERUP extends PhaseImpl {
                 }
 
                 // Update promptInfo if coverage improves
+                TestMessage testMessage = new TestMessage();
+                testMessage.setErrorType(TestMessage.ErrorType.COVERAGE_ISSUE);
+                testMessage.setErrorMessage(uncoveredLines);
+                promptInfo.setErrorMsg(testMessage);
+
                 promptInfo.setCoverage_improve_time(promptInfo.coverage_improve_time + 1);
                 config.getLogger().warn("maxTimes "+config.max_coverage_improve_time);
                 config.getLogger().warn("The improve time "+promptInfo.coverage_improve_time);

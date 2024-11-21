@@ -10,7 +10,6 @@ import freemarker.template.TemplateException;
 import lombok.Data;
 import zju.cst.aces.api.Task;
 import zju.cst.aces.api.config.Config;
-import zju.cst.aces.coverage.CodeCoverageAnalyzer_jar;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.runner.AbstractRunner;
@@ -40,16 +39,6 @@ public class PromptTemplate {
     public String TEMPLATE_EXTRA = "";
     public String TEMPLATE_REPAIR = "";
 
-    public String TEMPLATE_HITS_SLICE_INIT = "";
-    public String TEMPLATE_HITS_TEST_INIT = "";
-    public String TEMPLATE_HITS_TEST_INIT_SYSTEM = "";
-    public String TEMPLATE_HITS_TEST_REPAIR = "";
-    public String TEMPLATE_HITS_TEST_REPAIR_SYSTEM = "";
-
-    public String TEMPLATE_CHATTESTER_INIT = "";
-    public String TEMPLATE_CHATTESTER_EXTRA = "";
-    public String TEMPLATE_CHATTESTER_REPAIR = "";
-
     public Map<String, Object> dataModel = new HashMap<>();
     public Properties properties;
     public Path promptPath;
@@ -66,18 +55,6 @@ public class PromptTemplate {
         TEMPLATE_EXTRA = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
         TEMPLATE_EXTRA_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
         TEMPLATE_REPAIR = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
-
-        TEMPLATE_HITS_SLICE_INIT = properties.getProperty("PROMPT_TEMPLATE_HITS_SLICE_INIT");
-        TEMPLATE_HITS_TEST_INIT = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_INIT");
-        TEMPLATE_HITS_TEST_INIT_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_INIT_SYSTEM");
-        TEMPLATE_HITS_TEST_REPAIR = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_REPAIR");
-        TEMPLATE_HITS_TEST_REPAIR_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_HITS_TEST_REPAIR_SYSTEM");
-
-        // 新的 CHATTESTER 模板属性
-        TEMPLATE_CHATTESTER_INIT = properties.getProperty("PROMPT_TEMPLATE_CHATTESTER_INIT");
-        TEMPLATE_CHATTESTER_EXTRA = properties.getProperty("PROMPT_TEMPLATE_CHATTESTER_EXTRA");
-        TEMPLATE_CHATTESTER_REPAIR = properties.getProperty("PROMPT_TEMPLATE_CHATTESTER_REPAIR");
-
     }
     //渲染
     public String renderTemplate(String templateFileName) throws IOException, TemplateException{
@@ -193,6 +170,7 @@ public class PromptTemplate {
         this.dataModel.put("java_doc",javadocs);
         this.dataModel.put("java_doc_code",getJavaDocCodeExample(javadocs));
         this.dataModel.put("doc_infos",getSnippetCode(promptInfo.getMethodInfo().getMethodName(),config));
+        //add hits
         if (promptInfo.getSliceStep() != null) {
             this.dataModel.put("step_desp", promptInfo.getSliceStep().getDesp());
             this.dataModel.put("step_code", promptInfo.getSliceStep().getCode());
@@ -813,136 +791,5 @@ public class PromptTemplate {
         List<String> docSnippets = snippetAnalyzer.getDocSnippets(absolutePath, methodName);
         return docSnippets;
     }
-    public String getCounterExampleCode(PromptInfo promptInfo) {
-        ClassInfo classInfo = promptInfo.getClassInfo();
-        MethodInfo methodInfo = promptInfo.getMethodInfo();
-        String targetMethodName = classInfo.getFullClassName() + "." + methodInfo.getMethodSignature();
-        StringBuilder counterExampleCode = new StringBuilder();
-        Map<String, Object> bestCoverageInfo = null;
-        List<String> selectedMethods = new ArrayList<>();
-        Set<String> totalUncoveredLines = new HashSet<>();
 
-        // 反向分析结果数据结构如下：
-        Map<String, Set<List<MethodExampleMap.MEC>>> methodPaths = config.methodExampleMap.getMemList();
-        List<Map<String, Object>> coverageResults = new ArrayList<>();
-
-        for (List<MethodExampleMap.MEC> path : methodPaths.get(targetMethodName)) {
-            MethodExampleMap.MEC topMethod = path.get(path.size() - 1);  // 获取路径的顶端方法
-//            String[] topMethodInfo = findCodeByClassInfo(topMethod.getClassName());
-            String[] topMethodInfo=null;
-            if (topMethodInfo[0] == null || topMethodInfo[1] == null) {
-                config.getLogger().warn("No test file found for " + topMethod.getClassName());
-                continue;
-            }
-
-            try {
-                Map<String, Object> coverageInfo = new CodeCoverageAnalyzer_jar().analyzeCoverage(
-                        topMethodInfo[0], topMethodInfo[1],
-                        promptInfo.fullClassName,
-                        promptInfo.methodSignature,
-                        config.project.getBuildPath().toString(),
-                        config.project.getCompileSourceRoots().get(0),
-                        config.classPaths,
-                        config
-                );
-                coverageResults.add(coverageInfo);
-            } catch (Exception e) {
-                config.getLogger().error("Failed to analyze coverage for " + topMethod.getClassName());
-            }
-        }
-
-        // 按照覆盖率排序
-        coverageResults.sort((a, b) -> {
-            String lineCoverageA = (String) a.get("lineCoverage");
-            String lineCoverageB = (String) b.get("lineCoverage");
-            return Double.compare(Double.parseDouble(lineCoverageB), Double.parseDouble(lineCoverageA));
-        });
-
-        // 选择覆盖率最高的方法
-        if (!coverageResults.isEmpty()) {
-            bestCoverageInfo = coverageResults.get(0);
-            totalUncoveredLines.addAll((Collection<String>) bestCoverageInfo.get("uncoveredLines"));
-            selectedMethods.add((String) bestCoverageInfo.get("methodSignature"));
-        }
-
-        // 检查其他方法是否能减少未覆盖行
-        for (int        i = 1; i < coverageResults.size(); i++) {
-            Map<String, Object> coverageInfo = coverageResults.get(i);
-            List<String> uncoveredLines = (List<String>) coverageInfo.get("uncoveredLines");
-            boolean reducesUncoveredLines = false;
-
-            for (String line : totalUncoveredLines) {
-                if (!uncoveredLines.contains(line)) {
-                    reducesUncoveredLines = true;
-                    break;
-                }
-            }
-            //取交集
-            if (reducesUncoveredLines) {
-                totalUncoveredLines.retainAll(uncoveredLines);
-                selectedMethods.add((String) coverageInfo.get("methodCode"));
-            }
-        }
-
-        // 构建返回结果
-        counterExampleCode.append("these counter-examples enter the target method via the selected sequence of method invocations:\n");
-        for (String method : selectedMethods) {
-            System.out.println("selectedMethods");
-            System.out.println(method);
-            counterExampleCode.append(method).append("\n");
-        }
-
-        return counterExampleCode.toString(); // 返回结果
-    }
-
-
-
-
-    public Map<String, String> getBackwardAnalysis(ClassInfo classInfo, MethodInfo methodInfo) throws IOException {
-        Map<String, String> backwardAnalysis = new HashMap<>();
-        MethodExampleMap methodExampleMap = Config.methodExampleMap;
-        String targetMethodName = classInfo.getFullClassName() + "." + methodInfo.getMethodSignature();
-
-        // 直接获取 targetMethodName 对应的值
-        Set<List<MethodExampleMap.MEC>> paths = methodExampleMap.getMemList().get(targetMethodName);
-        if (paths != null) {
-            StringBuilder info = new StringBuilder();
-            for (List<MethodExampleMap.MEC> path : paths) {
-                for (int i = path.size() - 1; i >= 0; i--) {
-                    MethodExampleMap.MEC mec = path.get(i);
-                    info.append(mec.getCode()).append(" -> ");
-                }
-                info.append(targetMethodName).append("\n");
-            }
-
-            if (info.length() > 0) {
-                backwardAnalysis.put(targetMethodName, info.toString().trim());
-            }
-        }
-        return backwardAnalysis;
-    }
-
-
-    public Map<String, String> getForwardAnalysis(ClassInfo classInfo, MethodInfo methodInfo) throws IOException {
-        Map<String, String> forwardAnalysis = new HashMap<>();
-        Map<String, TreeSet<OCM.OCC>> ocm = config.ocm.getOCM();
-        String targetClassName = classInfo.getFullClassName();
-        for (Map.Entry<String, TreeSet<OCM.OCC>> entry : ocm.entrySet()) {
-            String key = entry.getKey();
-            if (targetClassName.equals(key)) {
-                TreeSet<OCM.OCC> occSet = entry.getValue();
-                StringBuilder info = new StringBuilder();
-                for (OCM.OCC occ : occSet) {
-                    info.append(occ.getClassName()).append(".").append(occ.getMethodName())
-                            .append(" at line ").append(occ.getLineNum()).append(" the construction code is ").append(occ.getCode()).append("\n");
-                }
-
-                if (info.length() > 0) {
-                    forwardAnalysis.put(targetClassName, info.toString().trim());
-                }
-                break;
-            }
-        }
-        return forwardAnalysis;
-    }
 }
