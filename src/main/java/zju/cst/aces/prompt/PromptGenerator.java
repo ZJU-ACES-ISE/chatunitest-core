@@ -3,6 +3,7 @@ package zju.cst.aces.prompt;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.phase.solution.COVERUP;
 import zju.cst.aces.api.phase.solution.SYMPROMPT;
+import zju.cst.aces.api.phase.solution.TELPA;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.prompt.template.PromptTemplate;
 import zju.cst.aces.util.TokenCounter;
@@ -125,6 +126,9 @@ public class PromptGenerator {
                 return config.useSlice ? PromptFile.hits_slice_init : PromptFile.hits_test_init;
             case "COVERUP":
                 return PromptFile.chatunitest_init;
+            case "TELPA":
+                setTelpaInitData();
+                return PromptFile.telpa_init;
             case "SYMPROMPT":
                 setSymPromptInitData();
                 return PromptFile.symprompt_init;
@@ -140,6 +144,11 @@ public class PromptGenerator {
 
     private void setSymPromptInitData() {
         promptTemplate.dataModel.put("minPaths", SYMPROMPT.convertedPaths);
+    }
+    private void setTelpaInitData() {
+        promptTemplate.dataModel.put("forward_analysis", TELPA.forwardAnalysis);
+        promptTemplate.dataModel.put("backward_analysis", TELPA.backwardAnalysis);
+        promptTemplate.dataModel.put("counter_examples",TELPA.counterExampleCode);
     }
 
 

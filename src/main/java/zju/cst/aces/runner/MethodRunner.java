@@ -1,5 +1,6 @@
 package zju.cst.aces.runner;
 
+import zju.cst.aces.api.phase.Phase;
 import zju.cst.aces.api.phase.PhaseImpl;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
@@ -115,7 +116,7 @@ public class MethodRunner extends ClassRunner {
 
     public boolean startRounds(final int num) throws IOException {
 
-        PhaseImpl phase = PhaseImpl.createPhase(config);
+        Phase phase = PhaseImpl.createPhase(config);
 
         // Prompt Construction Phase
         PromptConstructorImpl pc = phase.generatePrompt(classInfo, methodInfo,num);

@@ -31,16 +31,17 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static zju.cst.aces.parser.ProjectParser.config;
 import static zju.cst.aces.parser.ProjectParser.exportJson;
 
 @Data
 public class JavaParserUtil {
     public static JavaParser parser;
+    public Config config;
     public Path srcFolderPath;
     public static NodeList<CompilationUnit> cus;
     public static NodeList<CompilationUnit> cusWithTest;
     public JavaParserUtil(Config config){
+        this.config=config;
         this.parser = config.getParser();
         this.srcFolderPath = Paths.get(config.getProject().getBasedir().getAbsolutePath(), "src", "main", "java");
     }
@@ -115,6 +116,9 @@ public class JavaParserUtil {
                                     if (!slice.toAst().isEmpty()) {
                                         // 提取 import 语句
                                         StringBuilder codeWithImports = new StringBuilder();
+                                        callerCompilationUnit.getPackageDeclaration().ifPresent(packageDeclaration -> {
+                                            codeWithImports.append(packageDeclaration).append("\n\n");
+                                        });
                                         callerCompilationUnit.getImports().forEach(importDeclaration -> {
                                             codeWithImports.append(importDeclaration).append("\n");
                                         });
@@ -302,7 +306,8 @@ public class JavaParserUtil {
     }
     public void exportMethodExampleMap(MethodExampleMap methodExampleMap) {
         Path savePath = config.tmpOutput.resolve("methodExampleCode.json");
-        exportJson(savePath, methodExampleMap.getMEM());
+        Map<String, TreeSet<MethodExampleMap.MEC>> mem = methodExampleMap.getMEM();
+        exportJson(savePath, mem);
     }
     public void findBackwardAnalysis(MethodExampleMap methodExampleMap){
 

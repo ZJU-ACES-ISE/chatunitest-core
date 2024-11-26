@@ -8,9 +8,11 @@ import zju.cst.aces.api.phase.step.*;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 
+import java.io.IOException;
+
 public class PhaseImpl implements Phase {
     public enum PhaseType {
-        TEPLA,
+        TELPA,
         TESTPILOT,
         COVERUP,
         HITS,
@@ -73,7 +75,7 @@ public class PhaseImpl implements Phase {
         try {
             PhaseType phaseType = PhaseType.valueOf(phaseTypeString); // todo 这里似乎如果没有找到枚举对象会直接崩溃
             switch (phaseType) {
-                case TEPLA:
+                case TELPA:
                     return new TELPA(config);
                 case TESTPILOT:
                     return new TESTPILOT(config);

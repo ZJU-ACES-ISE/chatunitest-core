@@ -324,38 +324,28 @@ public class CodeCoverageAnalyzer {
     }
     public static void main(final String[] args) throws Exception {
 
-        String testSourceCode = "\n" +
-                "package myTest;\n" +
+        String testSourceCode = "package myTest;\n" +
                 "\n" +
-                "import org.junit.Test;\n" +
+                "\n" +
+                "\n" +
+                "import org.junit.jupiter.api.Test;\n" +
+                "\n" +
                 "import static org.junit.Assert.*;\n" +
                 "\n" +
-                "public class TeplaB_Test{\n" +
+                "import myTest.TeplaB;\n" +
                 "\n" +
-                "  @Test(timeout = 4000)\n" +
-                "  public void test_getA_0()  throws Throwable  {\n" +
-                "      TeplaB teplaB0 = new TeplaB();\n" +
-                "      teplaB0.res((-2580));\n" +
-                "      boolean boolean0 = teplaB0.isTrue(0);\n" +
-                "      assertFalse(boolean0);\n" +
-                "      \n" +
-                "      teplaB0.getA();\n" +
-                "      teplaB0.init();\n" +
-                "      teplaB0.getA();\n" +
-                "      boolean boolean1 = teplaB0.isTrue(1);\n" +
-                "      assertTrue(boolean1);\n" +
-                "  }\n" +
+                "import org.junit.runner.RunWith;\n" +
                 "\n" +
-                "  @Test(timeout = 4000)\n" +
-                "  public void test_res_1()  throws Throwable  {\n" +
-                "      TeplaB teplaB0 = new TeplaB();\n" +
-                "      teplaB0.teplaB();\n" +
-                "      boolean boolean0 = teplaB0.isTrue(0);\n" +
-                "      assertFalse(boolean0);\n" +
-                "  }\n" +
+                "public class TeplaB_SSTest {\n" +
+                "\n" +
+                "    @Test\n" +
+                "    public void test_res_1() throws Throwable {\n" +
+                "        TeplaB teplaB0 = new TeplaB();\n" +
+                "        teplaB0.teplaB();\n" +
+                "    }\n" +
                 "}\n";
-        String targetClassName = "myTest.TeplaB";
-        String methodSignature = "res(int)";  // 假设我们要测试 parsePattern 方法
+        String targetClassName = "myTest.Tepla";
+        String methodSignature = "calculate()";  // 假设我们要测试 parsePattern 方法
         String targetClassCompiledDir = "D:\\ZJUtest\\target\\classes"; // 目标类的编译目录
         String targetClassSourceDir = "D:\\ZJUtest\\src\\main\\java"; // 目标类的源代码目录
 
@@ -382,7 +372,7 @@ public class CodeCoverageAnalyzer {
                 "D:\\maven-repository\\org\\junit\\jupiter\\junit-jupiter-params\\5.9.2\\junit-jupiter-params-5.9.2.jar",
                 "D:\\maven-repository\\junit\\junit\\4.12\\junit-4.12.jar"
         );
-        String targetTestName = "myTest.TeplaB_Test";
+        String targetTestName = "myTest.TeplaB_SSTest";
         System.out.println(targetTestName);
         Map<String, Object> coverageInfo = new CodeCoverageAnalyzer().analyzeCoverage(testSourceCode,targetTestName, targetClassName, methodSignature, targetClassCompiledDir, targetClassSourceDir, dependencies);
         System.out.println("Coverage Information:");
