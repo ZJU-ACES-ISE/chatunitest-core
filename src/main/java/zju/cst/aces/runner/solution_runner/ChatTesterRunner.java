@@ -4,6 +4,8 @@ import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.ChatGenerator;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
 import zju.cst.aces.api.impl.RepairImpl;
+import zju.cst.aces.api.phase.Phase;
+import zju.cst.aces.api.phase.PhaseImpl;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.prompt.template.PromptTemplate;
 import zju.cst.aces.runner.AbstractRunner;
@@ -25,7 +27,7 @@ public class ChatTesterRunner extends MethodRunner {
     }
 
     /**
-     * Main process of ChatTester, including:
+     * Main process of CHATTESTER, including:
      * 1. Generate intention for focal method, then
      * 2. Use intention and focal context to generate test, and
      * 3. Iteratively repair the test until it passes.
@@ -43,9 +45,11 @@ public class ChatTesterRunner extends MethodRunner {
 
         config.setValidator(new TesterValidator(config.getTestOutput(), config.getCompileOutputPath(),  config.getProject().getBasedir().toPath().resolve("target"), config.getClassPaths())); // 设置chattester的专属验证器
 
+        Phase phase = PhaseImpl.createPhase(config);
 
         ChatGenerator generator = new ChatGenerator(config);
-        PromptConstructorImpl pc = new PromptConstructorImpl(config);
+//        PromptConstructorImpl pc = new PromptConstructorImpl(config);
+        PromptConstructorImpl pc = phase.generatePrompt(classInfo, methodInfo,num);
         RepairImpl repair = new RepairImpl(config, pc);
         //prompt generation里面的
         pc.setFullTestName(fullTestName);
@@ -58,6 +62,7 @@ public class ChatTesterRunner extends MethodRunner {
 
         int errorNum = Integer.MAX_VALUE;
         int invalidRefinementCount = 0;
+        config.useExtra = true;
         for (int rounds = 0; rounds < config.getMaxRounds(); rounds++) {
             promptInfo.addRecord(new RoundRecord(rounds));
             RoundRecord record = promptInfo.getRecords().get(rounds);
@@ -69,12 +74,13 @@ public class ChatTesterRunner extends MethodRunner {
             if (rounds == 0) {
                 // generate method intention
                  config.getLogger().info("Creating intention for method < " + methodInfo.methodName + " > ...");
-                List<ChatMessage> intentionPrompt = this.promptGenerator.generateMessages(promptInfo, pt.TEMPLATE_EXTRA);
+                List<ChatMessage> intentionPrompt = this.promptGenerator.generateMessages(promptInfo, "CHATTESTER");
+                config.useExtra = false;
                 ChatResponse response = ChatGenerator.chat(config, intentionPrompt);
                 String intention = ChatGenerator.getContentByResponse(response);
 
                 // set intention in user prompt
-                prompt = promptGenerator.generateMessages(promptInfo);
+                prompt = promptGenerator.generateMessages(promptInfo, "CHATTESTER");
                 ChatMessage userChatMessage = prompt.get(1);
                 String oldContent = userChatMessage.getContent();
                 int lastBraceIndex = oldContent.lastIndexOf("}");
@@ -95,7 +101,7 @@ public class ChatTesterRunner extends MethodRunner {
                 errorNum = promptInfo.getErrorMsg().getErrorMessage().size();
                 // iterate repair process
                  config.getLogger().info("Fixing test for method < " + methodInfo.methodName + " > round " + rounds + " ...");
-                prompt = promptGenerator.generateMessages(promptInfo);
+                prompt = promptGenerator.generateMessages(promptInfo, "CHATTESTER");
                 TestMessage errorMsg = promptInfo.getErrorMsg();
                 if (errorMsg.getErrorType().equals(TestMessage.ErrorType.COMPILE_ERROR)) {
                     List<CompilerError> compilerErrors = new ArrayList<>();
@@ -148,7 +154,7 @@ public class ChatTesterRunner extends MethodRunner {
 
                     if (!deps.toString().isEmpty()) {
 //                         config.getLogger().info("==================================================");
-//                         config.getLogger().info("[ChatTester Deps in Repair Process]: \n" + deps);
+//                         config.getLogger().info("[CHATTESTER Deps in Repair Process]: \n" + deps);
 //                         config.getLogger().info("==================================================");
                         int lastBraceIndex = repairPrompt.lastIndexOf("}");
                         prompt.get(0).setContent(
@@ -157,7 +163,7 @@ public class ChatTesterRunner extends MethodRunner {
                     }
                 }
             } else {
-                prompt = promptGenerator.generateMessages(promptInfo);
+                prompt = promptGenerator.generateMessages(promptInfo, "CHATTESTER");
             }
 
             // start generate test

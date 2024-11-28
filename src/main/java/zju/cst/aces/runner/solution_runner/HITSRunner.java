@@ -25,6 +25,7 @@ public class HITSRunner extends MethodRunner {
     @Override
     public boolean startRounds(final int num) {
         PhaseImpl phase = PhaseImpl.createPhase(config);
+        config.useSlice = true;
 
         // Prompt Construction Phase
         PromptConstructorImpl pc = phase.generatePrompt(classInfo, methodInfo,num);

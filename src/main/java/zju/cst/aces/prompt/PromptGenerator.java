@@ -1,6 +1,7 @@
 package zju.cst.aces.prompt;
 
 import zju.cst.aces.api.config.Config;
+import zju.cst.aces.api.phase.solution.CHATTESTER;
 import zju.cst.aces.api.phase.solution.COVERUP;
 import zju.cst.aces.api.phase.solution.SYMPROMPT;
 import zju.cst.aces.api.phase.solution.TELPA;
@@ -104,13 +105,17 @@ public class PromptGenerator {
                 return PromptFile.testpilot_repair;
             case "HITS":
                 return config.useSlice ? PromptFile.hits_slice_init : PromptFile.hits_test_repair;
+            case "TESTSPARK":
+                return PromptFile.testspark_repair;
             case "COVERUP":
-                if (COVERUP.uncoveredLines.isEmpty()) {
+                if (COVERUP.uncoveredLines.isEmpty()) { // todo 多线程应该会出问题
                     return PromptFile.chatunitest_repair;
                 } else {
                     setCoverUpRepairData();
                     return PromptFile.coverup_repair;
                 }
+            case "CHATTESTER":
+                return PromptFile.chattester_repair;
             case "SYMPROMPT":
                 return PromptFile.chatunitest_repair;
             default:
@@ -126,9 +131,13 @@ public class PromptGenerator {
                 return config.useSlice ? PromptFile.hits_slice_init : PromptFile.hits_test_init;
             case "COVERUP":
                 return PromptFile.chatunitest_init;
+            case "TESTSPARK":
+                return PromptFile.testspark_init;
             case "TELPA":
                 setTelpaInitData();
                 return PromptFile.telpa_init;
+            case "CHATTESTER":
+                return config.useExtra ? PromptFile.chattester_extra : PromptFile.chattester_init;
             case "SYMPROMPT":
                 setSymPromptInitData();
                 return PromptFile.symprompt_init;

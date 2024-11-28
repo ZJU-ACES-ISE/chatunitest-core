@@ -3,6 +3,8 @@ package zju.cst.aces.runner;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 import zju.cst.aces.api.config.Config;
+import zju.cst.aces.runner.solution_runner.ChatTesterRunner;
+import zju.cst.aces.runner.solution_runner.HITSRunner;
 import zju.cst.aces.util.Counter;
 import zju.cst.aces.util.TestClassMerger;
 import zju.cst.aces.util.ClassNameProcessor;
@@ -42,7 +44,8 @@ public class ClassRunner extends AbstractRunner {
                     config.getLogger().info("Skip method: " + mSig + " in class: " + fullClassName);
                     continue;
                 }
-                new MethodRunner(config, fullClassName, methodInfo).start();
+//                new MethodRunner(config, fullClassName, methodInfo).start();
+                selectRunner(config.getPhaseType(), fullClassName, methodInfo);
                 int newCount = config.getCompletedJobCount().incrementAndGet();
                 config.getLogger().info(String.format("\n==========================\n[%s] Completed Method Jobs:   [ %s /  %s]", config.pluginSign, newCount, config.getJobCount()));
             }
@@ -66,7 +69,8 @@ public class ClassRunner extends AbstractRunner {
                     if (!Counter.filter(methodInfo)) {
                         return "Skip method: " + mSig + " in class: " + fullClassName;
                     }
-                    new MethodRunner(config, fullClassName, methodInfo).start();
+//                    new MethodRunner(config, fullClassName, methodInfo).start();
+                    selectRunner(config.getPhaseType(), fullClassName, methodInfo);
                     int newCount = config.getCompletedJobCount().incrementAndGet();
                     config.getLogger().info(String.format("\n==========================\n[%s] Completed Method Jobs:   [ %s /  %s]", config.pluginSign, newCount, config.getJobCount()));
                     return "Processed " + mSig;
@@ -92,5 +96,21 @@ public class ClassRunner extends AbstractRunner {
         }
 
         executor.shutdown();
+    }
+
+    public void selectRunner(String runnerType, String fullClassName, MethodInfo methodInfo) throws IOException {
+        // Map templateName to a specific PromptFile enum constant
+        switch (runnerType) {
+            case "CHATTESTER":
+                new ChatTesterRunner(config, fullClassName, methodInfo).start();
+                break;
+            case "HITS":
+//                config.getLogger().warn("HITS will be ignored!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                new HITSRunner(config, fullClassName, methodInfo).start();
+                break;
+            default:
+                new MethodRunner(config, fullClassName, methodInfo).start();
+                break;
+        }
     }
 }

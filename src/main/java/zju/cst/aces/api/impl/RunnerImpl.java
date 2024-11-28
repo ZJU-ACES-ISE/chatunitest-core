@@ -34,12 +34,12 @@ public class RunnerImpl implements Runner {
         }
     }
 
-    public void selectRunner(String templateName, String fullClassName, MethodInfo methodInfo) throws IOException {
+    public void selectRunner(String phaseType, String fullClassName, MethodInfo methodInfo) throws IOException {
         // Map templateName to a specific PromptFile enum constant
-        switch (templateName) {
-            case "chattester":
+        switch (phaseType) {
+            case "CHATTESTER":
                 new ChatTesterRunner(config, fullClassName, methodInfo).start();
-            case "hits":
+            case "HITS":
                 new HITSRunner(config, fullClassName, methodInfo).start();
             default:
                 new MethodRunner(config, fullClassName, methodInfo).start();

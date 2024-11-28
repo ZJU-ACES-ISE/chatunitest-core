@@ -108,6 +108,7 @@ public class PromptTemplate {
         Map<String, String> cdep_temp = new HashMap<>();
         Map<String, String> mdep_temp = new HashMap<>();
 
+        this.dataModel.put("unit_test", promptInfo.getUnitTest());
         // Map<String, String>, key: dependent class names
         this.dataModel.put("dep_packages", getDepPackages(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
         this.dataModel.put("dep_imports", getDepImports(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
@@ -175,8 +176,8 @@ public class PromptTemplate {
             this.dataModel.put("step_desp", promptInfo.getSliceStep().getDesp());
             this.dataModel.put("step_code", promptInfo.getSliceStep().getCode());
         } else {
-            this.dataModel.put("step_desp", null);
-            this.dataModel.put("step_code", null);
+            this.dataModel.put("step_desp", "");
+            this.dataModel.put("step_code", "");
         }
         //add target method invocation example in the project
         Map<String, List<String>> invocationCodeMap = get_method_invocation_code(Paths.get(config.tmpOutput.toString(),
