@@ -58,7 +58,7 @@ public class HITS extends PhaseImpl {
                 PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
                 obfuscator.obfuscatePromptInfo(obfuscatedPromptInfo);
                 if(config.useSlice) {
-                    prompt = promptGenerator.generateMessages(obfuscatedPromptInfo, "hits"); // todo
+                    prompt = promptGenerator.generateMessages(obfuscatedPromptInfo, "HITS"); // todo
                     generateMethodSlice(prompt, record, obfuscatedPromptInfo);
                     config.useSlice = false;
                 }else{
@@ -66,7 +66,7 @@ public class HITS extends PhaseImpl {
                 }
             } else {
                 if(config.useSlice) {
-                    prompt = promptGenerator.generateMessages(promptInfo, "hits");
+                    prompt = promptGenerator.generateMessages(promptInfo, "HITS");
                     generateMethodSlice(prompt, record, promptInfo);
                     config.useSlice = false;
                 }else {
@@ -96,7 +96,7 @@ public class HITS extends PhaseImpl {
                 Obfuscator obfuscator = new Obfuscator(config);
                 PromptInfo obfuscatedPromptInfo = new PromptInfo(promptInfo);
                 obfuscator.obfuscatePromptInfo(obfuscatedPromptInfo);
-                prompt = promptGenerator.generateMessages(obfuscatedPromptInfo, "hits");
+                prompt = promptGenerator.generateMessages(obfuscatedPromptInfo, "HITS");
                 code = generateTest(prompt, record);
                 if (!record.isHasCode()) {
                     promptInfo.setUnitTest("");
@@ -104,7 +104,7 @@ public class HITS extends PhaseImpl {
                 }
                 code = obfuscator.deobfuscateJava(code);
             } else {
-                prompt = promptGenerator.generateMessages(promptInfo, "hits");
+                prompt = promptGenerator.generateMessages(promptInfo, "HITS");
                 code = generateTest(prompt, record);
                 if (!record.isHasCode()) {
                     promptInfo.setUnitTest("");

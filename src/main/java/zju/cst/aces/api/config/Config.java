@@ -100,6 +100,7 @@ public class Config {
     public String pluginSign;
     public String phaseType;
     public boolean useSlice;
+    public boolean useExtra;
 
     @Getter
     @Setter
@@ -162,6 +163,7 @@ public class Config {
         public String pluginSign;
         public String phaseType; //TODO
         public boolean useSlice;
+        public boolean useExtra;
 
         public ConfigBuilder(Project project) {
             initDefault(project);
@@ -281,6 +283,11 @@ public class Config {
 
         public ConfigBuilder useSlice(boolean useSlice){
             this.useSlice=useSlice;
+            return this;
+        }
+
+        public ConfigBuilder useExtra(boolean useExtra){
+            this.useExtra=useExtra;
             return this;
         }
 
@@ -638,6 +645,7 @@ public class Config {
             config.setPluginSign(this.pluginSign);
             config.setPhaseType(this.phaseType);
             config.setUseSlice(this.useSlice);
+            config.setUseExtra(this.useExtra);
             config.setCoverageAnalyzer_jar_path(this.coverageAnalyzer_jar_path);
             config.setMax_coverage_improve_time(this.max_coverage_improve_time);
             return config;

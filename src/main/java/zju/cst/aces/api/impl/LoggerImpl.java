@@ -12,7 +12,7 @@ public class LoggerImpl implements zju.cst.aces.api.Logger {
     java.util.logging.Logger log;
 
     public LoggerImpl() {
-        this.log = java.util.logging.Logger.getLogger("ChatUniTest");
+        this.log = java.util.logging.Logger.getLogger("ChatUniTest"); //todo
         Handler consoleHandler = new ConsoleHandler();
         consoleHandler.setLevel(Level.ALL);
         consoleHandler.setFormatter(new LogFormatter());

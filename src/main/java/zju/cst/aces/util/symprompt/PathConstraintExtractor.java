@@ -97,19 +97,24 @@ public class PathConstraintExtractor {
         generatePathConstraintsHelper(conditions, 0, new ArrayList<>(), pathConstraints);
         return pathConstraints;
     }
-
+    // todo bug
     private static void generatePathConstraintsHelper(List<String> conditions, int index, List<String> currentPath, List<List<String>> pathConstraints) {
-        if (index == conditions.size()) {
-            pathConstraints.add(new ArrayList<>(currentPath));
+        // 如果当前索引超过条件的大小，返回
+        if (index >= conditions.size()) {
             return;
         }
+
+        // 添加当前索引的条件
         currentPath.add(conditions.get(index));
         generatePathConstraintsHelper(conditions, index + 2, currentPath, pathConstraints);
         currentPath.remove(currentPath.size() - 1);
 
-        currentPath.add(conditions.get(index + 1));
-        generatePathConstraintsHelper(conditions, index + 2, currentPath, pathConstraints);
-        currentPath.remove(currentPath.size() - 1);
+        // 检查 index + 1 是否在范围内
+        if (index + 1 < conditions.size()) {
+            currentPath.add(conditions.get(index + 1));
+            generatePathConstraintsHelper(conditions, index + 2, currentPath, pathConstraints);
+            currentPath.remove(currentPath.size() - 1);
+        }
     }
 
     private static List<List<String>> generateMinpaths(List<List<String>> pathConstraints) {

@@ -16,7 +16,8 @@ public class PhaseImpl implements Phase {
         TESTPILOT,
         COVERUP,
         HITS,
-        SYMPROMPT
+        SYMPROMPT,
+        CHATTESTER
     }
 
     protected final Config config;
@@ -85,6 +86,8 @@ public class PhaseImpl implements Phase {
                     return new HITS(config);
                 case SYMPROMPT:
                     return new SYMPROMPT(config);
+                case CHATTESTER:
+                    return new CHATTESTER(config);
                 default:
                     return new PhaseImpl(config); // Default or fallback Phase
             }
