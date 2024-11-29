@@ -5,14 +5,16 @@ import com.github.javaparser.ast.NodeList;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
 import zju.cst.aces.api.phase.PhaseImpl;
-import zju.cst.aces.coverage.CodeCoverageAnalyzer;
 import zju.cst.aces.coverage.CodeCoverageAnalyzer_jar;
 import zju.cst.aces.dto.*;
-import zju.cst.aces.util.JavaParserUtil;
+import zju.cst.aces.parser.ProjectParser;
+import zju.cst.aces.util.telpa.JavaParserUtil;
 
 
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class TELPA extends PhaseImpl {
     public static  MethodExampleMap methodExampleMap;
@@ -26,8 +28,11 @@ public class TELPA extends PhaseImpl {
     }
     @Override
     public void prepare() {
+        ProjectParser.config=config;
         JavaParserUtil javaParserUtil=new JavaParserUtil(config);
         JavaParserUtil.cus=javaParserUtil.getParseResult();
+        Logger logger = Logger.getLogger("slicing.graphs");
+        logger.setLevel(Level.SEVERE); // 只输出严重错误
         JavaParserUtil.cusWithTest=javaParserUtil.addFilesToCompilationUnits(config.counterExamplePath);
         MethodExampleMap methodExampleMap = javaParserUtil.createMethodExampleMap(javaParserUtil.cus);
         this.methodExampleMap = methodExampleMap;
@@ -125,7 +130,7 @@ public class TELPA extends PhaseImpl {
                 return null;
             }
             totalUncoveredLines.addAll((Collection<String>) bestCoverageInfo.get("uncoveredLines"));
-            selectedMethods.add((String) bestCoverageInfo.get("methodSignature"));
+            selectedMethods.add(bestCoverageInfo.get("methodCode").toString());
         }
 
         // 检查其他方法是否能减少未覆盖行

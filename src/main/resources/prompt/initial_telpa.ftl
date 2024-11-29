@@ -9,5 +9,7 @@ The context of the function is
 What is the functionality of the function?
 The test programs below are designed to test the function `${method_sig}`.
 They can cover different part of the function.
-The contents of the test programs are ```${counter-examples}```
+<#if counter_examples?has_content>
+    The contents of the test programs are ```${counter_examples}```
+</#if>
 Please help me generate new test programs that cover different scenarios or edge cases.

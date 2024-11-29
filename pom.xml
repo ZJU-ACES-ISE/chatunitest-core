@@ -72,7 +72,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.28</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.knuddels</groupId>
@@ -93,19 +92,16 @@
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-launcher</artifactId>
             <version>1.9.2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>5.9.2</version> <!-- should be 5.9.2 -->
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
             <version>5.9.2</version>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.shared</groupId>
@@ -201,6 +197,20 @@
             <artifactId>jackson-databind</artifactId>
             <version>2.13.4</version>
         </dependency>
+
+        <!-- Other dependencies -->
+        <dependency>
+            <groupId>org.graphstream</groupId>
+            <artifactId>gs-core</artifactId>
+            <version>2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graphstream</groupId>
+            <artifactId>gs-ui-swing</artifactId>
+            <version>2.0</version>
+        </dependency>
+
+
     </dependencies>
 
     <profiles>

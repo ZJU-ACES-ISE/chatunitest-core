@@ -1,4 +1,4 @@
-package zju.cst.aces.util;
+package zju.cst.aces.util.telpa;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
@@ -6,6 +6,7 @@ import com.github.javaparser.Position;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.CallableDeclaration;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.Expression;
@@ -24,12 +25,15 @@ import zju.cst.aces.dto.MethodExampleMap;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static zju.cst.aces.parser.ProjectParser.exportJson;
 
@@ -85,11 +89,27 @@ public class JavaParserUtil {
         return cus;
     }
     public Map<String, String> findCodeByMethodInfo(String methodName, NodeList<CompilationUnit> cus) {
-
         Map<String, String> codes = new HashMap<>();
         try {
             // 创建SDG
+            PrintStream originalOut = System.out;
+            PrintStream originalErr = System.err;
+            PrintStream noOutput = new PrintStream(new OutputStream() {
+                @Override
+                public void write(int b) {
+                    // 忽略所有输出
+                }
+            });
+            System.setOut(noOutput);
+            System.setErr(noOutput);
+
+            // 调用 createSDG 方法
             SDG sdg = createSDG(cus);
+
+            System.setOut(originalOut);
+            System.setErr(originalErr);
+
+
             // 遍历 CompilationUnits 中的所有方法
             for (CompilationUnit cu : cus) {
                 cu.findAll(CallableDeclaration.class).forEach(callable -> {
@@ -100,9 +120,10 @@ public class JavaParserUtil {
                         // 检查当前调用的源方法是否带有 @Test 注解
                         CallableDeclaration<?> caller = edge.getSource();
                         if (caller.isAnnotationPresent("Test")) {
-                            // 检查调用的方法是否是指定的 className
+                            // 检查调用的方法是否是指定的方法名
                             String calledMethodName = String.valueOf(edge.getTarget().getSignature());
                             if (calledMethodName != null && methodName.equals(calledMethodName)) {
+                                // 获取调用位置和参数
                                 Expression callSite = (Expression) edge.getCall();
                                 int callSiteLine = callSite.getBegin().orElse(new Position(0, 0)).line;
 
@@ -111,23 +132,41 @@ public class JavaParserUtil {
                                 String callerClassFullName = callerCompilationUnit.getType(0).getFullyQualifiedName().orElse(null);
 
                                 if (callerClassFullName != null && !arguments.isEmpty()) {
-                                    var sc = new MultiVariableCriterion(callerClassFullName, callSiteLine, arguments);
-                                    Slice slice = sdg.slice(sc);
-                                    if (!slice.toAst().isEmpty()) {
-                                        // 提取 import 语句
-                                        StringBuilder codeWithImports = new StringBuilder();
-                                        callerCompilationUnit.getPackageDeclaration().ifPresent(packageDeclaration -> {
-                                            codeWithImports.append(packageDeclaration).append("\n\n");
-                                        });
-                                        callerCompilationUnit.getImports().forEach(importDeclaration -> {
-                                            codeWithImports.append(importDeclaration).append("\n");
-                                        });
-                                        // 添加切片代码
-                                        String code = findCodeBySlice(slice, callerCompilationUnit.getType(0).getNameAsString());
-                                        if (code != null) {
-                                            codeWithImports.append(code);
-                                            codes.put(callerClassFullName, codeWithImports.toString());
-                                        }
+                                    // 构造完整的测试类代码
+                                    StringBuilder completeCode = new StringBuilder();
+
+                                    // 添加包声明和导入语句
+                                    callerCompilationUnit.getPackageDeclaration().ifPresent(packageDeclaration -> {
+                                        completeCode.append(packageDeclaration).append("\n\n");
+                                    });
+                                    callerCompilationUnit.getImports().forEach(importDeclaration -> {
+                                        completeCode.append(importDeclaration).append("\n");
+                                    });
+
+                                    // 获取类声明
+                                    List<ClassOrInterfaceDeclaration> classes = callerCompilationUnit.findAll(ClassOrInterfaceDeclaration.class);
+                                    Optional<ClassOrInterfaceDeclaration> containingClass = classes.stream()
+                                            .filter(c -> c.getFullyQualifiedName().orElse("").equals(callerClassFullName))
+                                            .findFirst();
+
+                                    if (containingClass.isPresent()) {
+                                        ClassOrInterfaceDeclaration testClass = containingClass.get();
+
+                                        // 构造完整类代码
+                                        completeCode.append("\n\n");
+                                        completeCode.append(testClass.getAnnotations().stream()
+                                                .map(Object::toString)
+                                                .collect(Collectors.joining("\n"))).append("\n"); // 添加类注解
+                                        completeCode.append("public class ").append(testClass.getNameAsString()).append(" {\n\n");
+
+                                        // 添加测试方法代码
+                                        completeCode.append(caller.toString()).append("\n");
+
+                                        // 封闭类定义
+                                        completeCode.append("}\n");
+
+                                        // 存储完整代码到 Map
+                                        codes.put(callerClassFullName, completeCode.toString());
                                     }
                                 }
                             }
@@ -141,6 +180,7 @@ public class JavaParserUtil {
 
         return codes;
     }
+
 
     public NodeList<CompilationUnit> addFilesToCompilationUnits(Path counterExamplePath) {
         List<Path> files = getFiles(counterExamplePath);
@@ -319,7 +359,6 @@ public class JavaParserUtil {
                 findPaths(key, methodExample, path, paths, methodExampleMap);
             }
         });
-
         // select ShortestPath
         filterShortestPaths(methodExampleMap,paths);
     }
