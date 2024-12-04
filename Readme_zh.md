@@ -33,14 +33,13 @@ This is an implementation for the paper "TestSpark: IntelliJ IDEA's Ultimate Tes
 mvn clean install
 ```
 
-### 1. 将以下依赖项添加到待生成单元测试项目的`pom.xml`文件中
+### 1. 将以下依赖项添加到maven-plugin的`pom.xml`文件中
 注意core中pom的版本要与引入依赖的版本一致
 ```xml
 <dependency>
     <groupId>io.github.ZJU-ACES-ISE</groupId>
-    <artifactId>chatunitest-starter</artifactId>
+    <artifactId>chatunitest-core</artifactId>
     <version>2.0.0</version>
-    <type>pom</type>
 </dependency>
 ```
 ### 2. 后续步骤
