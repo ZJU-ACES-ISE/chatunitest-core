@@ -36,14 +36,13 @@ This is an implementation for the paper "TestSpark: IntelliJ IDEA's Ultimate Tes
 mvn clean install
 ```
 
-### 1. Add the Following Dependency to the `pom.xml` File of the Project for Unit Test Generation
-Make sure the version in the core's `pom.xml` matches the version of the dependency you are adding.
+### 1. Add the Following Dependency to the `pom.xml` File of the Maven Plugin
+Make sure the version in the core's `pom.xml` matches the version of the dependency you are adding:
 ```xml
 <dependency>
     <groupId>io.github.ZJU-ACES-ISE</groupId>
-    <artifactId>chatunitest-starter</artifactId>
+    <artifactId>chatunitest-core</artifactId>
     <version>2.0.0</version>
-    <type>pom</type>
 </dependency>
 ```
 
