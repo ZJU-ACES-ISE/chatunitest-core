@@ -20,7 +20,8 @@ public enum PromptFile {
     testspark_repair("PROMPT_TEMPLATE_TESTSPARK_REPAIR", "PROMPT_TEMPLATE_INIT_SYSTEM"),
     coverup_repair("PROMPT_TEMPLATE_COVERUP_REPAIR", "PROMPT_TEMPLATE_INIT_SYSTEM"),
     symprompt_init("PROMPT_TEMPLATE_SYMPROMPT_INIT", "PROMPT_TEMPLATE_SYMPROMPT_INIT_SYSTEM"),
-    telpa_init("PROMPT_TEMPLATE_TELPA_INIT", "PROMPT_TEMPLATE_INIT_SYSTEM");
+    telpa_init("PROMPT_TEMPLATE_TELPA_INIT", "PROMPT_TEMPLATE_INIT_SYSTEM"),
+    mutap_init("PROMPT_TEMPLATE_MUTAPINIT", "PROMPT_TEMPLATE_INIT_SYSTEM");
     // 成员变量
     private final String generate;
     private final String generateSystem;

@@ -5,6 +5,7 @@ import zju.cst.aces.dto.MethodInfo;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.runner.solution_runner.ChatTesterRunner;
 import zju.cst.aces.runner.solution_runner.HITSRunner;
+import zju.cst.aces.runner.solution_runner.MUTAPRunner;
 import zju.cst.aces.util.Counter;
 import zju.cst.aces.util.TestClassMerger;
 import zju.cst.aces.util.ClassNameProcessor;
@@ -106,6 +107,9 @@ public class ClassRunner extends AbstractRunner {
                 break;
             case "HITS":
 //                config.getLogger().warn("HITS will be ignored!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                new HITSRunner(config, fullClassName, methodInfo).start();
+                break;
+            case "MUTAP":
                 new HITSRunner(config, fullClassName, methodInfo).start();
                 break;
             default:

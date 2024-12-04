@@ -210,6 +210,12 @@
             <version>2.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <version>1.6.</version> <!-- 或更新版本 -->
+        </dependency>
+
 
     </dependencies>
 

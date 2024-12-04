@@ -17,7 +17,8 @@ public class PhaseImpl implements Phase {
         COVERUP,
         HITS,
         SYMPROMPT,
-        CHATTESTER
+        CHATTESTER,
+        MUTAP
     }
 
     protected final Config config;
@@ -88,6 +89,8 @@ public class PhaseImpl implements Phase {
                     return new SYMPROMPT(config);
                 case CHATTESTER:
                     return new CHATTESTER(config);
+                case MUTAP:
+                    return new MUTAP(config);
                 default:
                     return new PhaseImpl(config); // Default or fallback Phase
             }
