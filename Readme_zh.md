@@ -9,23 +9,6 @@
 
 ![概览](docs/img/overview.jpg)
 
-### 复现工作
-#### ChatTester
-This is an implementation for the paper "No More Manual Tests? Evaluating and Improving ChatGPT for Unit Test Generation" [arxiv](https://arxiv.org/abs/2305.04207)
-#### CoverUp
-This is an implementation for the paper "CoverUp: Coverage-Guided LLM-Based Test Generation" [arxiv](https://arxiv.org/abs/2403.16218).
-#### TELPA
-This is an implementation for the paper "Enhancing LLM-based Test Generation for Hard-to-Cover Branches via Program Analysis" [arxiv](https://arxiv.org/abs/2404.04966)
-#### SysPrompt
-This is an implementation for the paper "Code-Aware Prompting: A study of Coverage Guided Test Generation in Regression Setting using LLM" [arxiv](https://arxiv.org/abs/2402.00097)
-#### TestPilot
-This is an implementation for the paper "An Empirical Evaluation of Using Large Language Models for Automated Unit Test Generation" [arxiv](https://arxiv.org/abs/2302.06527)
-#### HITS
-This is an implementation for the paper "HITS: High-coverage LLM-based Unit Test Generation via Method Slicing" [arxiv](https://arxiv.org/abs/2408.11324)
-#### MUTAP
-This is an implementation for the paper "Effective Test Generation Using Pre-trained Large Language Models and Mutation Testing" [arxiv](https://arxiv.org/abs/2308.16557)
-#### TestSpark
-This is an implementation for the paper "TestSpark: IntelliJ IDEA's Ultimate Test Generation Companion" [arxiv](https://arxiv.org/abs/2401.06580)
 ## 运行步骤
 
 ### 0. core的构建
@@ -46,6 +29,35 @@ mvn clean install
 详见maven-plugin部分
 [chatunitest-maven-plugin/corporation](https://github.com/ZJU-ACES-ISE/chatunitest-maven-plugin/tree/corporation)
 
+## 自定义内容
+### 使用 FTL 模板
+
+#### 1. 配置映射关系
+在 `config.properties` 中定义映射关系。
+
+#### 2. 定义 PromptFile 枚举类
+在 `PromptFile` 枚举类中定义枚举常量及其对应的模板文件名。
+
+#### 3. 引用模板
+在 `PromptGenerator` 类中的 `getInitPromptFile` 和 `getRepairPromptFile` 方法中引用 `PromptFile` 的模板。
+
+#### 4. 生成 Prompt
+后续调用 `PromptGenerator` 的 `generateMessages` 方法即可获取 prompt。具体实现方式可参见 HITS 的实现。
+
+### 扩展 FTL 模板
+`PromptInfo` 是一个数据实体类，这部分可以按需扩展。`PromptTemplate` 中的 `dataModel` 存放着供 FTL 模板使用的变量数据。如果有自定义新的 FTL 模板，请检查是否有新的变量引入，并及时更新 `dataModel`。
+
+### 修改生成单测的粒度
+可以构造一个 `MethodRunner` 的继承类，参见 `HITSRunner`。并在 `selectRunner` 方法中添加新的实现。
+
+### 自定义单元测试生成方案
+如果你想要自行定义单元测试生成方案，下面给出一个示例：
+
+- 首先，你需要定义一个 `PhaseImpl` 的继承类，用于实现核心的生成方案。我们一般将其放置在 `phase` 的 `solution` 文件夹中。
+  
+- 接着，你需要在 `PhaseImpl` 类中的 `createPhase` 方法中添加新的实现。如果有新增模板，请参考上述使用 FTL 模板的部分；如果有新的数据变量引入，请参见修改 FTL 模板的部分。
+
+- 如需修改生成单测的粒度，例如 HITS 是针对方法切片生成单元测试，请参考修改生成单测的粒度部分。
 
 ## :email: 联系我们
 
