@@ -3,31 +3,11 @@
 [English](./README.md) | [中文](./Readme_zh.md)
 
 ## Motivation
-Many people have tried using ChatGPT to assist with various programming tasks and have achieved good results. However, there are some issues with directly using ChatGPT: First, the generated code often does not execute properly, leading to the adage **“five minutes of coding, two hours of debugging.”** Second, it is inconvenient to integrate with existing projects, as it requires manual interaction with ChatGPT and switching between different pages. 
-
-To address these issues, we have proposed a **“Generate-Validate-Fix”** framework and implemented a prototype system. Additionally, to facilitate usage, we have developed several plugins that can be easily integrated into existing development workflows. The Maven plugin has been completed and the latest version has been published to the Maven Central Repository. We welcome you to try it out and provide feedback. Furthermore, we have launched the Chatunitest plugin in the IntelliJ IDEA Plugin Marketplace. You can search for and install ChatUniTest in the marketplace or visit the plugin page [Chatunitest: IntelliJ IDEA Plugin](https://plugins.jetbrains.com/plugin/22522-chatunitest) for more information. In this latest branch, we have integrated multiple related works that we have reproduced, allowing users to choose and use them as needed.
+Many have attempted to use ChatGPT to assist with various programming tasks, achieving good results. However, there are some challenges with directly using ChatGPT: First, the generated code often fails to execute correctly, leading to the saying **“five minutes of coding, two hours of debugging”**; second, integrating with existing projects is cumbersome, requiring manual interaction with ChatGPT and switching between different pages. To address these issues, we propose a **“Generate-Validate-Fix”** framework and have developed a prototype system. To facilitate usage, we created several plugins that can easily integrate into existing development workflows. We have completed the development of the Maven plugin, and the latest version has been released to the Maven Central Repository for your trial and feedback. Additionally, we have launched the Chatunitest plugin in the IntelliJ IDEA Plugin Marketplace. You can search for and install ChatUniTest in the marketplace or visit the plugin page [Chatunitest: IntelliJ IDEA Plugin](https://plugins.jetbrains.com/plugin/22522-chatunitest) for more information. This latest branch integrates several related works we have reproduced, allowing you to choose according to your needs.
 
 ## Overview
 
 ![Overview](docs/img/overview.jpg)
-
-### Reproduced Works
-#### ChatTester
-This is an implementation for the paper "No More Manual Tests? Evaluating and Improving ChatGPT for Unit Test Generation" [arxiv](https://arxiv.org/abs/2305.04207).
-#### CoverUp
-This is an implementation for the paper "CoverUp: Coverage-Guided LLM-Based Test Generation" [arxiv](https://arxiv.org/abs/2403.16218).
-#### TELPA
-This is an implementation for the paper "Enhancing LLM-based Test Generation for Hard-to-Cover Branches via Program Analysis" [arxiv](https://arxiv.org/abs/2404.04966).
-#### SysPrompt
-This is an implementation for the paper "Code-Aware Prompting: A study of Coverage Guided Test Generation in Regression Setting using LLM" [arxiv](https://arxiv.org/abs/2402.00097).
-#### TestPilot
-This is an implementation for the paper "An Empirical Evaluation of Using Large Language Models for Automated Unit Test Generation" [arxiv](https://arxiv.org/abs/2302.06527).
-#### HITS
-This is an implementation for the paper "HITS: High-coverage LLM-based Unit Test Generation via Method Slicing" [arxiv](https://arxiv.org/abs/2408.11324).
-#### MUTAP
-This is an implementation for the paper "Effective Test Generation Using Pre-trained Large Language Models and Mutation Testing" [arxiv](https://arxiv.org/abs/2308.16557).
-#### TestSpark
-This is an implementation for the paper "TestSpark: IntelliJ IDEA's Ultimate Test Generation Companion" [arxiv](https://arxiv.org/abs/2401.06580).
 
 ## Running Steps
 
@@ -36,8 +16,8 @@ This is an implementation for the paper "TestSpark: IntelliJ IDEA's Ultimate Tes
 mvn clean install
 ```
 
-### 1. Add the Following Dependency to the `pom.xml` File of the Maven Plugin
-Make sure the version in the core's `pom.xml` matches the version of the dependency you are adding:
+### 1. Add the following dependency to the `pom.xml` file of the Maven plugin
+Make sure the version in the core's pom matches the version of the imported dependency.
 ```xml
 <dependency>
     <groupId>io.github.ZJU-ACES-ISE</groupId>
@@ -47,11 +27,42 @@ Make sure the version in the core's `pom.xml` matches the version of the depende
 ```
 
 ### 2. Subsequent Steps
-For detailed instructions, see the Maven plugin section [chatunitest-maven-plugin/corporation](https://github.com/ZJU-ACES-ISE/chatunitest-maven-plugin/tree/corporation).
+For detailed instructions, please refer to the Maven plugin section:
+[chatunitest-maven-plugin/corporation](https://github.com/ZJU-ACES-ISE/chatunitest-maven-plugin/tree/corporation)
+
+## Custom Content
+### Using FTL Templates
+
+#### 1. Configure Mapping
+Define the mapping in the `config.properties` file.
+
+#### 2. Define the PromptFile Enum
+Define enum constants and their corresponding template filenames in the `PromptFile` enum class.
+
+#### 3. Reference Templates
+Reference the `PromptFile` templates in the `getInitPromptFile` and `getRepairPromptFile` methods of the `PromptGenerator` class.
+
+#### 4. Generate Prompts
+Subsequently, call the `generateMessages` method of the `PromptGenerator` to obtain the prompt. For specific implementation details, please refer to the HITS implementation.
+
+### Extending FTL Templates
+`PromptInfo` is a data entity class that can be extended as needed. The `dataModel` in `PromptTemplate` holds the variable data used by the FTL templates. If you introduce new variables in a custom FTL template, ensure that you update the `dataModel` accordingly.
+
+### Modifying the Granularity of Generated Unit Tests
+You can create a subclass of `MethodRunner`, similar to `HITSRunner`, and add new implementations in the `selectRunner` method.
+
+### Custom Unit Test Generation Scheme
+If you wish to define your own unit test generation scheme, here is an example:
+
+- First, define a subclass of `PhaseImpl` to implement the core generation scheme. We typically place this in the `phase`'s `solution` folder.
+  
+- Next, add new implementations in the `createPhase` method of the `PhaseImpl` class. If you have new templates, please refer to the section on using FTL templates; if there are new data variables, see the section on modifying FTL templates.
+
+- If you need to modify the granularity of the generated unit tests (for example, HITS generates unit tests based on method slicing), please refer to the section on modifying the granularity of generated unit tests.
 
 ## :email: Contact Us
 
-If you have any questions, please feel free to contact us via email at the following addresses:
+If you have any questions, please feel free to contact us via email:
 
 1. Corresponding author: `zjuzhichen AT zju.edu.cn`
 2. Author: `yh_ch AT zju.edu.cn`, `xiezhuokui AT zju.edu.cn`
