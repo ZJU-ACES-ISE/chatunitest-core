@@ -1,9 +1,14 @@
 package zju.cst.aces.runner;
 
-import zju.cst.aces.api.Phase;
+import zju.cst.aces.api.phase.Phase;
+import zju.cst.aces.api.phase.PhaseImpl;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
+import zju.cst.aces.api.impl.obfuscator.Obfuscator;
 import zju.cst.aces.dto.*;
+import zju.cst.aces.runner.ClassRunner;
+import zju.cst.aces.util.JsonResponseProcessor;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +51,7 @@ public class MethodRunner extends ClassRunner {
             executor.shutdown();
         } else {
             for (int num = 0; num < config.getTestNumber(); num++) {
-                boolean result = startRounds(num);
+                boolean result = startRounds(num); //todo
                 if (result && config.isStopWhenSuccess()) {
                     break;
                 }
@@ -54,21 +59,22 @@ public class MethodRunner extends ClassRunner {
         }
     }
 
-    public boolean startRounds(final int num) {
+    public boolean startRounds(final int num) throws IOException {
 
-        Phase phase = new Phase(config);
+        Phase phase = PhaseImpl.createPhase(config);
 
         // Prompt Construction Phase
-        PromptConstructorImpl pc = phase.new PromptGeneration(classInfo, methodInfo).execute(num);
+        PromptConstructorImpl pc = phase.generatePrompt(classInfo, methodInfo,num);
         PromptInfo promptInfo = pc.getPromptInfo();
         promptInfo.setRound(0);
 
         // Test Generation Phase
-        phase.new TestGeneration().execute(pc);
+        phase.generateTest(pc);
 
         // Validation
-        if (phase.new Validation().execute(pc)) {
+        if (phase.validateTest(pc)) {
             exportRecord(pc.getPromptInfo(), classInfo, num);
+
             return true;
         }
 
@@ -78,10 +84,10 @@ public class MethodRunner extends ClassRunner {
             promptInfo.setRound(rounds);
 
             // Repair
-            phase.new Repair().execute(pc);
+            phase.repairTest(pc);
 
-            // Validation
-            if (phase.new Validation().execute(pc)) {
+            // Validation and process
+            if (phase.validateTest(pc)) { // if passed validation
                 exportRecord(pc.getPromptInfo(), classInfo, num);
                 return true;
             }

@@ -1,67 +1,68 @@
 # :mega: ChatUnitest Core
 
-![logo](docs/img/logo.png)
-
-
 [English](./README.md) | [中文](./Readme_zh.md)
 
-## Background
-Many people have tried using ChatGPT to help them with various programming tasks and have achieved good results. However, there are some issues with using ChatGPT directly. Firstly, the generated code often fails to execute correctly, leading to the famous saying **"five minutes to code, two hours to debug"**. Secondly, it is inconvenient to integrate with existing projects as it requires manual interaction with ChatGPT and switching between different platforms. To address these problems, we have proposed the **"Generate-Validate-Repair"** framework and implemented a prototype. Additionally, to make it easier for everyone to use, we have developed some plugins that can be seamlessly integrated into existing development workflows.
+## Motivation
+Many have attempted to use ChatGPT to assist with various programming tasks, achieving good results. However, there are some challenges with directly using ChatGPT: First, the generated code often fails to execute correctly, leading to the saying **“five minutes of coding, two hours of debugging”**; second, integrating with existing projects is cumbersome, requiring manual interaction with ChatGPT and switching between different pages. To address these issues, we propose a **“Generate-Validate-Fix”** framework and have developed a prototype system. To facilitate usage, we created several plugins that can easily integrate into existing development workflows. We have completed the development of the Maven plugin, and the latest version has been released to the Maven Central Repository for your trial and feedback. Additionally, we have launched the Chatunitest plugin in the IntelliJ IDEA Plugin Marketplace. You can search for and install ChatUniTest in the marketplace or visit the plugin page [Chatunitest: IntelliJ IDEA Plugin](https://plugins.jetbrains.com/plugin/22522-chatunitest) for more information. This latest branch integrates several related works we have reproduced, allowing you to choose according to your needs.
 
 ## Overview
 
 ![Overview](docs/img/overview.jpg)
 
-## Steps to run
+## Running Steps
 
-### 0. Add our dependency to `pom.xml` and config
+### 0. Build the Core
+```shell
+mvn clean install
+```
+
+### 1. Add the following dependency to the `pom.xml` file of the Maven plugin
+Make sure the version in the core's pom matches the version of the imported dependency.
 ```xml
 <dependency>
     <groupId>io.github.ZJU-ACES-ISE</groupId>
     <artifactId>chatunitest-core</artifactId>
-    <version>1.1.0</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
-### 1. Add the following dependency to pom.xml
+### 2. Subsequent Steps
+For detailed instructions, please refer to the Maven plugin section:
+[chatunitest-maven-plugin/corporation](https://github.com/ZJU-ACES-ISE/chatunitest-maven-plugin/tree/corporation)
 
-```xml
-<dependency>
-    <groupId>io.github.ZJU-ACES-ISE</groupId>
-    <artifactId>chatunitest-starter</artifactId>
-    <version>1.4.0</version>
-    <type>pom</type>
-</dependency>
-```
+## Custom Content
+### Using FTL Templates
 
-## Design Your Custom Prompt
+#### 1. Configure Mapping
+Define the mapping in the `config.properties` file.
 
-### 1.Create a Directory Containing Your Prompt Files Using Freemarker
+#### 2. Define the PromptFile Enum
+Define enum constants and their corresponding template filenames in the `PromptFile` enum class.
 
-Refer to the examples in `src/main/resources/prompt`:
+#### 3. Reference Templates
+Reference the `PromptFile` templates in the `getInitPromptFile` and `getRepairPromptFile` methods of the `PromptGenerator` class.
 
-`initial.ftl` serves as the initial prompt in the basic generation process.
-`initial_system.ftl` serves as the corresponding system prompt in the basic generation process.
+#### 4. Generate Prompts
+Subsequently, call the `generateMessages` method of the `PromptGenerator` to obtain the prompt. For specific implementation details, please refer to the HITS implementation.
 
-`extra.ftl` and `extra_system.ftl` are designed for further extensions in the pipeline (currently not in use).
+### Extending FTL Templates
+`PromptInfo` is a data entity class that can be extended as needed. The `dataModel` in `PromptTemplate` holds the variable data used by the FTL templates. If you introduce new variables in a custom FTL template, ensure that you update the `dataModel` accordingly.
 
-`repair.ftl` serves as the repair prompt in the repair process. 
+### Modifying the Granularity of Generated Unit Tests
+You can create a subclass of `MethodRunner`, similar to `HITSRunner`, and add new implementations in the `selectRunner` method.
 
-### 2. Update the Template Filenames in the `config.properties` File
+### Custom Unit Test Generation Scheme
+If you wish to define your own unit test generation scheme, here is an example:
 
-```properties
-PROMPT_TEMPLATE_INIT=initial.ftl
-PROMPT_TEMPLATE_EXTRA=extra.ftl
-PROMPT_TEMPLATE_REPAIR=repair.ftl
-```
+- First, define a subclass of `PhaseImpl` to implement the core generation scheme. We typically place this in the `phase`'s `solution` folder.
+  
+- Next, add new implementations in the `createPhase` method of the `PhaseImpl` class. If you have new templates, please refer to the section on using FTL templates; if there are new data variables, see the section on modifying FTL templates.
 
-### 3. To Use an Extra Template, Extend the `MethodRunner` and Override the `startRounds` Method
+- If you need to modify the granularity of the generated unit tests (for example, HITS generates unit tests based on method slicing), please refer to the section on modifying the granularity of generated unit tests.
 
-Refer to the example in `ChatTester Github Repository`.
+## :email: Contact Us
 
-## :email: Contact us
-
-If you have any questions, please feel free to contact us via email. The email addresses of the authors are as follows:
+If you have any questions, please feel free to contact us via email:
 
 1. Corresponding author: `zjuzhichen AT zju.edu.cn`
 2. Author: `yh_ch AT zju.edu.cn`, `xiezhuokui AT zju.edu.cn`

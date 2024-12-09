@@ -379,6 +379,34 @@ public abstract class AbstractRunner {
         }
     }
 
+    public void exportSliceRecord(PromptInfo promptInfo, ClassInfo classInfo, int attempt, int sliceNum) {
+        String methodIndex = classInfo.methodSigs.get(promptInfo.methodSignature);
+        Path recordPath = config.getHistoryPath();
+
+        recordPath = recordPath.resolve("class" + classInfo.index);
+        exportMethodMapping(classInfo, recordPath);
+
+        recordPath = recordPath.resolve("method" + methodIndex);
+        exportAttemptMapping(promptInfo, recordPath);
+
+        recordPath = recordPath.resolve("attempt" + attempt);
+        if (!recordPath.toFile().exists()) {
+            recordPath.toFile().mkdirs();
+        }
+        recordPath = recordPath.resolve("sliceNum" + sliceNum);
+        if (!recordPath.toFile().exists()) {
+            recordPath.toFile().mkdirs();
+        }
+        File recordFile = recordPath.resolve("records.json").toFile();
+        try (OutputStreamWriter writer = new OutputStreamWriter(
+                new FileOutputStream(recordFile), StandardCharsets.UTF_8)) {
+            writer.write(GSON.toJson(promptInfo.getRecords()));
+        } catch (IOException e) {
+            throw new RuntimeException("In AbstractRunner.exportRecord: " + e);
+        }
+    }
+
+
     public static synchronized void exportClassMapping(Config config, Path savePath) {
         if (!savePath.toFile().exists()) {
             savePath.toFile().mkdirs();
@@ -511,41 +539,40 @@ public abstract class AbstractRunner {
             return true;//如果超时了直接当做成功跳过这个方法
         }
         List<String> errors = extractErrorBySummary(summary, fullTestName);
+        boolean compileSuccess = false;
+        //execution error
         if (summary.getTestsFailedCount() > 0 || summary.getTestsSucceededCount() == 0) {
-            if (isOnlyAssertionError(errors)) {
-                exportTest(code, savePath);
-                config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > compile and execute successfully with only assertion error, round " + rounds);
-                return true;
-            }
-
-            String testProcessed = testProcessor.removeErrorTest(promptInfo, summary);
-
-            // Remove errors successfully, recompile and re-execute test
-            if (testProcessed != null) {
-                config.getLogger().debug("[Original Test]:\n" + code);
-                if (config.getValidator().semanticValidate(testProcessed, testName, compilationErrorPath, null)) {
-                    if (config.getValidator().runtimeValidate(fullTestName)) {
-                        exportTest(testProcessed, savePath);
-                        config.getLogger().debug("[Processed Test]:\n" + testProcessed);
-                        config.getLogger().info("Processed test for method < " + promptInfo.getMethodInfo().getMethodName() + " > generated successfully round " + rounds);
-                        return true;
+            if (!isOnlyAssertionError(errors)) {
+                String testProcessed = testProcessor.removeErrorTest(promptInfo, summary);
+                // Remove errors successfully, recompile and re-execute test
+                if (testProcessed != null) {
+                    config.getLogger().debug("[Original Test]:\n" + code);
+                    if (config.getValidator().semanticValidate(testProcessed, testName, compilationErrorPath, null)) {
+                        compileSuccess=true;
+                        if (config.getValidator().runtimeValidate(fullTestName)) {
+                            exportTest(testProcessed, savePath);
+                            config.getLogger().debug("[Processed Test]:\n" + testProcessed);
+                            config.getLogger().info("Processed test for method < " + promptInfo.getMethodInfo().getMethodName() + " > generated successfully round " + rounds);
+                            return true;
+                        }
                     }
+                    testProcessor.removeCorrectTest(promptInfo, summary);
                 }
+                // Set promptInfo error message
+                TestMessage testMessage = new TestMessage();
+                testMessage.setErrorType(TestMessage.ErrorType.RUNTIME_ERROR);
+                testMessage.setErrorMessage(errors);
+                promptInfo.setErrorMsg(testMessage);
+                exportError(code, errors, executionErrorPath);
                 testProcessor.removeCorrectTest(promptInfo, summary);
+                config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > execution failed round " + rounds);
+                return false;
             }
-
-            // Set promptInfo error message
-            TestMessage testMessage = new TestMessage();
-            testMessage.setErrorType(TestMessage.ErrorType.RUNTIME_ERROR);
-            testMessage.setErrorMessage(errors);
-            promptInfo.setErrorMsg(testMessage);
-            exportError(code, errors, executionErrorPath);
-            testProcessor.removeCorrectTest(promptInfo, summary);
-            config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > execution failed round " + rounds);
-            return false;
         }
-//            summary.printTo(new PrintWriter(System.out));
-        exportTest(code, savePath);
+        summary.printTo(new PrintWriter(System.out));
+        if(!config.phaseType.equals("COVERUP")){
+            exportTest(code, savePath);
+        }
         config.getLogger().info("Test for method < " + promptInfo.getMethodInfo().getMethodName() + " > compile and execute successfully round " + rounds);
         return true;
     }

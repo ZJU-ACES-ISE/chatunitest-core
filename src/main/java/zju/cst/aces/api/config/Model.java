@@ -20,6 +20,22 @@ public enum Model {
             .withFrequencyPenalty(0)
             .withPresencePenalty(0)
             .build()),
+    GPT_4O("gpt-4o", new ModelConfig.Builder()
+            .withModelName("gpt-4o")
+            .withUrl("https://api.gptsapi.net/v1/chat/completions")
+            .withContextLength(122880) //120k
+            .withTemperature(0.5)
+            .withFrequencyPenalty(0)
+            .withPresencePenalty(0)
+            .build()),
+    GPT_4O_MINI("gpt-4o-mini", new ModelConfig.Builder()
+            .withModelName("gpt-4o-mini")
+            .withUrl("https://api.gptsapi.net/v1/chat/completions")
+            .withContextLength(122880) //120k
+            .withTemperature(0.5)
+            .withFrequencyPenalty(0)
+            .withPresencePenalty(0)
+            .build()),
     CODE_LLAMA("code-llama", new ModelConfig.Builder()
             .withModelName("code-llama")
             .withUrl(null)

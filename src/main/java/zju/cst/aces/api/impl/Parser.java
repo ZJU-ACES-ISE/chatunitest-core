@@ -18,11 +18,14 @@ public class Parser implements PreProcess {
     Path parseOutput;
     Logger log;
 
+    Config config;
+
     public Parser(ProjectParser parser, Project project, Path parseOutput, Logger log) {
         this.parser = parser;
         this.project = project;
         this.parseOutput = parseOutput;
         this.log = log;
+        this.config = ProjectParser.config;
     }
 
     @Override
@@ -38,15 +41,15 @@ public class Parser implements PreProcess {
             return;
         }
         if (project.getPackaging().equals("pom")) {
-            log.info("\n==========================\n[ChatUniTest] Skip pom-packaging ...");
+            log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...", config.pluginSign));
             return;
         }
-        if (! parseOutput.toFile().exists()) {
-            log.info("\n==========================\n[ChatUniTest] Parsing class info ...");
+        if (!parseOutput.toFile().exists()) {
+            log.info(String.format("\n==========================\n[%s] Parsing class info ...", config.pluginSign));
             parser.parse();
-            log.info("\n==========================\n[ChatUniTest] Parse finished");
+            log.info(String.format("\n==========================\n[%s] Parse finished", config.pluginSign));
         } else {
-            log.info("\n==========================\n[ChatUniTest] Parse output already exists, skip parsing!");
+            log.info(String.format("\n==========================\n[%s] Parse output already exists, skip parsing!", config.pluginSign));
         }
     }
 }

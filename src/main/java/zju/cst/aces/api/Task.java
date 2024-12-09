@@ -1,10 +1,13 @@
 package zju.cst.aces.api;
 
+import zju.cst.aces.api.phase.Phase;
+import zju.cst.aces.api.phase.PhaseImpl;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.runner.AbstractRunner;
+import zju.cst.aces.util.ClassNameProcessor;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,14 +27,25 @@ public class Task {
     Config config;
     Logger log;
     Runner runner;
+    public enum Granularity {
+        METHOD,
+        CLASS,
+        PROJECT;
+    }
+    Granularity granularity;
+    ClassNameProcessor classNameProcessor;
 
     public Task(Config config, Runner runner) {
         this.config = config;
         this.log = config.getLogger();
         this.runner = runner;
+        this.classNameProcessor=new ClassNameProcessor();
     }
 
-    public void startMethodTask(String className, String methodName) {
+    public void startMethodTask(String className, String methodName) throws IOException {
+        if(granularity == null){
+            granularity = Granularity.METHOD;
+        }
         try {
             checkTargetFolder(config.getProject());
         } catch (RuntimeException e) {
@@ -43,8 +57,8 @@ public class Task {
             return;
         }
 
-        Phase phase = new Phase(config);
-        phase.new Preparation().execute();
+        Phase phase = PhaseImpl.createPhase(config);
+        phase.prepare();
 
         log.info(String.format("\n==========================\n[%s] Generating tests for class: < ",config.pluginSign) + className
                 + "> method: < " + methodName + " > ...");
@@ -91,9 +105,16 @@ public class Task {
         }
 
         log.info(String.format("\n==========================\n[%s] Generation finished", config.pluginSign));
+
+        Path testOutPutPath = config.getTestOutput();
+        classNameProcessor.processJavaFiles(testOutPutPath);
+        log.info(String.format("\n==========================\n[%s] Test processed", config.pluginSign));
     }
 
-    public void startClassTask(String className) {
+    public void startClassTask(String className) throws IOException {
+        if(granularity == null){
+            granularity = Granularity.CLASS;
+        }
         try {
             checkTargetFolder(config.getProject());
         } catch (RuntimeException e) {
@@ -104,8 +125,8 @@ public class Task {
             log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...",config.pluginSign));
             return;
         }
-        Phase phase = new Phase(config);
-        phase.new Preparation().execute();
+        Phase phase = PhaseImpl.createPhase(config);
+        phase.prepare();
         log.info(String.format("\n==========================\n[%s] Generating tests for class < " + className + " > ...",config.pluginSign));
         try {
             this.runner.runClass(getFullClassName(config, className));
@@ -113,9 +134,16 @@ public class Task {
             log.warn("Class not found: " + className + " in " + config.getProject().getArtifactId());
         }
         log.info(String.format("\n==========================\n[%s] Generation finished",config.pluginSign));
+
+        Path testOutPutPath = config.getTestOutput();
+        classNameProcessor.processJavaFiles(testOutPutPath);
+        log.info(String.format("\n==========================\n[%s] Test processed", config.pluginSign));
     }
 
-    public void startProjectTask() {
+    public void startProjectTask() throws IOException {
+        if(granularity == null){
+            granularity = Granularity.PROJECT;
+        }
         Project project = config.getProject();
         try {
             checkTargetFolder(project);
@@ -127,8 +155,8 @@ public class Task {
             log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...",config.pluginSign));
             return;
         }
-        Phase phase = new Phase(config);
-        phase.new Preparation().execute();
+        Phase phase = PhaseImpl.createPhase(config);
+        phase.prepare();
         List<String> classPaths = ProjectParser.scanSourceDirectory(project);
 
         try {
@@ -159,6 +187,10 @@ public class Task {
         }
 
         log.info(String.format("\n==========================\n[%s] Generation finished",config.pluginSign));
+
+        Path testOutPutPath = config.getTestOutput();
+        classNameProcessor.processJavaFiles(testOutPutPath);
+        log.info(String.format("\n==========================\n[%s] Test processed",config.pluginSign));
     }
 
     public void projectJob(List<String> classPaths) {

@@ -20,6 +20,7 @@ public class TestMessage {
 
     public enum ErrorType {
         COMPILE_ERROR,
-        RUNTIME_ERROR
+        RUNTIME_ERROR,
+        COVERAGE_ISSUE
     }
 }

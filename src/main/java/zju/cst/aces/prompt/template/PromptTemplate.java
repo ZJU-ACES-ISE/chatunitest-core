@@ -1,4 +1,4 @@
-package zju.cst.aces.prompt;
+package zju.cst.aces.prompt.template;
 
 
 import com.google.gson.Gson;
@@ -7,21 +7,19 @@ import com.google.gson.reflect.TypeToken;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+import lombok.Data;
 import zju.cst.aces.api.Task;
 import zju.cst.aces.api.config.Config;
-import zju.cst.aces.dto.ClassInfo;
-import zju.cst.aces.dto.ExampleUsage;
-import zju.cst.aces.dto.MethodInfo;
-import zju.cst.aces.dto.PromptInfo;
+import zju.cst.aces.dto.*;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.runner.AbstractRunner;
+import zju.cst.aces.util.testpilot.JavadocCodeExampleCheck;
+import zju.cst.aces.util.testpilot.SnippetAnalyzer;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,14 +28,17 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
+@Data
 public class PromptTemplate {
 
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     public static final String CONFIG_FILE = "config.properties";
     public String TEMPLATE_INIT = "";
+    public String TEMPLATE_INIT_SYSTEM  = "";
+    public String TEMPLATE_EXTRA_SYSTEM  = "";
     public String TEMPLATE_EXTRA = "";
     public String TEMPLATE_REPAIR = "";
+
     public Map<String, Object> dataModel = new HashMap<>();
     public Properties properties;
     public Path promptPath;
@@ -50,10 +51,11 @@ public class PromptTemplate {
         this.promptPath = promptPath;
         this.maxPromptTokens = maxPromptTokens;
         TEMPLATE_INIT = properties.getProperty("PROMPT_TEMPLATE_INIT");
+        TEMPLATE_INIT_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_INIT_SYSTEM");
         TEMPLATE_EXTRA = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
+        TEMPLATE_EXTRA_SYSTEM = properties.getProperty("PROMPT_TEMPLATE_EXTRA");
         TEMPLATE_REPAIR = properties.getProperty("PROMPT_TEMPLATE_REPAIR");
     }
-
     //渲染
     public String renderTemplate(String templateFileName) throws IOException, TemplateException{
         Configuration configuration = new Configuration(Configuration.VERSION_2_3_30);
@@ -85,6 +87,7 @@ public class PromptTemplate {
             if (matches.size() > 0) {
                 String key = matches.get(matches.size()-1);
                 if (dataModel.containsKey(key)) {
+                    if(dataModel.get(key)==null) break;
                     if (dataModel.get(key) instanceof String) {
                         dataModel.put(key, "");
                     } else if (dataModel.get(key) instanceof List) {
@@ -105,6 +108,7 @@ public class PromptTemplate {
         Map<String, String> cdep_temp = new HashMap<>();
         Map<String, String> mdep_temp = new HashMap<>();
 
+        this.dataModel.put("unit_test", promptInfo.getUnitTest());
         // Map<String, String>, key: dependent class names
         this.dataModel.put("dep_packages", getDepPackages(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
         this.dataModel.put("dep_imports", getDepImports(promptInfo.getClassInfo(), promptInfo.getMethodInfo()));
@@ -122,11 +126,6 @@ public class PromptTemplate {
                 getDepClassSigs(promptInfo.getClassInfo(), promptInfo.getMethodInfo()),
                 getDepBriefWithAnoAndCom(promptInfo.getClassInfo(),promptInfo.getMethodInfo()))){
             this.dataModel.put("dep_m_sigs_ano_com",getDepBriefWithAno(promptInfo.getClassInfo(),promptInfo.getMethodInfo()));
-        }
-        // String
-        if (config.getExamplePath() != null) {
-            ExampleUsage exampleUsage = new ExampleUsage(config.getExamplePath(), promptInfo.className);
-            this.dataModel.put("example_usage", exampleUsage.getShortestUsage(promptInfo.getMethodInfo().methodSignature));
         }
         this.dataModel.put("project_full_code", getFullProjectCode(promptInfo.getClassName(), config));
         this.dataModel.put("method_name", promptInfo.getMethodName());
@@ -163,7 +162,23 @@ public class PromptTemplate {
             this.dataModel.put("other_method_sigs", null);
             this.dataModel.put("other_method_bodies", null);
         }
-
+        if (config.getExamplePath() != null) {
+            ExampleUsage exampleUsage = new ExampleUsage(config.getExamplePath(), promptInfo.className);
+            this.dataModel.put("example_usage", exampleUsage.getShortestUsage(promptInfo.getMethodInfo().methodSignature));
+        }
+        //add javaDocs
+        String javadocs=promptInfo.getMethodInfo().getMethod_comment();
+        this.dataModel.put("java_doc",javadocs);
+        this.dataModel.put("java_doc_code",getJavaDocCodeExample(javadocs));
+        this.dataModel.put("doc_infos",getSnippetCode(promptInfo.getMethodInfo().getMethodName(),config));
+        //add hits
+        if (promptInfo.getSliceStep() != null) {
+            this.dataModel.put("step_desp", promptInfo.getSliceStep().getDesp());
+            this.dataModel.put("step_code", promptInfo.getSliceStep().getCode());
+        } else {
+            this.dataModel.put("step_desp", "");
+            this.dataModel.put("step_code", "");
+        }
         //add target method invocation example in the project
         Map<String, List<String>> invocationCodeMap = get_method_invocation_code(Paths.get(config.tmpOutput.toString(),
                 "methodExampleCode.json").toString(), promptInfo.getFullClassName(), promptInfo.getMethodSignature());
@@ -181,6 +196,8 @@ public class PromptTemplate {
         this.dataModel.put("c_deps", cdep_temp);
         this.dataModel.put("m_deps", mdep_temp);
         this.dataModel.put("full_fm", promptInfo.getContext());
+
+
     }
 
     public static void main(String[] args) {
@@ -763,4 +780,17 @@ public class PromptTemplate {
         }
         return fullProjectCode;
     }
+    public String getJavaDocCodeExample(String javadocs) {
+        List<String> lines = Arrays.asList(javadocs.split("\r\n"));
+        JavadocCodeExampleCheck javadocCodeExampleCheck=new JavadocCodeExampleCheck();
+        List<String> javaDocCodeExample = javadocCodeExampleCheck.getJavaDocCodeExample(lines);
+        return  String.join("\r\n", javaDocCodeExample);
+    }
+    public List<String> getSnippetCode(String methodName, Config config) {
+        String absolutePath = config.getProject().getBasedir().getAbsolutePath();
+        SnippetAnalyzer snippetAnalyzer=new SnippetAnalyzer();
+        List<String> docSnippets = snippetAnalyzer.getDocSnippets(absolutePath, methodName);
+        return docSnippets;
+    }
+
 }
