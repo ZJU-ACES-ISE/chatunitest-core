@@ -110,7 +110,7 @@ public class ClassRunner extends AbstractRunner {
                 new HITSRunner(config, fullClassName, methodInfo).start();
                 break;
             case "MUTAP":
-                new HITSRunner(config, fullClassName, methodInfo).start();
+                new MUTAPRunner(config, fullClassName, methodInfo).start();
                 break;
             default:
                 new MethodRunner(config, fullClassName, methodInfo).start();

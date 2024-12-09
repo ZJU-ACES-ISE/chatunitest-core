@@ -138,6 +138,8 @@ public class PromptGenerator {
                 return PromptFile.telpa_init;
             case "CHATTESTER":
                 return config.useExtra ? PromptFile.chattester_extra : PromptFile.chattester_init;
+            case "MUTAP":
+                return PromptFile.mutap_init;
             case "SYMPROMPT":
                 setSymPromptInitData();
                 return PromptFile.symprompt_init;

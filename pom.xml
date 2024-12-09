@@ -213,7 +213,7 @@
         <dependency>
             <groupId>org.pitest</groupId>
             <artifactId>pitest-maven</artifactId>
-            <version>1.6.</version> <!-- 或更新版本 -->
+            <version>1.15.2</version> <!-- 或更新版本 -->
         </dependency>
 
 
