@@ -27,7 +27,7 @@ mvn clean install
 ```
 ### 2. 后续步骤
 详见maven-plugin部分
-[chatunitest-maven-plugin/corporation](https://github.com/ZJU-ACES-ISE/chatunitest-maven-plugin/tree/corporation)
+[chatunitest-maven-plugin/corporation](https://github.com/ZJU-ACES-ISE/chatunitest-maven-plugin)
 
 ## 自定义内容
 ### 使用 FTL 模板
