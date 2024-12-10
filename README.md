@@ -28,7 +28,7 @@ Make sure the version in the core's pom matches the version of the imported depe
 
 ### 2. Subsequent Steps
 For detailed instructions, please refer to the Maven plugin section:
-[chatunitest-maven-plugin/corporation](https://github.com/ZJU-ACES-ISE/chatunitest-maven-plugin/tree/corporation)
+[chatunitest-maven-plugin/corporation](https://github.com/ZJU-ACES-ISE/chatunitest-maven-plugin/)
 
 ## Custom Content
 ### Using FTL Templates
