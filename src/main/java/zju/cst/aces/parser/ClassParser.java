@@ -176,6 +176,7 @@ public class ClassParser {
         } else {
             ci.setMockDeps(new ArrayList<>());
         }
+        ci.setFieldDeps(findFieldDeps(cu, classNode));
         return ci;
     }
 
@@ -282,6 +283,18 @@ public class ClassParser {
             }
         }
         return mockDeps;
+    }
+
+    private List<String> findFieldDeps(CompilationUnit cu, ClassOrInterfaceDeclaration classNode) {
+        List<String> fieldDeps = new ArrayList<>();
+        for (FieldDeclaration f : classNode.getFields()) {
+            String typeName = getTypeQualifiedName(f.getElementType());
+            if (typeName.isEmpty()) {
+                continue;
+            }
+            fieldDeps.add(typeName);
+        }
+        return fieldDeps;
     }
 
     private List<String> getGetterSetter(CompilationUnit cu, ClassOrInterfaceDeclaration classNode) {

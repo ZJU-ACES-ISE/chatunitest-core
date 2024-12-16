@@ -179,11 +179,13 @@ public class Config {
             }
 
             Project parent = project.getParent();
+            StringBuilder parentPath;
+            parentPath = new StringBuilder(project.getArtifactId());
             while(parent != null && parent.getBasedir() != null) {
-                this.tmpOutput = this.tmpOutput.resolve(parent.getArtifactId());
+                parentPath.insert(0, parent.getArtifactId() + "/");
                 parent = parent.getParent();
             }
-            this.tmpOutput = this.tmpOutput.resolve(project.getArtifactId());
+            this.tmpOutput = this.tmpOutput.resolve(parentPath.toString());
             this.compileOutputPath = this.tmpOutput.resolve("build");
             this.parseOutput = this.tmpOutput.resolve("class-info");
             this.errorOutput = this.tmpOutput.resolve("error-message");
@@ -217,11 +219,13 @@ public class Config {
         public ConfigBuilder tmpOutput(Path tmpOutput) {
             this.tmpOutput = tmpOutput;
             Project parent = project.getParent();
+            StringBuilder parentPath;
+            parentPath = new StringBuilder(project.getArtifactId());
             while(parent != null && parent.getBasedir() != null) {
-                this.tmpOutput = this.tmpOutput.resolve(parent.getArtifactId());
+                parentPath.insert(0, parent.getArtifactId() + "/");
                 parent = parent.getParent();
             }
-            this.tmpOutput = this.tmpOutput.resolve(project.getArtifactId());
+            this.tmpOutput = this.tmpOutput.resolve(parentPath.toString());
             this.compileOutputPath = this.tmpOutput.resolve("build");
             this.parseOutput = this.tmpOutput.resolve("class-info");
             this.errorOutput = this.tmpOutput.resolve("error-message");
@@ -426,11 +430,13 @@ public class Config {
             } else {
                 this.testOutput = testOutput;
                 Project parent = project.getParent();
+                StringBuilder parentPath;
+                parentPath = new StringBuilder(project.getArtifactId());
                 while(parent != null && parent.getBasedir() != null) {
-                    this.testOutput = this.testOutput.resolve(parent.getArtifactId());
+                    parentPath.insert(0, parent.getArtifactId() + "/");
                     parent = parent.getParent();
                 }
-                this.testOutput = this.testOutput.resolve(project.getArtifactId());
+                this.testOutput = this.testOutput.resolve(parentPath.toString());
             }
             return this;
         }

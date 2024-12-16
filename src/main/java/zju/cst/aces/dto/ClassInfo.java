@@ -37,6 +37,7 @@ public class ClassInfo {
     public List<String> getterSetterBrief;
     public Map<String, Set<String>> constructorDeps;
     public List<String> mockDeps;
+    public List<String> fieldDeps;
     public String compilationUnitCode;
     public String classDeclarationCode;
     public List<String> subClasses;
