@@ -4,6 +4,14 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public enum Model {
+    GPT_4o_mini("gpt-4o-mini-2024-07-18", new ModelConfig.Builder()
+            .withModelName("gpt-4o-mini-2024-07-18")
+            .withUrl("https://api.openai.com/v1/chat/completions")
+            .withContextLength(16384)
+            .withTemperature(0.5)
+            .withFrequencyPenalty(0)
+            .withPresencePenalty(0)
+            .build()),
     GPT_3_5_TURBO("gpt-3.5-turbo", new ModelConfig.Builder()
             .withModelName("gpt-3.5-turbo")
             .withUrl("https://api.openai.com/v1/chat/completions")
@@ -15,7 +23,7 @@ public enum Model {
     GPT_3_5_TURBO_1106("gpt-3.5-turbo-1106", new ModelConfig.Builder()
             .withModelName("gpt-3.5-turbo-1106")
             .withUrl("https://api.openai.com/v1/chat/completions")
-            .withContextLength(16385)
+            .withContextLength(16384)
             .withTemperature(0.5)
             .withFrequencyPenalty(0)
             .withPresencePenalty(0)
@@ -23,7 +31,7 @@ public enum Model {
     CODE_LLAMA("code-llama", new ModelConfig.Builder()
             .withModelName("code-llama")
             .withUrl(null)
-            .withContextLength(16385)
+            .withContextLength(16384)
             .withTemperature(0.5)
             .withFrequencyPenalty(0)
             .withPresencePenalty(0)

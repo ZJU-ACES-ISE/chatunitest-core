@@ -5,6 +5,7 @@ import zju.cst.aces.dto.ClassInfo;
 import zju.cst.aces.dto.MethodInfo;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.runner.AbstractRunner;
+import zju.cst.aces.util.Counter;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,8 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import zju.cst.aces.util.Counter;
 
 public class Task {
 
@@ -78,19 +77,19 @@ public class Task {
                         }
                         try {
                             this.runner.runMethod(fullClassName, methodInfo);
+                            return;
                         } catch (Exception e) {
                             log.error("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId() + "\n" + e.getMessage());
                         }
                     }
                 }
             }
-
+            throw new IOException("Method " + methodName + " in class " + fullClassName + " not found");
         } catch (IOException e) {
             log.warn("Method not found: " + methodName + " in " + className + " " + config.getProject().getArtifactId());
-            return;
+        } finally {
+            log.info(String.format("\n==========================\n[%s] Generation finished", config.pluginSign));
         }
-
-        log.info(String.format("\n==========================\n[%s] Generation finished", config.pluginSign));
     }
 
     public void startClassTask(String className) {

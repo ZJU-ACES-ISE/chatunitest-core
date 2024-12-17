@@ -8,10 +8,7 @@ import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import zju.cst.aces.api.Task;
 import zju.cst.aces.api.config.Config;
-import zju.cst.aces.dto.ClassInfo;
-import zju.cst.aces.dto.ExampleUsage;
-import zju.cst.aces.dto.MethodInfo;
-import zju.cst.aces.dto.PromptInfo;
+import zju.cst.aces.dto.*;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.runner.AbstractRunner;
 
@@ -125,6 +122,21 @@ public class PromptTemplate {
             ExampleUsage exampleUsage = new ExampleUsage(config.getExamplePath(), promptInfo.className);
             this.dataModel.put("example_usage", exampleUsage.getShortestUsage(promptInfo.getMethodInfo().methodSignature));
         }
+
+        if (config.getGnnPredictPath() != null) {
+            GnnPredictMap predictMap = new GnnPredictMap(config);
+            List<String> predictDeps = predictMap.getPredict(promptInfo.getFullClassName());
+            Map<String, String> predictDepsBrief = new HashMap<>();
+            for (String dep : predictDeps) {
+                try {
+                    predictDepsBrief.put(dep, findDepClassBrief(dep));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            this.dataModel.put("predict_deps", predictDepsBrief);
+        }
+
         this.dataModel.put("project_full_code", getFullProjectCode(promptInfo.getClassName(), config));
         this.dataModel.put("method_name", promptInfo.getMethodName());
         this.dataModel.put("full_class_name",promptInfo.getFullClassName());
@@ -171,6 +183,15 @@ public class PromptTemplate {
         this.dataModel.put("c_deps", cdep_temp);
         this.dataModel.put("m_deps", mdep_temp);
         this.dataModel.put("full_fm", promptInfo.getContext());
+    }
+
+    public String findDepClassBrief(String fullClassName) throws IOException {
+        ClassInfo depInfo = AbstractRunner.getClassInfo(config, fullClassName);
+        if (depInfo == null) {
+            return "";
+        }
+        return depInfo.getClassSignature() + " {\n" +
+                AbstractRunner.joinLines(depInfo.getConstructorBrief()) + "\n}";
     }
 
     public Map<String, String> getDepBrief(MethodInfo methodInfo) throws IOException {

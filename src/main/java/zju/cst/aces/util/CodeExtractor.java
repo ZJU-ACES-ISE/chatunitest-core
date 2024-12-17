@@ -20,22 +20,22 @@ public class CodeExtractor {
     }
 
     public String extractText(String text) {
-        if (text.contains("<INFO>")) {
-            List<String> infoList = List.of(text.split("<INFO>"));
+        if (text.contains("<STEP>")) {
+            List<String> infoList = List.of(text.split("<STEP>"));
 
-            String importsInfo = infoList.get(1);
-            Pattern pattern = Pattern.compile("```[java]*([\\s\\S]*?)```");
-            Matcher matcher = pattern.matcher(importsInfo);
-            List<String> importList = new ArrayList<>();
-            while (matcher.find()) {
-                importList.addAll(Arrays.asList(matcher.group(1).trim().split("\n")));
-                break;
-            }
+//            String importsInfo = infoList.get(1);
+//            Pattern pattern = Pattern.compile("```[java]*([\\s\\S]*?)```");
+//            Matcher matcher = pattern.matcher(importsInfo);
+//            List<String> importList = new ArrayList<>();
+//            while (matcher.find()) {
+//                importList.addAll(Arrays.asList(matcher.group(1).trim().split("\n")));
+//                break;
+//            }
 
             for (int i = infoList.size() - 1; i >= 0; i--) {
                 String info = infoList.get(i);
                 if (info.contains("```")) {
-                    text = AbstractRunner.repairImports(extract(info), importList);
+                    text = AbstractRunner.repairImports(extract(info), new ArrayList<>());
                     return text;
                 }
             }

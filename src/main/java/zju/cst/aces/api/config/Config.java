@@ -82,6 +82,7 @@ public class Config {
     public Path historyPath;
     public Path examplePath;
     public Path symbolFramePath;
+    public Path gnnPredictPath;
 
     public String proxy;
     public String hostname;
@@ -128,7 +129,7 @@ public class Config {
         public int minErrorTokens = 500;
         public int sleepTime = 0;
         public int dependencyDepth = 1;
-        public Model model = Model.GPT_3_5_TURBO;
+        public Model model = Model.GPT_4o_mini;
         public Double temperature = 0.5;
         public int topP = 1;
         public int frequencyPenalty = 0;
@@ -142,6 +143,7 @@ public class Config {
         public Path historyPath;
         public Path examplePath;
         public Path symbolFramePath;
+        public Path gnnPredictPath;
         public String proxy = "null:-1";
         public String hostname = "null";
         public String port = "-1";
@@ -471,6 +473,11 @@ public class Config {
             return this;
         }
 
+        public ConfigBuilder gnnPredictPath(Path gnnPredictPath) {
+            this.gnnPredictPath = gnnPredictPath;
+            return this;
+        }
+
         public ConfigBuilder hostname(String hostname) {
             this.hostname = hostname;
             return this;
@@ -592,6 +599,7 @@ public class Config {
             config.setClassNameMapPath(this.classNameMapPath);
             config.setHistoryPath(this.historyPath);
             config.setExamplePath(this.examplePath);
+            config.setGnnPredictPath(this.gnnPredictPath);
             config.setSymbolFramePath(this.symbolFramePath);
             config.setProxy(this.proxy);
             config.setHostname(this.hostname);
@@ -628,6 +636,8 @@ public class Config {
         logger.info(" TmpOutput Path >>> " + this.getTmpOutput());
         logger.info(" Prompt path >>> " + this.getPromptPath());
         logger.info(" Example path >>> " + this.getExamplePath());
+        logger.info(" SymbolFrame path >>> " + this.getSymbolFramePath());
+        logger.info(" GnnPredict path >>> " + this.getGnnPredictPath());
         logger.info(" --- ");
         logger.info(" Model >>> " + this.getModel());
         logger.info(" Url >>> " + this.getUrl());
