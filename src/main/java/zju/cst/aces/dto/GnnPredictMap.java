@@ -2,6 +2,7 @@ package zju.cst.aces.dto;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import zju.cst.aces.api.Project;
 import zju.cst.aces.api.config.Config;
 
 import java.nio.charset.StandardCharsets;
@@ -29,7 +30,13 @@ public class GnnPredictMap {
             return;
         }
         try {
-            this.predict = (Map<String, TreeSet<String>>) GSON.fromJson(Files.readString(path, StandardCharsets.UTF_8), Map.class).get(config.getProject().getArtifactId());
+            String projectName = config.getProject().getArtifactId();
+            Project parent = config.project.getParent();
+            while(parent != null && parent.getBasedir() != null) {
+                projectName = parent.getArtifactId();
+                parent = parent.getParent();
+            }
+            this.predict = (Map<String, TreeSet<String>>) GSON.fromJson(Files.readString(path, StandardCharsets.UTF_8), Map.class).get(projectName);
         } catch (Exception e) {
             throw new RuntimeException("In GnnPredictMap.loadPredictMap: " + e);
         }
