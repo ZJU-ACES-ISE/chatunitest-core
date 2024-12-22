@@ -86,9 +86,9 @@ public class HITS extends PhaseImpl {
             RoundRecord record = promptInfo.getRecords().get(rounds);
             record.setAttempt(promptInfo.getTestNum());
             if (rounds == 0) {
-                config.getLogger().info("Generating test for method < " + methodInfo.methodName + " > sliceNum"+ promptInfo.getSliceNum() + " < "+ " > round " + rounds + " ...");
+                config.getLogger().info("Generating test for method < " + methodInfo.methodName + " > < sliceNum"+ promptInfo.getSliceNum() + " > round " + rounds + " ...");
             } else {
-                config.getLogger().info("Fixing test for method < " + methodInfo.methodName + " > sliceNum"+ promptInfo.getSliceNum() + " < "+ " > round "  + rounds + " ...");
+                config.getLogger().info("Fixing test for method < " + methodInfo.methodName + " > < sliceNum"+ promptInfo.getSliceNum() + " > round "  + rounds + " ...");
             }
             List<ChatMessage> prompt;
             String code;

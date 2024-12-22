@@ -46,7 +46,7 @@ public class HITSRunner extends MethodRunner {
         JsonResponseProcessor.JsonData methodSliceInfo = JsonResponseProcessor.readJsonFromFile(promptInfo.getMethodSlicePath().resolve("slice.json"));
         if (methodSliceInfo != null) {
             // Accessing the steps
-            boolean hasErrors;
+            boolean hasErrors = false;
             for (int i = 0; i < methodSliceInfo.getSteps().size(); i++) {
                 // Test Generation Phase
                 hasErrors = false;
@@ -57,23 +57,23 @@ public class HITSRunner extends MethodRunner {
                 // Validation
                 if (phase_hits.validateTest(pc)) {
                     exportRecord(pc.getPromptInfo(), classInfo, num);
-                    return true;
+                    continue;
                 } else {
                     hasErrors = true;
                 }
                 if (hasErrors) {
                     // Validation and Repair Phase
-                    for (int rounds = 0; rounds < config.getMaxRounds(); rounds++) {
+                    for (int rounds = 1; rounds < config.getMaxRounds(); rounds++) {
 
                         promptInfo.setRound(rounds);
 
                         // Repair
-                        phase_hits.repairTest(pc);
-
+                        phase_hits.generateSliceTest(pc);
                         // Validation and process
                         if (phase_hits.validateTest(pc)) { // if passed validation
                             exportRecord(pc.getPromptInfo(), classInfo, num);
-                            return true; // successfully
+                            hasErrors = false;
+                            break; // successfully
                         }
 
                     }
@@ -81,7 +81,8 @@ public class HITSRunner extends MethodRunner {
 
                 exportSliceRecord(pc.getPromptInfo(), classInfo, num, i); //todo 检测是否顺利生成信息
             }
+            return !hasErrors;
         }
-        return false;
+        return true;
     }
 }

@@ -28,7 +28,7 @@ public class MethodRunner extends ClassRunner {
         if (!config.isStopWhenSuccess() && config.isEnableMultithreading()) {
             ExecutorService executor = Executors.newFixedThreadPool(config.getTestNumber());
             List<Future<String>> futures = new ArrayList<>();
-            for (int num = 0; num < config.getTestNumber(); num++) {
+            for (int num = 0; num < 1; num++) {
                 int finalNum = num;
                 Callable<String> callable = () -> {
                     startRounds(finalNum);
@@ -50,7 +50,7 @@ public class MethodRunner extends ClassRunner {
 
             executor.shutdown();
         } else {
-            for (int num = 0; num < config.getTestNumber(); num++) {
+            for (int num = 0; num < 1; num++) {
                 boolean result = startRounds(num); //todo
                 if (result && config.isStopWhenSuccess()) {
                     break;
