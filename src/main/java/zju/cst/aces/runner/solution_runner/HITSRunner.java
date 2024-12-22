@@ -11,10 +11,49 @@ import zju.cst.aces.runner.MethodRunner;
 import zju.cst.aces.util.JsonResponseProcessor;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
 
 public class HITSRunner extends MethodRunner {
     public HITSRunner(Config config, String fullClassName, MethodInfo methodInfo) throws IOException {
         super(config, fullClassName, methodInfo);
+    }
+
+    @Override
+    public void start() throws IOException {
+        if (!config.isStopWhenSuccess() && config.isEnableMultithreading()) {
+            ExecutorService executor = Executors.newFixedThreadPool(config.getTestNumber());
+            List<Future<String>> futures = new ArrayList<>();
+            for (int num = 0; num < config.getTestNumber(); num++) {
+                int finalNum = num;
+                Callable<String> callable = () -> {
+                    startRounds(finalNum);
+                    return "";
+                };
+                Future<String> future = executor.submit(callable);
+                futures.add(future);
+            }
+            Runtime.getRuntime().addShutdownHook(new Thread(executor::shutdownNow));
+
+            for (Future<String> future : futures) {
+                try {
+                    String result = future.get();
+                    System.out.println(result);
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            executor.shutdown();
+        } else {
+            for (int num = 0; num < 1; num++) { //hits外层就一轮生成，不迭代，内存迭代
+                boolean result = startRounds(num); //todo
+                if (result && config.isStopWhenSuccess()) {
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -46,7 +85,7 @@ public class HITSRunner extends MethodRunner {
         JsonResponseProcessor.JsonData methodSliceInfo = JsonResponseProcessor.readJsonFromFile(promptInfo.getMethodSlicePath().resolve("slice.json"));
         if (methodSliceInfo != null) {
             // Accessing the steps
-            boolean hasErrors;
+            boolean hasErrors = false;
             for (int i = 0; i < methodSliceInfo.getSteps().size(); i++) {
                 // Test Generation Phase
                 hasErrors = false;
@@ -57,7 +96,6 @@ public class HITSRunner extends MethodRunner {
                 // Validation
                 if (phase_hits.validateTest(pc)) {
                     exportRecord(pc.getPromptInfo(), classInfo, num);
-                    return true;
                 } else {
                     hasErrors = true;
                 }
@@ -73,14 +111,15 @@ public class HITSRunner extends MethodRunner {
                         // Validation and process
                         if (phase_hits.validateTest(pc)) { // if passed validation
                             exportRecord(pc.getPromptInfo(), classInfo, num);
-                            return true; // successfully
+                            hasErrors = false; //修复成功
+                            break;
                         }
-
                     }
                 }
 
                 exportSliceRecord(pc.getPromptInfo(), classInfo, num, i); //todo 检测是否顺利生成信息
             }
+            return !hasErrors;
         }
         return false;
     }

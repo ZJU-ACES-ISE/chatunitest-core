@@ -49,6 +49,7 @@ public class AskGPT {
 
                 RequestBody body = RequestBody.create(MEDIA_TYPE, jsonPayload);
                 Request request = new Request.Builder().url(modelConfig.getUrl()).post(body).addHeader("Content-Type", "application/json").addHeader("Authorization", "Bearer " + apiKey).build();
+//                System.out.println(jsonPayload);
 
                 response = config.getClient().newCall(request).execute();
                 if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
