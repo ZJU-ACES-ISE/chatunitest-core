@@ -47,7 +47,7 @@ public class HITSRunner extends MethodRunner {
 
             executor.shutdown();
         } else {
-            for (int num = 0; num < 1; num++) { //hits外层就一轮生成，不迭代，内存迭代
+            for (int num = 0; num < config.getTestNumber(); num++) { //hits外层就一轮生成，不迭代，内存迭代
                 boolean result = startRounds(num); //todo
                 if (result && config.isStopWhenSuccess()) {
                     break;
@@ -101,7 +101,7 @@ public class HITSRunner extends MethodRunner {
                 }
                 if (hasErrors) {
                     // Validation and Repair Phase
-                    for (int rounds = 0; rounds < config.getMaxRounds(); rounds++) {
+                    for (int rounds = 1; rounds < config.getMaxRounds(); rounds++) {
 
                         promptInfo.setRound(rounds);
 

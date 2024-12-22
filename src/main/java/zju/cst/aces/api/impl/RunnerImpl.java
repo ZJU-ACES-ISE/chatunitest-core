@@ -39,8 +39,10 @@ public class RunnerImpl implements Runner {
         switch (phaseType) {
             case "CHATTESTER":
                 new ChatTesterRunner(config, fullClassName, methodInfo).start();
+                break;
             case "HITS":
                 new HITSRunner(config, fullClassName, methodInfo).start();
+                break;
             default:
                 new MethodRunner(config, fullClassName, methodInfo).start();
         }

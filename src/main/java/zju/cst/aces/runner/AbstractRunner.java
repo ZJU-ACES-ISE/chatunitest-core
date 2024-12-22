@@ -506,11 +506,13 @@ public abstract class AbstractRunner {
      * @return
      */
     public static boolean runTest(Config config, String fullTestName, PromptInfo promptInfo, int rounds) {
-        String testName = fullTestName.substring(fullTestName.lastIndexOf(".") + 1);
+        String testName;
         Path savePath;
         if(config.phaseType.equals("HITS")){
-            savePath = config.getTestOutput().resolve(fullTestName.replace(".", File.separator)+ "_slice" + promptInfo.getSliceNum() + ".java"); // todo 这里要加上切片序号
+            testName = fullTestName.substring(fullTestName.lastIndexOf(".") + 1) + "_slice" + promptInfo.getSliceNum(); //todo 这里要和文件名保持一致
+            savePath = config.getTestOutput().resolve(fullTestName.replace(".", File.separator) + "_slice" + promptInfo.getSliceNum() + ".java");
         }else {
+            testName = fullTestName.substring(fullTestName.lastIndexOf(".") + 1);
             savePath = config.getTestOutput().resolve(fullTestName.replace(".", File.separator) + ".java");
         }
         if (promptInfo.getTestPath() == null) {
