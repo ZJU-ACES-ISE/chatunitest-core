@@ -25,7 +25,7 @@ public class HITSRunner extends MethodRunner {
         if (!config.isStopWhenSuccess() && config.isEnableMultithreading()) {
             ExecutorService executor = Executors.newFixedThreadPool(config.getTestNumber());
             List<Future<String>> futures = new ArrayList<>();
-            for (int num = 0; num < config.getTestNumber(); num++) {
+            for (int num = 0; num < 1; num++) {
                 int finalNum = num;
                 Callable<String> callable = () -> {
                     startRounds(finalNum);
@@ -47,7 +47,7 @@ public class HITSRunner extends MethodRunner {
 
             executor.shutdown();
         } else {
-            for (int num = 0; num < config.getTestNumber(); num++) { //hits外层就一轮生成，不迭代，内存迭代
+            for (int num = 0; num < 1; num++) { //hits外层就一轮生成，不迭代，内存迭代
                 boolean result = startRounds(num); //todo
                 if (result && config.isStopWhenSuccess()) {
                     break;

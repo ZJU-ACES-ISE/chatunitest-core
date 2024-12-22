@@ -20,9 +20,9 @@ import java.util.List;
 
 public class HITS extends PhaseImpl {
 
-    public static PromptGenerator promptGenerator;
-    public static MethodInfo methodInfo;
-    public static TestGeneration testGeneration;
+    public PromptGenerator promptGenerator;
+    public MethodInfo methodInfo;
+    public TestGeneration testGeneration;
 
     public HITS(Config config) {
         super(config);
