@@ -10,6 +10,7 @@ import freemarker.template.TemplateException;
 import lombok.Data;
 import zju.cst.aces.api.Task;
 import zju.cst.aces.api.config.Config;
+import zju.cst.aces.api.phase.solution.COVERUP;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.runner.AbstractRunner;
@@ -179,6 +180,13 @@ public class PromptTemplate {
             this.dataModel.put("step_desp", "");
             this.dataModel.put("step_code", "");
         }
+//        if(COVERUP.coverage_message != null) {
+//            this.dataModel.put("coverage_message", String.join(", ", COVERUP.coverage_message));
+//        }
+//        if(COVERUP.uncoveredLines != null) {
+//            this.dataModel.put("uncovered_lines", String.join(", ", COVERUP.uncoveredLines));
+//        }
+
         //add target method invocation example in the project
         Map<String, List<String>> invocationCodeMap = get_method_invocation_code(Paths.get(config.tmpOutput.toString(),
                 "methodExampleCode.json").toString(), promptInfo.getFullClassName(), promptInfo.getMethodSignature());
