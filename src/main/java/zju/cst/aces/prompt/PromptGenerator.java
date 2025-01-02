@@ -149,8 +149,8 @@ public class PromptGenerator {
     }
 
     private void setCoverUpRepairData() {
-        promptTemplate.dataModel.put("coverage_message", COVERUP.coverage_message);
-        promptTemplate.dataModel.put("uncovered_lines", COVERUP.uncoveredLines);
+        promptTemplate.dataModel.put("coverage_message", String.join(", ", COVERUP.coverage_message));
+        promptTemplate.dataModel.put("uncovered_lines", String.join(", ", COVERUP.uncoveredLines));
     }
 
     private void setSymPromptInitData() {
