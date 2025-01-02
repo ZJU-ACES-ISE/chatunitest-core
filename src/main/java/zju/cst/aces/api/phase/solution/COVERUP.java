@@ -37,7 +37,7 @@ public class COVERUP extends PhaseImpl {
         if (runTest(config, pc.getFullTestName(), promptInfo, promptInfo.getRound())) {
             try {
                 String testName = pc.getFullTestName().substring(pc.getFullTestName().lastIndexOf(".") + 1);
-                Path savePath = config.getTestOutput().resolve(pc.getFullTestName().replace(".", File.separator));
+                Path savePath = config.getTestOutput().resolve(pc.getFullTestName()+".java".replace(".", File.separator));
                 if (!Files.exists(Paths.get(config.getCoverageAnalyzer_jar_path()))) {
                     config.getLogger().error("[Jar Path Missing] The specified coverageAnalyzer_jar_path does not exist. Please check the configuration.");
                     return true;
