@@ -20,12 +20,24 @@ public class ClassNameProcessor {
     private Map<String, AtomicInteger> classNameCountMap = new HashMap<>();
     private Map<String, AtomicInteger> enumNameCountMap = new HashMap<>();
 
-    public void processJavaFiles(Path testPath) throws IOException {
+    public void processJavaFiles(Path testPath){
+        // Check if the testPath exists and is a directory
+        if (Files.notExists(testPath)) {
+            return;
+        }
+
+        if (!Files.isDirectory(testPath)) {
+            return;
+        }
+
+        // Process Java files in the testPath directory
         try (Stream<Path> paths = Files.walk(testPath)) {
             // Filter Java files and process each one
             paths.filter(Files::isRegularFile)
                     .filter(path -> path.toString().endsWith(".java"))
                     .forEach(this::processJavaFile);
+        }catch (IOException e){
+            e.printStackTrace();
         }
     }
 
@@ -93,13 +105,13 @@ public class ClassNameProcessor {
         return newContent.toString();
     }
 
-    public static void main(String[] args) {
-        try {
-            Path testPath = Paths.get("D:\\APP\\IdeaProjects\\commons-lang\\src\\test\\java\\org\\apache\\commons\\lang3");
-            ClassNameProcessor processor = new ClassNameProcessor();
-            processor.processJavaFiles(testPath);
-        } catch (IOException e) {
-            System.err.println("I/O error: " + e.getMessage());
-        }
-    }
+//    public static void main(String[] args) {
+//        try {
+//            Path testPath = Paths.get("D:\\APP\\IdeaProjects\\commons-lang\\src\\test\\java\\org\\apache\\commons\\lang3");
+//            ClassNameProcessor processor = new ClassNameProcessor();
+//            processor.processJavaFiles(testPath);
+//        } catch (IOException e) {
+//            System.err.println("I/O error: " + e.getMessage());
+//        }
+//    }
 }
