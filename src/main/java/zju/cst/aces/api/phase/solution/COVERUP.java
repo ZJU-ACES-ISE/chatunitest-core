@@ -3,14 +3,12 @@ package zju.cst.aces.api.phase.solution;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
 import zju.cst.aces.api.phase.PhaseImpl;
-import zju.cst.aces.coverage.CodeCoverageAnalyzer_jar;
+import zju.cst.aces.coverage.CodeCoverageAnalyzer;
 import zju.cst.aces.dto.PromptInfo;
 import zju.cst.aces.dto.TestMessage;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,19 +36,13 @@ public class COVERUP extends PhaseImpl {
             try {
                 String testName = pc.getFullTestName().substring(pc.getFullTestName().lastIndexOf(".") + 1);
                 Path savePath = config.getTestOutput().resolve(pc.getFullTestName().replace(".", File.separator) + ".java");
-                if (!Files.exists(Paths.get(config.getCoverageAnalyzer_jar_path()))) {
-                    config.getLogger().error("[Jar Path Missing] The specified coverageAnalyzer_jar_path does not exist. Please check the configuration.");
-                    return true;
-                }
-
-                Map<String, Object> coverageInfo = new CodeCoverageAnalyzer_jar().analyzeCoverage(
+                Map<String, Object> coverageInfo = new CodeCoverageAnalyzer().analyzeCoverage(
                         code, pc.getFullTestName(),
                         promptInfo.fullClassName,
                         promptInfo.methodSignature,
                         config.project.getBuildPath().toString(),
                         config.project.getCompileSourceRoots().get(0),
-                        config.classPaths,
-                        config
+                        config.classPaths
                 );
 
                 float lineCoverage = coverageInfo.get("lineCoverage") instanceof Double

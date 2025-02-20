@@ -211,6 +211,11 @@
             <version>1.15.2</version> <!-- 或更新版本 -->
         </dependency>
 
+        <dependency>
+            <groupId>org.jacoco</groupId>
+            <artifactId>org.jacoco.core</artifactId>
+            <version>0.8.8</version>
+        </dependency>
 
     </dependencies>
 

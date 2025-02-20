@@ -5,7 +5,7 @@ import com.github.javaparser.ast.NodeList;
 import zju.cst.aces.api.config.Config;
 import zju.cst.aces.api.impl.PromptConstructorImpl;
 import zju.cst.aces.api.phase.PhaseImpl;
-import zju.cst.aces.coverage.CodeCoverageAnalyzer_jar;
+import zju.cst.aces.coverage.CodeCoverageAnalyzer;
 import zju.cst.aces.dto.*;
 import zju.cst.aces.parser.ProjectParser;
 import zju.cst.aces.util.telpa.JavaParserUtil;
@@ -98,16 +98,14 @@ public class TELPA extends PhaseImpl {
                 Map<String, String> testMethodInfo = javaParserUtil.findCodeByMethodInfo(topMethod.getMethodName(), parseResult);
                 try {
                     for (Map.Entry<String, String> testMethod : testMethodInfo.entrySet()) {
-                        Map<String, Object> coverageInfo = new CodeCoverageAnalyzer_jar().analyzeCoverage(
+                        Map<String, Object> coverageInfo = new CodeCoverageAnalyzer().analyzeCoverage(
                                 testMethod.getValue(), testMethod.getKey(),
                                 classInfo.getFullClassName(),
                                 methodInfo.getMethodSignature(),
                                 config.project.getBuildPath().toString(),
                                 config.project.getCompileSourceRoots().get(0),
-                                config.classPaths,
-                                config
+                                config.classPaths
                         );
-                        coverageResults.add(coverageInfo);
                     }
                 } catch (Exception e) {
                     config.getLogger().error("Failed to analyze coverage for " + topMethod.getClassName());

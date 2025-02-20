@@ -84,7 +84,6 @@ public class Config {
     public Path examplePath;
     public Path symbolFramePath;
 
-    public String coverageAnalyzer_jar_path;
     public int max_coverage_improve_time;
     public String proxy;
     public String hostname;
@@ -157,7 +156,6 @@ public class Config {
                 .writeTimeout(5, TimeUnit.MINUTES)
                 .readTimeout(5, TimeUnit.MINUTES)
                 .build();
-        public String coverageAnalyzer_jar_path;
         public int max_coverage_improve_time=maxRounds;
         public Validator validator;
         public String pluginSign;
@@ -224,10 +222,6 @@ public class Config {
 
         public ConfigBuilder proxy(String proxy) {
             setProxy(proxy);
-            return this;
-        }
-        public ConfigBuilder coverageAnalyzer_jar_path(String coverageAnalyzer_jar_path){
-            this.coverageAnalyzer_jar_path=coverageAnalyzer_jar_path;
             return this;
         }
         public ConfigBuilder max_coverage_improve_time(int max_coverage_improve_time){
@@ -646,7 +640,6 @@ public class Config {
             config.setPhaseType(this.phaseType);
             config.setUseSlice(this.useSlice);
             config.setUseExtra(this.useExtra);
-            config.setCoverageAnalyzer_jar_path(this.coverageAnalyzer_jar_path);
             config.setMax_coverage_improve_time(this.max_coverage_improve_time);
             return config;
         }
@@ -690,7 +683,6 @@ public class Config {
         logger.info(" MaxPromptTokens >>> " + this.getMaxPromptTokens());
         logger.info(" SleepTime >>> " + this.getSleepTime());
         logger.info(" DependencyDepth >>> " + this.getDependencyDepth());
-        logger.info(" coverageAnalyzer_jar_path >>> " + this.getCoverageAnalyzer_jar_path());
         logger.info(" PhaseType >>> " + this.phaseType);
         logger.info("\n===================================================================\n");
         try {
