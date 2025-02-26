@@ -407,7 +407,9 @@ public class Config {
         }
 
         public ConfigBuilder maxPromptTokens(int maxPromptTokens) {
-            this.maxPromptTokens = maxPromptTokens;
+            if (maxPromptTokens > 0) {
+                this.maxPromptTokens = maxPromptTokens;
+            }
             return this;
         }
 
