@@ -381,7 +381,7 @@ public class ClassParser {
         String sig = "";
         if (node instanceof MethodDeclaration) {
             MethodDeclaration methodNode = (MethodDeclaration) node;
-            if (!methodNode.getBody().isPresent()) {
+            if (methodNode.getBody().isPresent()) {
                 sig = getSourceCodeByPosition(
                         getTokenString(cu),
                         methodNode.getBegin().orElseThrow(() -> new NoSuchElementException("Begin position not present")),
