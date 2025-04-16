@@ -19,6 +19,7 @@ import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclar
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.google.gson.Gson;
 import lombok.var;
+import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import slicing.graphs.CallGraph;
 import slicing.graphs.sdg.SDG;
@@ -181,7 +182,8 @@ public class ClassParser {
                 getGetterSetterSig(cu, classNode),
                 getGetterSetter(cu, classNode),
                 getConstructorDeps(cu, classNode),
-                getSubClasses(classNode)
+                getSubClasses(classNode),
+                getInitializer(cu)
         );
 
         ci.setPublic(classNode.isPublic());
@@ -510,6 +512,15 @@ public class ClassParser {
             cSigs.add(c.getSignature().asString());
         });
         return cSigs;
+    }
+
+    private String getInitializer(CompilationUnit cu) {
+        List<InitializerDeclaration> all = cu.findAll(InitializerDeclaration.class);
+        if (CollectionUtils.isNotEmpty(all)) {
+            InitializerDeclaration initializerDeclaration = all.get(0);
+            return initializerDeclaration.toString();
+        }
+        return null;
     }
 
     private List<String> getBriefConstructors(CompilationUnit cu, ClassOrInterfaceDeclaration node) {

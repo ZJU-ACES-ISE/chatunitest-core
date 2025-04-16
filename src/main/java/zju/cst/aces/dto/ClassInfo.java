@@ -37,12 +37,14 @@ public class ClassInfo {
     public Map<String, Set<String>> constructorDeps;
     public String compilationUnitCode;
     public String classDeclarationCode;
+    public String initializerCode;
     public List<String> subClasses;
 
     public ClassInfo(CompilationUnit cu, ClassOrInterfaceDeclaration classNode, int index, String classSignature,
                      List<String> imports, List<String> fields, List<String> superClasses, Map<String, String> methodSigs,
                      List<String> methodsBrief, boolean hasConstructor, List<String> constructorSigs,
-                     List<String> constructorBrief, List<String> getterSetterSigs, List<String> getterSetterBrief, Map<String, Set<String>> constructorDeps,List<String> subClasses) {
+                     List<String> constructorBrief, List<String> getterSetterSigs, List<String> getterSetterBrief, Map<String, Set<String>> constructorDeps, List<String> subClasses,
+                     String initializerCode) {
         this.className = classNode.getNameAsString();
         this.index = index;
         this.modifier = classNode.getModifiers().toString();
@@ -62,7 +64,8 @@ public class ClassInfo {
         this.getterSetterSigs = getterSetterSigs;
         this.getterSetterBrief = getterSetterBrief;
         this.constructorDeps = constructorDeps;
-        this.subClasses=subClasses;
+        this.subClasses = subClasses;
+        this.initializerCode = initializerCode;
     }
 
     public ClassInfo(CompilationUnit cu, EnumDeclaration classNode, int index, String classSignature,
