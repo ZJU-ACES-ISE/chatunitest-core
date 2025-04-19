@@ -20,9 +20,9 @@ mvn clean install
 Make sure the version in the core's pom matches the version of the imported dependency.
 ```xml
 <dependency>
-    <groupId>io.github.ZJU-ACES-ISE</groupId>
+    <groupId>io.github.zju-aces-ise</groupId>
     <artifactId>chatunitest-core</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
 </dependency>
 ```
 
