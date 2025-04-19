@@ -39,15 +39,16 @@ import static zju.cst.aces.parser.ProjectParser.exportJson;
 
 @Data
 public class JavaParserUtil {
-    public static JavaParser parser;
-    public Config config;
-    public Path srcFolderPath;
-    public static NodeList<CompilationUnit> cus;
-    public static NodeList<CompilationUnit> cusWithTest;
-    public JavaParserUtil(Config config){
-        this.config=config;
+    private final Config config;
+    private final JavaParser parser;
+    private final Path srcFolderPath;
+    private NodeList<CompilationUnit> compilationUnits;
+
+    public JavaParserUtil(Config config) {
+        this.config = config;
         this.parser = config.getParser();
         this.srcFolderPath = Paths.get(config.getProject().getBasedir().getAbsolutePath(), "src", "main", "java");
+        this.compilationUnits = getParseResult(); // 初始化时就解析源文件
     }
     public static List<String> scanSourceDirectory(Project project) {
         List<String> classPaths = new ArrayList<>();
@@ -91,25 +92,9 @@ public class JavaParserUtil {
     public Map<String, String> findCodeByMethodInfo(String methodName, NodeList<CompilationUnit> cus) {
         Map<String, String> codes = new HashMap<>();
         try {
-            // 创建SDG
-            PrintStream originalOut = System.out;
-            PrintStream originalErr = System.err;
-            PrintStream noOutput = new PrintStream(new OutputStream() {
-                @Override
-                public void write(int b) {
-                    // 忽略所有输出
-                }
-            });
-            System.setOut(noOutput);
-            System.setErr(noOutput);
 
             // 调用 createSDG 方法
             SDG sdg = createSDG(cus);
-
-            System.setOut(originalOut);
-            System.setErr(originalErr);
-
-
             // 遍历 CompilationUnits 中的所有方法
             for (CompilationUnit cu : cus) {
                 cu.findAll(CallableDeclaration.class).forEach(callable -> {
@@ -182,24 +167,26 @@ public class JavaParserUtil {
     }
 
 
-    public NodeList<CompilationUnit> addFilesToCompilationUnits(Path counterExamplePath) {
-        List<Path> files = getFiles(counterExamplePath);
-        NodeList<CompilationUnit> cusWithTest = new NodeList<>();
-        for (CompilationUnit unit : cus) {
-            cusWithTest.add(unit.clone()); // 使用 clone 方法进行深拷贝
-        }
-        for (Path file : files) {
+    public NodeList<CompilationUnit> addTestFiles(Path counterExamplePath) {
+        NodeList<CompilationUnit> mergedUnits = new NodeList<>();
+
+        // 添加已有的编译单元
+        mergedUnits.addAll(this.compilationUnits);
+
+        // 添加测试文件
+        List<Path> testFiles = getFiles(counterExamplePath);
+        for (Path file : testFiles) {
             try {
                 if (Files.isRegularFile(file)) {
                     ParseResult<CompilationUnit> parseResult = parser.parse(file);
-                    CompilationUnit cu = parseResult.getResult().orElseThrow(() -> new NoSuchElementException("parse Failed"));
-                    cusWithTest.add(cu);
+                    parseResult.getResult().ifPresent(mergedUnits::add);
                 }
             } catch (IOException e) {
-                config.getLogger().warn("Failed to parse file: " + file);
+                config.getLogger().warn("Failed to parse test file: " + file);
             }
         }
-        return cusWithTest;
+
+        return mergedUnits;
     }
     private List<Path> getFiles(Path path) {
         List<Path> fileList = new ArrayList<>();

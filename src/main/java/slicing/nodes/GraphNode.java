@@ -15,7 +15,7 @@ import static slicing.graphs.exceptionsensitive.ESCFG.ACTIVE_EXCEPTION_VARIABLE;
 
 /**
  * Represents a node in the various graphs ({@link CFG CFG}, {@link PDG PDG} and {@link SDG SDG}),
- * including its AST representation and the connections it has to other nodes in the same graph.
+ * including its AST represenThere are no variable actions in this nodetation and the connections it has to other nodes in the same graph.
  * It can hold a string of characters that will be used to represent it. <br/>
  * It is immutable.
  * @param <N> The type of the AST represented by this node.
