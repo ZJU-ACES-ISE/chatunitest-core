@@ -2,6 +2,7 @@ package zju.cst.aces.dto;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.EnumDeclaration;
 import lombok.Data;
 
 import java.util.List;
@@ -36,16 +37,45 @@ public class ClassInfo {
     public Map<String, Set<String>> constructorDeps;
     public String compilationUnitCode;
     public String classDeclarationCode;
+    public String initializerCode;
     public List<String> subClasses;
 
     public ClassInfo(CompilationUnit cu, ClassOrInterfaceDeclaration classNode, int index, String classSignature,
                      List<String> imports, List<String> fields, List<String> superClasses, Map<String, String> methodSigs,
                      List<String> methodsBrief, boolean hasConstructor, List<String> constructorSigs,
-                     List<String> constructorBrief, List<String> getterSetterSigs, List<String> getterSetterBrief, Map<String, Set<String>> constructorDeps,List<String> subClasses) {
+                     List<String> constructorBrief, List<String> getterSetterSigs, List<String> getterSetterBrief, Map<String, Set<String>> constructorDeps, List<String> subClasses,
+                     String initializerCode) {
         this.className = classNode.getNameAsString();
         this.index = index;
         this.modifier = classNode.getModifiers().toString();
         this.extend = classNode.getExtendedTypes().toString();
+        this.implement = classNode.getImplementedTypes().toString();
+        this.packageName = cu.getPackageDeclaration().orElse(null) == null ? "" : cu.getPackageDeclaration().get().getNameAsString();
+        this.packageDeclaration = getPackageDeclaration(cu);
+        this.classSignature = classSignature;
+        this.imports = imports;
+        this.fields = fields;
+        this.superClasses = superClasses;
+        this.methodSigs = methodSigs;
+        this.methodsBrief = methodsBrief;
+        this.hasConstructor = hasConstructor;
+        this.constructorSigs = constructorSigs;
+        this.constructorBrief = constructorBrief;
+        this.getterSetterSigs = getterSetterSigs;
+        this.getterSetterBrief = getterSetterBrief;
+        this.constructorDeps = constructorDeps;
+        this.subClasses = subClasses;
+        this.initializerCode = initializerCode;
+    }
+
+    public ClassInfo(CompilationUnit cu, EnumDeclaration classNode, int index, String classSignature,
+                     List<String> imports, List<String> fields, List<String> superClasses, Map<String, String> methodSigs,
+                     List<String> methodsBrief, boolean hasConstructor, List<String> constructorSigs,
+                     List<String> constructorBrief, List<String> getterSetterSigs, List<String> getterSetterBrief, Map<String, Set<String>> constructorDeps, List<String> subClasses) {
+        this.className = classNode.getNameAsString();
+        this.index = index;
+        this.modifier = classNode.getModifiers().toString();
+        this.extend = "";
         this.implement = classNode.getImplementedTypes().toString();
         this.packageName = cu.getPackageDeclaration().orElse(null) == null ? "" : cu.getPackageDeclaration().get().getNameAsString();
         this.packageDeclaration = getPackageDeclaration(cu);

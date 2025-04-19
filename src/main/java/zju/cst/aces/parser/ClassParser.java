@@ -19,6 +19,7 @@ import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclar
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.google.gson.Gson;
 import lombok.var;
+import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import slicing.graphs.CallGraph;
 import slicing.graphs.sdg.SDG;
@@ -83,7 +84,23 @@ public class ClassParser {
                 logger.error("In ClassParser.extractClass Exception: when parse class " + classDeclaration.getNameAsString() + " :\n" + e);
             }
         }
-        return classes.size();
+
+        // 处理枚举类
+        List<EnumDeclaration> enums = cu.findAll(EnumDeclaration.class);
+        for (EnumDeclaration enumDeclaration : enums) {
+            try {
+                classInfo = getInfoByEnum(cu, enumDeclaration);
+                exportClassInfo(classInfo, enumDeclaration);
+                extractEnumMethods(cu, enumDeclaration);
+
+                addClassMapping(classInfo);
+                methodCount += enumDeclaration.getMethods().size();
+            } catch (Exception e) {
+                logger.error("In ClassParser.extractClass Exception: when parse enum " + enumDeclaration.getNameAsString() + " :\n" + e);
+            }
+        }
+
+        return classes.size() + enums.size();
     }
 
     public int extractClass(CompilationUnit cu) {
@@ -101,7 +118,23 @@ public class ClassParser {
                 logger.error("In ClassParser.extractClass Exception: when parse class " + classDeclaration.getNameAsString() + " :\n" + e);
             }
         }
-        return classes.size();
+
+        // 处理枚举类
+        List<EnumDeclaration> enums = cu.findAll(EnumDeclaration.class);
+        for (EnumDeclaration enumDeclaration : enums) {
+            try {
+                classInfo = getInfoByEnum(cu, enumDeclaration);
+                exportClassInfo(classInfo, enumDeclaration);
+                extractEnumMethods(cu, enumDeclaration);
+
+                addClassMapping(classInfo);
+                methodCount += enumDeclaration.getMethods().size();
+            } catch (Exception e) {
+                logger.error("In ClassParser.extractClass Exception: when parse enum " + enumDeclaration.getNameAsString() + " :\n" + e);
+            }
+        }
+
+        return classes.size() + enums.size();
     }
 
     private static boolean isJavaSourceDir(Path path) {
@@ -149,7 +182,8 @@ public class ClassParser {
                 getGetterSetterSig(cu, classNode),
                 getGetterSetter(cu, classNode),
                 getConstructorDeps(cu, classNode),
-                getSubClasses(classNode)
+                getSubClasses(classNode),
+                getInitializer(cu)
         );
 
         ci.setPublic(classNode.isPublic());
@@ -167,12 +201,146 @@ public class ClassParser {
         return ci;
     }
 
+    private void exportClassInfo(ClassInfo classInfo, EnumDeclaration enumNode) throws IOException {
+        Path classOutputDir = classOutputPath.resolve(enumNode.getName().getIdentifier());
+        if (!Files.exists(classOutputDir)) {
+            Files.createDirectories(classOutputDir);
+        }
+        Path classInfoPath = classOutputDir.resolve("class.json");
+        //set charset utf-8
+        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(classInfoPath.toFile()), StandardCharsets.UTF_8)) {
+            writer.write(this.GSON.toJson(classInfo));
+        }
+    }
+
+    /**
+     * Extract enum information to json format
+     */
+    private ClassInfo getInfoByEnum(CompilationUnit cu, EnumDeclaration enumNode) {
+        ClassInfo ci = new ClassInfo(
+                cu,
+                enumNode, // 枚举类不是ClassOrInterfaceDeclaration
+                this.sharedInteger.getAndIncrement(),
+                getEnumSignature(cu, enumNode),
+                getImports(getImportDeclarations(cu)),
+                getEnumFields(cu, enumNode.getFields()),
+                new ArrayList<>(), // 枚举类没有父类
+                getEnumMethodSignatures(enumNode),
+                getBriefEnumMethods(cu, enumNode),
+                false, // 枚举类没有构造函数
+                new ArrayList<>(), // 枚举类没有构造函数签名
+                new ArrayList<>(), // 枚举类没有构造函数简要信息
+                getEnumGetterSetterSig(cu, enumNode),
+                getEnumGetterSetter(cu, enumNode),
+                new LinkedHashMap<>(), // 枚举类没有构造函数依赖
+                getEnumSubClasses(enumNode)
+        );
+
+        ci.setPublic(enumNode.isPublic());
+        ci.setAbstract(false); // 枚举类不能是抽象的
+        ci.setInterface(false);
+        ci.setCode(cu.toString(), enumNode.toString());
+        ci.setFullClassName(
+                cu.getPackageDeclaration()
+                        .orElseThrow(() -> new NoSuchElementException("Package declaration not present"))
+                        .getNameAsString() + "." + ci.className
+        );
+
+        ci.setImplementedTypes(new ArrayList<>());
+        return ci;
+    }
+
+    /**
+     * Get enum signature
+     */
+    public static String getEnumSignature(CompilationUnit cu, EnumDeclaration node) {
+        if (!node.hasRange()) {
+            return node.getNameAsString();
+        }
+        return getSourceCodeByPosition(
+                getTokenString(cu),
+                node.getBegin().orElseThrow(() -> new NoSuchElementException("Begin position not present")),
+                node.getName().getEnd().orElseThrow(() -> new NoSuchElementException("Name end position not present"))
+        );
+    }
+
+    /**
+     * Get all brief method in enum
+     */
+    private List<String> getBriefEnumMethods(CompilationUnit cu, EnumDeclaration node) {
+        List<String> mSigs = new ArrayList<>();
+        node.getMethods().forEach(m -> {
+            if (m.hasRange()) mSigs.add(getBriefMethod(cu, m));
+        });
+        return mSigs;
+    }
+
+    /**
+     * Get the map of all method signatures and id in enum
+     */
+    private Map<String, String> getEnumMethodSignatures(EnumDeclaration node) {
+        Map<String, String> mSigs = new LinkedHashMap<>();
+        List<MethodDeclaration> methods = node.getMethods();
+        int i = 0;
+        for (; i < methods.size(); i++) {
+            if (!methods.get(i).hasRange()) continue;
+            try {
+                mSigs.put(methods.get(i).getSignature().asString(), String.valueOf(i));
+            } catch (Exception e) {
+                throw new RuntimeException("In ClassParser getEnumMethodSignatures: when resolve method: " + methods.get(i).getNameAsString() + ": " + e);
+            }
+        }
+        return mSigs;
+    }
+
+    /**
+     * Get full fields declaration of enum.
+     */
+    private List<String> getEnumFields(CompilationUnit cu, List<FieldDeclaration> nodes) {
+        List<String> fields = new ArrayList<>();
+        for (FieldDeclaration f : nodes) {
+            fields.add(getFieldCode(cu, f));
+        }
+        return fields;
+    }
+
+    private void extractEnumMethods(CompilationUnit cu, EnumDeclaration enumDeclaration) throws IOException {
+        List<MethodDeclaration> methods = enumDeclaration.getMethods();
+        for (MethodDeclaration m : methods) {
+            if (m.hasRange()) {
+                MethodInfo info = getInfoByMethod(cu, null, m);
+                exportEnumMethodInfo(info, enumDeclaration, m);
+            }
+        }
+    }
+
+    private void exportEnumMethodInfo(MethodInfo methodInfo, EnumDeclaration enumNode, MethodDeclaration node) throws IOException {
+        Path classOutputDir = classOutputPath.resolve(enumNode.getName().getIdentifier());
+        if (!Files.exists(classOutputDir)) {
+            Files.createDirectories(classOutputDir);
+        }
+        Path info = classOutputDir.resolve(getFilePathBySig(node.getSignature().asString()));
+        //set charset utf-8
+        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(info.toFile()), StandardCharsets.UTF_8)) {
+            writer.write(this.GSON.toJson(methodInfo));
+        }
+    }
+
     /**
      * Generate extracted information of focal method(constructor).
      */
     private MethodInfo getInfoByMethod(CompilationUnit cu, ClassOrInterfaceDeclaration classNode, CallableDeclaration node) {
+        String className;
+        if (classNode != null) {
+            className = classNode.getNameAsString();
+        } else if (node.getParentNode().orElse(null) instanceof EnumDeclaration) {
+            className = ((EnumDeclaration) node.getParentNode().get()).getNameAsString();
+        } else {
+            className = "Unknown";
+        }
+        
         MethodInfo mi = new MethodInfo(
-                classNode.getNameAsString(),
+                className,
                 node.getNameAsString(),
                 getBriefMethod(cu, node),
                 getMethodSig(node),
@@ -344,6 +512,15 @@ public class ClassParser {
             cSigs.add(c.getSignature().asString());
         });
         return cSigs;
+    }
+
+    private String getInitializer(CompilationUnit cu) {
+        List<InitializerDeclaration> all = cu.findAll(InitializerDeclaration.class);
+        if (CollectionUtils.isNotEmpty(all)) {
+            InitializerDeclaration initializerDeclaration = all.get(0);
+            return initializerDeclaration.toString();
+        }
+        return null;
     }
 
     private List<String> getBriefConstructors(CompilationUnit cu, ClassOrInterfaceDeclaration node) {
@@ -918,6 +1095,31 @@ public class ClassParser {
             }
         });
         return new ArrayList<>(set);
+    }
+
+    private List<String> getEnumGetterSetterSig(CompilationUnit cu, EnumDeclaration enumNode) {
+        List<String> getterSetter = new ArrayList<>();
+        for (MethodDeclaration m : enumNode.getMethods()) {
+            if (isGetSet2(m)) {
+                getterSetter.add(m.getSignature().asString());
+            }
+        }
+        return getterSetter;
+    }
+
+    private List<String> getEnumGetterSetter(CompilationUnit cu, EnumDeclaration enumNode) {
+        List<String> getterSetter = new ArrayList<>();
+        for (MethodDeclaration m : enumNode.getMethods()) {
+            if (isGetSet2(m)) {
+                getterSetter.add(getBriefMethod(cu, m));
+            }
+        }
+        return getterSetter;
+    }
+
+    public List<String> getEnumSubClasses(EnumDeclaration node) {
+        // 枚举类没有子类，返回空列表
+        return new ArrayList<>();
     }
 }
 
