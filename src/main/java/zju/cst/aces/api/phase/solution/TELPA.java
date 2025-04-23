@@ -22,19 +22,54 @@ public class TELPA extends PhaseImpl {
     public static  Map<String, String> backwardAnalysis;
     public static  String counterExampleCode;
     public static  boolean isCovered=false;
-    private JavaParserUtil javaParserUtil;
+    private static JavaParserUtil javaParserUtil;
+    private static final Object lock = new Object();
+    private static Config staticConfig;
+
     public TELPA(Config config) {
         super(config);
-        javaParserUtil=new JavaParserUtil(config);
+        staticConfig = config;
+        // 在构造函数中不立即初始化JavaParserUtil，而是在第一次使用时初始化
     }
+
+    /**
+     * 获取JavaParserUtil实例，确保只在第一次调用时创建
+     * @return JavaParserUtil实例
+     */
+    private static JavaParserUtil getJavaParserUtil() {
+        if (javaParserUtil == null) {
+            synchronized (lock) {
+                if (javaParserUtil == null) {
+                    javaParserUtil = new JavaParserUtil(staticConfig);
+                }
+            }
+        }
+        return javaParserUtil;
+    }
+    /**
+     * 获取MethodExampleMap实例，确保只在第一次调用时创建
+     * @return MethodExampleMap实例
+     */
+    private static MethodExampleMap getMethodExampleMap() {
+        if (methodExampleMap == null) {
+            synchronized (lock) {
+                if (methodExampleMap == null) {
+                    ProjectParser.config = staticConfig;
+                    MethodExampleMap newMap = getJavaParserUtil().createMethodExampleMap(getJavaParserUtil().getCompilationUnits());
+                    getJavaParserUtil().findBackwardAnalysis(newMap);
+                    getJavaParserUtil().exportMethodExampleMap(newMap);
+                    getJavaParserUtil().exportBackwardAnalysis(newMap);
+                    methodExampleMap = newMap;
+                }
+            }
+        }
+        return methodExampleMap;
+    }
+
     @Override
     public void prepare() {
-        ProjectParser.config=config;
-        MethodExampleMap methodExampleMap = javaParserUtil.createMethodExampleMap(javaParserUtil.getCompilationUnits());
-        this.methodExampleMap = methodExampleMap;
-        javaParserUtil.findBackwardAnalysis(methodExampleMap);
-        javaParserUtil.exportMethodExampleMap(methodExampleMap);
-        javaParserUtil.exportBackwardAnalysis(methodExampleMap);
+        // 确保初始化MethodExampleMap
+        getMethodExampleMap();
         super.prepare();
     }
 
@@ -67,7 +102,7 @@ public class TELPA extends PhaseImpl {
     }
 
     public String getCounterExampleCode(ClassInfo classInfo,MethodInfo methodInfo) {
-        NodeList<CompilationUnit> parseResult = javaParserUtil.addTestFiles(config.getCounterExamplePath());
+        NodeList<CompilationUnit> parseResult = getJavaParserUtil().addTestFiles(config.getCounterExamplePath());
         //Initialize the Coverage Relevant Variables
         StringBuilder counterExampleCode = new StringBuilder();
         List<Map<String, Object>> coverageResults = new ArrayList<>();
@@ -79,12 +114,12 @@ public class TELPA extends PhaseImpl {
         String targetMethodName = classInfo.getFullClassName() + "." + methodInfo.getMethodSignature();
 
         // Backward analysis result data structure as follows:
-        Map<String, Set<List<MethodExampleMap.MEC>>> methodPaths = this.methodExampleMap.getMemList();
+        Map<String, Set<List<MethodExampleMap.MEC>>> methodPaths = getMethodExampleMap().getMemList();
 
         if(methodPaths!=null&&methodPaths.containsKey(targetMethodName)) {
             for (List<MethodExampleMap.MEC> path : methodPaths.get(targetMethodName)) {
                 MethodExampleMap.MEC topMethod = path.get(path.size() - 1);  // Get the top method of the path
-                Map<String, String> testMethodInfo = javaParserUtil.findCodeByMethodInfo(topMethod.getMethodName(), parseResult);
+                Map<String, String> testMethodInfo = getJavaParserUtil().findCodeByMethodInfo(topMethod.getMethodName(), parseResult);
                 try {
                     for (Map.Entry<String, String> testMethod : testMethodInfo.entrySet()) {
                         Map<String, Object> coverageInfo = new CodeCoverageAnalyzer().analyzeCoverage(
@@ -153,7 +188,7 @@ public class TELPA extends PhaseImpl {
 
     public Map<String, String> getBackwardAnalysis(ClassInfo classInfo, MethodInfo methodInfo) throws IOException {
         Map<String, String> backwardAnalysis = new HashMap<>();
-        MethodExampleMap methodExampleMap = this.methodExampleMap;
+        MethodExampleMap methodExampleMap = getMethodExampleMap();
         String targetMethodName = classInfo.getFullClassName() + "." + methodInfo.getMethodSignature();
 
         // Directly get the value corresponding to targetMethodName

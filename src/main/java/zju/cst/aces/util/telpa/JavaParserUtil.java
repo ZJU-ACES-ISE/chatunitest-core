@@ -43,12 +43,14 @@ public class JavaParserUtil {
     private final JavaParser parser;
     private final Path srcFolderPath;
     private NodeList<CompilationUnit> compilationUnits;
+    private static final Object lock = new Object();
 
     public JavaParserUtil(Config config) {
         this.config = config;
         this.parser = config.getParser();
         this.srcFolderPath = Paths.get(config.getProject().getBasedir().getAbsolutePath(), "src", "main", "java");
-        this.compilationUnits = getParseResult(); // 初始化时就解析源文件
+        // 不在构造函数中初始化compilationUnits，而是在第一次使用时初始化
+        this.compilationUnits=getParseResult();
     }
     public static List<String> scanSourceDirectory(Project project) {
         List<String> classPaths = new ArrayList<>();
