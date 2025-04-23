@@ -37,8 +37,8 @@ public class TestGeneration {
         assert (promptInfo.getRound() != null);
 
         int rounds = promptInfo.getRound();
-        promptInfo.addRecord(new RoundRecord(rounds));
-        RoundRecord record = promptInfo.getRecords().get(rounds);
+        RoundRecord record = new RoundRecord(rounds);
+        promptInfo.addRecord(record);
         record.setAttempt(promptInfo.getTestNum());
 
         if (rounds == 0) {
@@ -68,15 +68,13 @@ public class TestGeneration {
                 return;
             }
         }
-
+        RepairImpl repair = new RepairImpl(config, pc);
         if (CodeExtractor.isTestMethod(code)) {
             TestSkeleton skeleton = new TestSkeleton(promptInfo); // test skeleton to wrap a test method
             code = skeleton.build(code);
         } else {
-            RepairImpl repair = new RepairImpl(config, pc);
             code = repair.ruleBasedRepair(code);
         }
-
         promptInfo.setUnitTest(code);
         record.setCode(code);
     }
