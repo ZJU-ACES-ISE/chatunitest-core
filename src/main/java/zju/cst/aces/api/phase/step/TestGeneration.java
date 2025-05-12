@@ -37,8 +37,8 @@ public class TestGeneration {
         assert (promptInfo.getRound() != null);
 
         int rounds = promptInfo.getRound();
-        RoundRecord record = new RoundRecord(rounds);
-        promptInfo.addRecord(record);
+        promptInfo.addRecord(new RoundRecord(rounds));
+        RoundRecord record = promptInfo.getRecords().get(rounds);
         record.setAttempt(promptInfo.getTestNum());
 
         if (rounds == 0) {
