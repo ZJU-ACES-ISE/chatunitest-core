@@ -227,4 +227,79 @@ public class Counter {
         }
         return true;
     }
+
+    /**
+     * Generate a CSV file with all methods from class-info directory and sample a subset based on sampleSize
+     * @param config The configuration object containing tmpOutput path and sampleSize
+     * @return The number of methods in the sampled CSV file
+     * @throws IOException If an I/O error occurs
+     */
+    public static int generateMethodCSV(Config config) throws IOException {
+        // Get the class-info directory from config
+        Path parseOutputPath = config.getTmpOutput().resolve("class-info");
+
+        // Define output paths for CSV files
+        Path allMethodsCsvPath = config.getTmpOutput().resolve("focal_methods_all.csv");
+        Path sampledCsvPath = config.getTmpOutput().resolve("focal_methods_sampled.csv");
+
+        // Get the sample size from config
+        int sampleSize = config.getSampleSize();
+        sampleSize=Math.max(sampleSize,(int)(Counter.countMethod(config.getTmpOutput())*0.1));
+
+        // Get all methods and write to CSV
+        Map<String, List<String>> testMap = new HashMap<>();
+
+        // Get all json files named "class.json"
+        List<String> classJsonFiles = Files.walk(parseOutputPath)
+                .filter(Files::isRegularFile)
+                .map(Path::toString)
+                .filter(f -> f.endsWith("class.json"))
+                .collect(Collectors.toList());
+
+        for (String classJsonFile : classJsonFiles) {
+            File classInfoFile = new File(classJsonFile);
+            ClassInfo classInfo = GSON.fromJson(new String(Files.readAllBytes(classInfoFile.toPath()), StandardCharsets.UTF_8), ClassInfo.class);
+
+            if (!filter(classInfo)) {
+                continue;
+            }
+
+            List<String> methodList = new ArrayList<>();
+            for (String mSig : classInfo.methodSigs.keySet()) {
+                MethodInfo methodInfo = getMethodInfo(parseOutputPath, classInfo, mSig);
+                if (!filter(methodInfo)) {
+                    continue;
+                }
+                methodList.add(mSig);
+            }
+
+            testMap.put(classInfo.fullClassName, methodList);
+        }
+
+        // Write all methods to CSV
+        try (FileWriter csvWriter = new FileWriter(allMethodsCsvPath.toFile())) {
+            // Write header
+            csvWriter.append("Class Name,Method Signature\n");
+
+            // Write data
+            for (String className : testMap.keySet()) {
+                List<String> methods = testMap.get(className);
+                for (String method : methods) {
+                    csvWriter.append(className).append(",\"").append(method).append("\"\n");
+                }
+            }
+
+            System.out.println("All methods CSV file created successfully at: " + allMethodsCsvPath);
+        }
+
+        // Sample methods and write to another CSV
+        sampleMethods(allMethodsCsvPath.toString(), sampledCsvPath.toString(), sampleSize);
+
+        System.out.println("Total class count: " + testMap.size());
+        int totalMethodCount = testMap.values().stream().mapToInt(List::size).sum();
+        System.out.println("Total method count: " + totalMethodCount);
+        System.out.println("Sampled method count: " + Math.min(sampleSize, totalMethodCount));
+
+        return Math.min(sampleSize, totalMethodCount);
+    }
 }

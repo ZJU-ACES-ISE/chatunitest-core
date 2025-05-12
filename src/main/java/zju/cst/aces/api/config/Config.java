@@ -85,6 +85,7 @@ public class Config {
     public Path symbolFramePath;
 
     public int max_coverage_improve_time;
+    public int sampleSize;
     public String proxy;
     public String hostname;
     public String port;
@@ -157,6 +158,7 @@ public class Config {
                 .readTimeout(5, TimeUnit.MINUTES)
                 .build();
         public int max_coverage_improve_time=maxRounds;
+        public int sampleSize = 10;
         public Validator validator;
         public String pluginSign;
         public String phaseType; //TODO
@@ -226,6 +228,11 @@ public class Config {
         }
         public ConfigBuilder max_coverage_improve_time(int max_coverage_improve_time){
             this.max_coverage_improve_time=max_coverage_improve_time;
+            return this;
+        }
+
+        public ConfigBuilder sampleSize(int sampleSize) {
+            this.sampleSize = sampleSize;
             return this;
         }
         public ConfigBuilder tmpOutput(Path tmpOutput) {
@@ -643,6 +650,7 @@ public class Config {
             config.setUseSlice(this.useSlice);
             config.setUseExtra(this.useExtra);
             config.setMax_coverage_improve_time(this.max_coverage_improve_time);
+            config.setSampleSize(this.sampleSize);
             return config;
         }
     }
@@ -685,6 +693,7 @@ public class Config {
         logger.info(" MaxPromptTokens >>> " + this.getMaxPromptTokens());
         logger.info(" SleepTime >>> " + this.getSleepTime());
         logger.info(" DependencyDepth >>> " + this.getDependencyDepth());
+        logger.info(" SampleSize >>> " + this.getSampleSize());
         logger.info(" PhaseType >>> " + this.phaseType);
         logger.info("\n===================================================================\n");
         try {
@@ -692,5 +701,13 @@ public class Config {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    public int getSampleSize() {
+        return sampleSize;
+    }
+
+    public void setSampleSize(int sampleSize) {
+        this.sampleSize = sampleSize;
     }
 }
