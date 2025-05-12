@@ -20,9 +20,9 @@ mvn clean install
 注意core中pom的版本要与引入依赖的版本一致
 ```xml
 <dependency>
-    <groupId>io.github.ZJU-ACES-ISE</groupId>
+    <groupId>io.github.zju-aces-ise</groupId>
     <artifactId>chatunitest-core</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.1</version>
 </dependency>
 ```
 ### 2. 后续步骤
