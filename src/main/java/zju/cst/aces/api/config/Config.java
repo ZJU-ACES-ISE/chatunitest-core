@@ -99,8 +99,10 @@ public class Config {
     public Validator validator;
     public String pluginSign;
     public String phaseType;
+    public String module;
     public boolean useSlice;
     public boolean useExtra;
+    public boolean enablePrune;
 
     @Getter
     @Setter
@@ -162,8 +164,10 @@ public class Config {
         public Validator validator;
         public String pluginSign;
         public String phaseType; //TODO
+        public String module = "";
         public boolean useSlice;
         public boolean useExtra;
+        public boolean enablePrune = false;
 
         public ConfigBuilder(Project project) {
             initDefault(project);
@@ -531,6 +535,16 @@ public class Config {
             return this;
         }
 
+        public ConfigBuilder module(String module) {
+            this.module = module;
+            return this;
+        }
+
+        public ConfigBuilder enablePrune(boolean enablePrune) {
+            this.enablePrune = enablePrune;
+            return this;
+        }
+
         public void setProxy(String proxy) {
             this.proxy = proxy;
             setProxyStr();
@@ -651,6 +665,8 @@ public class Config {
             config.setUseExtra(this.useExtra);
             config.setMax_coverage_improve_time(this.max_coverage_improve_time);
             config.setSampleSize(this.sampleSize);
+            config.setModule(this.module);
+            config.setEnablePrune(this.enablePrune);
             return config;
         }
     }
@@ -695,6 +711,8 @@ public class Config {
         logger.info(" DependencyDepth >>> " + this.getDependencyDepth());
         logger.info(" SampleSize >>> " + this.getSampleSize());
         logger.info(" PhaseType >>> " + this.phaseType);
+        logger.info(" Module >>>> " + this.getModule());
+        logger.info(" Enable Prune >>>> " + this.isEnablePrune());
         logger.info("\n===================================================================\n");
         try {
             Thread.sleep(1000);
