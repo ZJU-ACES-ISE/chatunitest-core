@@ -548,7 +548,7 @@ public abstract class AbstractRunner {
         boolean compileSuccess = false;
         //execution error
         if (summary.getTestsFailedCount() > 0 || summary.getTestsSucceededCount() == 0) {
-            if (!isOnlyAssertionError(errors)) {
+            if (config.isEnablePrune() || !isOnlyAssertionError(errors)) {
                 String testProcessed = testProcessor.removeErrorTest(promptInfo, summary);
                 // Remove errors successfully, recompile and re-execute test
                 if (testProcessed != null) {
