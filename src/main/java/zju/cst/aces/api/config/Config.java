@@ -657,8 +657,9 @@ public class Config {
 
     public String getRandomKey() {
         Random rand = new Random();
-        if (apiKeys.length == 0) {
-            throw new RuntimeException("apiKeys is null!");
+        if (apiKeys == null || apiKeys.length == 0) {
+            // 对于本地模型（如 Ollama），不需要 API key
+            return "";
         }
         String apiKey = apiKeys[rand.nextInt(apiKeys.length)];
         return apiKey;

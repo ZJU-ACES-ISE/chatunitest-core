@@ -48,7 +48,17 @@ public class AskGPT {
                 String jsonPayload = GSON.toJson(payload);
 
                 RequestBody body = RequestBody.create(MEDIA_TYPE, jsonPayload);
-                Request request = new Request.Builder().url(modelConfig.getUrl()).post(body).addHeader("Content-Type", "application/json").addHeader("Authorization", "Bearer " + apiKey).build();
+                Request.Builder requestBuilder = new Request.Builder()
+                        .url(modelConfig.getUrl())
+                        .post(body)
+                        .addHeader("Content-Type", "application/json");
+                
+                // 只有当 apiKey 不为空时才添加 Authorization header（本地模型如 Ollama 不需要）
+                if (apiKey != null && !apiKey.isEmpty()) {
+                    requestBuilder.addHeader("Authorization", "Bearer " + apiKey);
+                }
+                
+                Request request = requestBuilder.build();
 
                 response = config.getClient().newCall(request).execute();
                 if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);

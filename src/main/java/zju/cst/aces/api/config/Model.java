@@ -60,8 +60,35 @@ public enum Model {
             .withTemperature(0.5)
             .withFrequencyPenalty(0)
             .withPresencePenalty(0)
-            .build());
+            .build()),
+    // 在 Model.java 中添加
 
+     QWEN_32B("qwen2.5-coder:32b", new ModelConfig.Builder()
+                .withModelName("qwen2.5-coder:32b")
+                .withUrl("http://localhost:11434/v1/chat/completions")
+                .withContextLength(32768)  // Qwen 2.5 通常支持 32k 上下文
+                .withTemperature(0.5)
+                .withFrequencyPenalty(0)
+                .withPresencePenalty(0)
+                .build()),
+
+     DEEPSEEK_V2_236B("deepseek-coder-v2:236b", new ModelConfig.Builder()
+                .withModelName("deepseek-coder-v2:236b")
+                .withUrl("http://localhost:11434/v1/chat/completions")
+                .withContextLength(65536)  // DeepSeek V2 支持 64k 上下文
+                .withTemperature(0.5)
+                .withFrequencyPenalty(0)
+                .withPresencePenalty(0)
+                .build()),
+
+     QWEN3_CODER_30B("qwen3-coder:30b", new ModelConfig.Builder()
+                .withModelName("qwen3-coder:30b")
+                .withUrl("http://localhost:11434/v1/chat/completions")
+                .withContextLength(32768)  // Qwen3 支持 32k 上下文
+                .withTemperature(0.5)
+                .withFrequencyPenalty(0)
+                .withPresencePenalty(0)
+                .build());
     private final String modelName;
     private final ModelConfig defaultConfig;
 
