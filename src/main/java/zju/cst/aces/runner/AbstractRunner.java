@@ -596,12 +596,19 @@ public abstract class AbstractRunner {
     public static List<String> extractErrorBySummary(TestExecutionSummary summary, String matchName) {
         List<String> errors = new ArrayList<>();
         summary.getFailures().forEach(failure -> {
+            boolean matched = false;
             for (StackTraceElement st : failure.getException().getStackTrace()) {
                 if (st.getClassName().contains(matchName)) {
                     errors.add("Error in " + failure.getTestIdentifier().getLegacyReportingName()
                             + ": line " + st.getLineNumber() + " : "
                             + failure.getException().toString());
+                    matched = true;
                 }
+            }
+            // 如果没在栈里找到任何属于这个测试类的帧，仍然记录一条兜底错误信息
+            if (!matched) {
+                errors.add("Error in " + failure.getTestIdentifier().getLegacyReportingName()
+                        + " : " + failure.getException());
             }
         });
         return errors;
