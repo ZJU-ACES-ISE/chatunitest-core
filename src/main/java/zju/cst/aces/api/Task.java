@@ -35,6 +35,14 @@ public class Task {
     Granularity granularity;
     ClassNameProcessor classNameProcessor;
 
+    private String normalizeSignature(String sig) {
+        if (sig == null) {
+            return null;
+        }
+        // 去掉所有空白字符（空格、Tab、换行等）
+        return sig.replaceAll("\\s+", "");
+    }
+
     public Task(Config config, Runner runner) {
         this.config = config;
         this.log = config.getLogger();
@@ -121,7 +129,7 @@ public class Task {
      * @throws IOException If an I/O error occurs
      */
     public void startMethodWithoutOverloadTask(String className, String methodName, String paramTypes) throws IOException {
-        if(granularity == null){
+        if (granularity == null) {
             granularity = Granularity.METHOD;
         }
         try {
@@ -131,20 +139,24 @@ public class Task {
             return;
         }
         if (config.getProject().getPackaging().equals("pom")) {
-            log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...",config.pluginSign));
+            log.info(String.format("\n==========================\n[%s] Skip pom-packaging ...", config.pluginSign));
             return;
         }
 
         Phase phase = PhaseImpl.createPhase(config);
         phase.prepare();
 
-        log.info(String.format("\n==========================\n[%s] Generating tests for class: < ",config.pluginSign) + className
+        log.info(String.format("\n==========================\n[%s] Generating tests for class: < ", config.pluginSign) + className
                 + "> method with signature: < " + paramTypes + " > ...");
+
+        // 预先把传入的签名做“紧凑化”（去掉所有空白）
+        String normalizedParamTypes = normalizeSignature(paramTypes);
 
         try {
             String fullClassName = getFullClassName(config, className);
             ClassInfo classInfo = AbstractRunner.getClassInfo(config, fullClassName);
             MethodInfo methodInfo = null;
+
             if (methodName.matches("\\d+")) { // use method id instead of method name
                 String methodId = methodName;
                 for (String mSig : classInfo.methodSigs.keySet()) {
@@ -159,7 +171,8 @@ public class Task {
                 try {
                     this.runner.runMethod(fullClassName, methodInfo);
                 } catch (Exception e) {
-                    log.error("Error when generating tests for " + methodName + " in " + className + " " + config.getProject().getArtifactId() + "\n" + e.getMessage());
+                    log.error("Error when generating tests for " + methodName + " in " + className + " " +
+                            config.getProject().getArtifactId() + "\n" + e.getMessage());
                 }
             } else {
                 boolean methodFound = false;
@@ -172,19 +185,23 @@ public class Task {
                             continue;
                         }
 
-                        // Check if the method signature matches the provided parameter string
                         // The methodSignature attribute contains the full method signature including name and parameters
                         String methodSignature = tempMethodInfo.methodSignature;
 
-                        // Directly compare the method signature with the provided parameter string
-                        if (methodSignature.equals(paramTypes)) {
+                        // 签名对比前先统一紧凑化（去空格）
+                        String normalizedMethodSig = normalizeSignature(methodSignature);
+
+                        // log.info("normalizedMethodSig:" + normalizedMethodSig);
+                        // log.info("normalizedMethodSig:" + normalizedParamTypes);
+
+                        if (normalizedMethodSig.equals(normalizedParamTypes)) {
                             methodInfo = tempMethodInfo;
                             methodFound = true;
                             try {
                                 this.runner.runMethod(fullClassName, methodInfo);
                             } catch (Exception e) {
                                 log.error("Error when generating tests for method with signature " + paramTypes +
-                                         " in " + className + " " + config.getProject().getArtifactId() + "\n" + e.getMessage());
+                                        " in " + className + " " + config.getProject().getArtifactId() + "\n" + e.getMessage());
                             }
                             break;
                         }
@@ -193,13 +210,13 @@ public class Task {
 
                 if (!methodFound) {
                     throw new IOException("Method with signature " + paramTypes +
-                                         " in class " + fullClassName + " not found");
+                            " in class " + fullClassName + " not found");
                 }
             }
 
         } catch (IOException e) {
             log.warn("Method not found with signature: " + paramTypes +
-                     " in " + className + " " + config.getProject().getArtifactId());
+                    " in " + className + " " + config.getProject().getArtifactId());
             return;
         }
 
